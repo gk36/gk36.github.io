@@ -159,6 +159,21 @@
   .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;box-shadow:var(--sh);opacity:0;transition:.25s;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .hint{font-size:11px;color:var(--dim);margin-top:6px}
+
+  /* ---- profiles ---- */
+  .profilebar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .pb-left{display:flex;align-items:center;gap:12px;flex:1;min-width:200px}
+  .pb-active{font-size:12.5px;font-weight:800;color:var(--muted);background:var(--bg);border:1px solid var(--line2);border-radius:999px;padding:6px 13px;white-space:nowrap}
+  .pb-active.live{color:var(--carb);border-color:var(--carb)}
+  .pb-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pb-input{background:var(--bg);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:700;width:150px;letter-spacing:.5px}
+  .pb-input:focus{outline:none;border-color:var(--accent)}
+  .pb-chips{display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:2px}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line2);border-radius:999px;padding:5px 6px 5px 13px;font-size:12.5px;font-weight:800;cursor:pointer;transition:.15s;letter-spacing:.4px}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{border-color:var(--carb);color:var(--carb);background:linear-gradient(180deg,rgba(62,207,142,.12),transparent)}
+  .chip .x{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--card2);color:var(--muted);font-size:13px;line-height:1}
+  .chip .x:hover{background:var(--pro);color:#fff}
 </style>
 </head>
 <body>
@@ -174,6 +189,20 @@
     </div>
     <div class="startchip" id="startChip">Starting point: <b>65.65 kg</b> · <b>174 cm</b> · goal: <b>lean muscle</b></div>
   </header>
+
+  <!-- ============ PROFILE ============ -->
+  <div class="card pad profilebar" id="profileBar">
+    <div class="pb-left">
+      <span class="section-title" style="margin:0">Profile</span>
+      <span class="pb-active" id="pbActive">Guest · defaults</span>
+    </div>
+    <div class="pb-right">
+      <input id="pName" class="pb-input" placeholder="name e.g. gk36" maxlength="20" autocomplete="off" spellcheck="false">
+      <button class="btn primary" id="pLoad">Load / Create</button>
+      <button class="btn" id="pGuest">Guest</button>
+    </div>
+    <div class="pb-chips" id="pChips"></div>
+  </div>
 
   <!-- ============ YOU ============ -->
   <div class="controls">
@@ -355,6 +384,8 @@ const state = {
   pick:{},          // key `${mealId}:${group}` -> food id
   milkMl:250,
 };
+let activeProfile=null;
+const DEFAULT_STATE=JSON.parse(JSON.stringify(state));
 
 const MEALS = [
   {id:1, name:'Breakfast Baseline', badge:'Morning', gym:false, time:'On waking / start of day',
@@ -642,6 +673,7 @@ function recompute(){
 
   // start chip + range fills
   syncRangeFill('kgRange');syncRangeFill('cmRange');syncRangeFill('ageRange');
+  persistActive();
 }
 
 /* ============================================================
@@ -692,6 +724,58 @@ function copyPlan(){
 }
 
 /* ============================================================
+   PROFILES  (saved in THIS browser via localStorage)
+   ============================================================ */
+const PKEY='carbmaxx_profiles_v1';
+const PFIELDS=['kg','cm','age','sex','act','goal','eggs','liver','boneBroth','breakfastCarbOn','dairyOn','milkMl','pick'];
+function loadProfiles(){ try{return JSON.parse(localStorage.getItem(PKEY))||{};}catch(e){return {};} }
+function saveProfiles(o){ try{localStorage.setItem(PKEY,JSON.stringify(o));}catch(e){} }
+function snapshot(){ const s={}; PFIELDS.forEach(k=>{ s[k]= k==='pick'?JSON.parse(JSON.stringify(state.pick)):state[k]; }); return s; }
+function persistActive(){ if(!activeProfile) return; const all=loadProfiles(); all[activeProfile]=snapshot(); saveProfiles(all); }
+function syncControls(){
+  document.getElementById('kgNum').value=state.kg;   document.getElementById('kgRange').value=state.kg;
+  document.getElementById('cmNum').value=state.cm;   document.getElementById('cmRange').value=state.cm;
+  document.getElementById('ageNum').value=state.age; document.getElementById('ageRange').value=state.age;
+  document.querySelectorAll('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sex===state.sex));
+  document.getElementById('actSel').value=state.act;
+  document.querySelectorAll('#goals .goal').forEach(el=>el.classList.toggle('on',el.dataset.goal===state.goal));
+}
+function applySnapshot(snap){
+  PFIELDS.forEach(k=>{ if(snap[k]!==undefined) state[k]= k==='pick'?JSON.parse(JSON.stringify(snap[k])):snap[k]; });
+  syncControls(); buildMeals(); recompute();
+}
+function renderProfileBar(){
+  const lab=document.getElementById('pbActive');
+  lab.textContent = activeProfile ? ('● '+activeProfile+' · auto-saving') : 'Guest · defaults';
+  lab.classList.toggle('live',!!activeProfile);
+  const all=loadProfiles(), names=Object.keys(all).sort();
+  const box=document.getElementById('pChips');
+  box.innerHTML = names.length
+    ? names.map(n=>`<span class="chip${n===activeProfile?' on':''}" data-p="${n}">${n}<span class="x" data-del="${n}" title="delete profile">×</span></span>`).join('')
+    : '<span style="color:var(--dim);font-size:12px">No saved profiles in this browser yet — type a name and hit Load / Create.</span>';
+  box.querySelectorAll('.chip').forEach(c=>c.onclick=e=>{ if(e.target.hasAttribute('data-del')) return; loadProfile(c.dataset.p); });
+  box.querySelectorAll('[data-del]').forEach(x=>x.onclick=e=>{ e.stopPropagation(); deleteProfile(x.getAttribute('data-del')); });
+}
+function loadProfile(name){
+  const all=loadProfiles(); if(!all[name]) return;
+  activeProfile=name; applySnapshot(all[name]);
+  document.getElementById('pName').value=name; renderProfileBar(); toast('Loaded "'+name+'"');
+}
+function profileLoadOrCreate(){
+  const name=document.getElementById('pName').value.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'').slice(0,20);
+  if(!name){ toast('Type a profile name (letters/numbers)'); return; }
+  document.getElementById('pName').value=name;
+  if(loadProfiles()[name]) loadProfile(name);
+  else { activeProfile=name; persistActive(); renderProfileBar(); toast('Created "'+name+'" — now auto-saving ✓'); }
+}
+function goGuest(){ activeProfile=null; applySnapshot(DEFAULT_STATE); document.getElementById('pName').value=''; renderProfileBar(); toast('Guest — defaults loaded'); }
+function deleteProfile(name){
+  const all=loadProfiles(); delete all[name]; saveProfiles(all);
+  if(activeProfile===name) goGuest(); else renderProfileBar();
+  toast('Deleted "'+name+'"');
+}
+
+/* ============================================================
    INIT
    ============================================================ */
 buildActivity();
@@ -703,6 +787,10 @@ linkPair('kgRange','kgNum','kg',parseFloat);
 linkPair('cmRange','cmNum','cm',v=>parseInt(v,10));
 linkPair('ageRange','ageNum','age',v=>parseInt(v,10));
 document.getElementById('copyBtn').onclick=copyPlan;
+document.getElementById('pLoad').onclick=profileLoadOrCreate;
+document.getElementById('pGuest').onclick=goGuest;
+document.getElementById('pName').addEventListener('keydown',e=>{ if(e.key==='Enter') profileLoadOrCreate(); });
+renderProfileBar();
 recompute();
 </script>
 </body>
