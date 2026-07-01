@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CARBMAXX · Your Protocol</title>
+<style>
+  :root{
+    --bg:#0e0f13; --bg2:#15171e; --card:#181b23; --card2:#1e222c;
+    --line:#2a2f3b; --line2:#353c4a;
+    --txt:#eef1f6; --muted:#98a1b3; --dim:#6b7488;
+    --pro:#ff5a5f;   /* protein red */
+    --carb:#3ecf8e;  /* carb green */
+    --fat:#f6c453;   /* fat gold  */
+    --accent:#ff6a3d; /* ember     */
+    --accent2:#ff8c42;
+    --radius:18px;
+    --sh:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1100px 600px at 80% -10%,rgba(255,106,61,.10),transparent 60%),
+               radial-gradient(900px 500px at -10% 10%,rgba(62,207,142,.07),transparent 55%),
+               var(--bg);
+    color:var(--txt);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+        background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:26px;box-shadow:var(--sh)}
+  .brand h1{margin:0;font-size:26px;letter-spacing:.5px}
+  .brand h1 span{color:var(--accent2)}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .startchip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:12.5px;color:var(--muted)}
+  .startchip b{color:var(--txt)}
+
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--sh)}
+  .pad{padding:20px}
+  .section-title{font-size:12px;text-transform:uppercase;letter-spacing:1.6px;color:var(--dim);margin:0 0 14px;font-weight:700}
+
+  /* ---- controls ---- */
+  .controls{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;margin-bottom:16px}
+  @media(max-width:820px){.controls{grid-template-columns:1fr}}
+  .field{margin-bottom:16px}
+  .field:last-child{margin-bottom:0}
+  .field .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .field .lab label{font-size:13px;color:var(--muted);font-weight:600}
+  .valbox{display:flex;align-items:baseline;gap:5px}
+  .valbox input.num{width:74px;background:var(--bg);border:1px solid var(--line2);color:var(--txt);
+        font-size:17px;font-weight:700;text-align:right;border-radius:9px;padding:5px 8px;font-variant-numeric:tabular-nums}
+  .valbox .unit{color:var(--dim);font-size:12px;font-weight:600}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:6px;
+        background:linear-gradient(90deg,var(--accent),var(--accent2)) no-repeat;background-size:var(--fill,50%) 100%;
+        background-color:var(--line);cursor:pointer;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+        background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);cursor:pointer}
+
+  .seg{display:flex;background:var(--bg);border:1px solid var(--line2);border-radius:11px;padding:4px;gap:4px}
+  .seg button{flex:1;background:transparent;border:0;color:var(--muted);padding:9px 6px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+  .seg button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  select.sel{width:100%;background:var(--bg);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 10px;font-size:13.5px;font-weight:600;cursor:pointer}
+
+  /* ---- goals ---- */
+  .goals{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:820px){.goals{grid-template-columns:repeat(2,1fr)}}
+  .goal{background:var(--bg);border:1px solid var(--line2);border-radius:13px;padding:13px 12px;cursor:pointer;text-align:center;transition:.15s;position:relative}
+  .goal:hover{border-color:var(--dim)}
+  .goal.on{border-color:var(--accent);background:linear-gradient(180deg,rgba(255,106,61,.16),rgba(255,106,61,.04));box-shadow:0 0 0 1px var(--accent) inset}
+  .goal .ico{font-size:22px}
+  .goal .nm{font-weight:800;font-size:14px;margin-top:4px}
+  .goal .sub{font-size:11px;color:var(--dim);margin-top:2px}
+  .goal.on .sub{color:var(--accent2)}
+  .goaldesc{margin-top:12px;font-size:13px;color:var(--muted);background:var(--bg);border:1px dashed var(--line2);border-radius:11px;padding:11px 13px}
+
+  /* ---- dashboard ---- */
+  .dash{display:grid;grid-template-columns:230px 1fr;gap:20px;align-items:center}
+  @media(max-width:720px){.dash{grid-template-columns:1fr}}
+  .kcal{text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:18px 10px}
+  .kcal .big{font-size:46px;font-weight:800;line-height:1;background:linear-gradient(135deg,#fff,var(--accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-variant-numeric:tabular-nums}
+  .kcal .lbl{color:var(--dim);font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-top:6px;font-weight:700}
+  .kcal .meta{margin-top:10px;font-size:11.5px;color:var(--muted);display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+  .kcal .meta b{color:var(--txt)}
+
+  .bars{display:flex;flex-direction:column;gap:14px}
+  .bar .bh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .bar .bh .n{font-weight:700;font-size:14px}
+  .bar .bh .g{font-variant-numeric:tabular-nums;font-weight:800;font-size:15px}
+  .bar .bh .k{color:var(--dim);font-size:11.5px;margin-left:6px;font-weight:600}
+  .track{height:12px;border-radius:8px;background:var(--bg);overflow:hidden;border:1px solid var(--line)}
+  .fill{height:100%;border-radius:8px;transition:width .35s cubic-bezier(.4,1.2,.5,1)}
+  .dot{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:7px;vertical-align:middle}
+  .split{margin-top:6px;font-size:12px;color:var(--muted)}
+  .split b{color:var(--txt)}
+
+  /* ---- timeline ---- */
+  .timeline{display:flex;gap:6px;margin-top:4px;overflow-x:auto;padding-bottom:4px}
+  .tnode{flex:1;min-width:96px;text-align:center;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:9px 6px}
+  .tnode.gym{background:linear-gradient(180deg,rgba(255,106,61,.18),transparent);border-color:var(--accent)}
+  .tnode .t{font-size:10.5px;color:var(--dim);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .tnode .m{font-size:12px;font-weight:700;margin-top:3px}
+  .tnode .c{font-size:11px;color:var(--carb);margin-top:2px;font-weight:700}
+
+  /* ---- meals ---- */
+  .meals{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:820px){.meals{grid-template-columns:1fr}}
+  .meal{display:flex;flex-direction:column}
+  .meal .mh{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .badge{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:var(--card2);color:var(--accent2);border:1px solid var(--line2)}
+  .badge.gym{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:0}
+  .meal h3{margin:0;font-size:17px}
+  .meal .time{color:var(--dim);font-size:12px;margin:2px 0 12px}
+  .row{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:10px}
+  .row .rl{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+  .row .rl .rlab{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--dim);font-weight:800}
+  .row .amt{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+  .row .amt small{font-size:12px;font-weight:700;color:var(--muted)}
+  .row .kc{font-size:11.5px;color:var(--dim);font-weight:600;margin-top:2px}
+  .row .note{font-size:11.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line2);display:none}
+  .row.shownote .note{display:block}
+  .row .sel-wrap{position:relative}
+  .eggs{display:flex;align-items:center;gap:10px}
+  .stepper{display:flex;align-items:center;gap:0;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+  .stepper button{background:var(--card2);border:0;color:var(--txt);width:32px;height:32px;font-size:18px;cursor:pointer;font-weight:700}
+  .stepper button:hover{background:var(--line2)}
+  .stepper .ev{min-width:34px;text-align:center;font-weight:800;font-size:16px}
+  .toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted);user-select:none}
+  .toggle input{display:none}
+  .toggle .tk{width:38px;height:22px;border-radius:999px;background:var(--line2);position:relative;transition:.2s}
+  .toggle .tk::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s}
+  .toggle input:checked + .tk{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+  .toggle input:checked + .tk::after{transform:translateX(16px)}
+  .toggle.mini{gap:6px}
+  .toggle.mini .tk{width:32px;height:18px}
+  .toggle.mini .tk::after{width:14px;height:14px}
+  .toggle.mini input:checked + .tk::after{transform:translateX(14px)}
+  .toggle.mini .tgl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:800;color:var(--dim)}
+  .toggle.mini input:checked ~ .tgl{color:var(--accent2)}
+  .meal .mnote{font-size:12px;color:var(--muted);margin-top:auto;padding-top:6px}
+  .swaptip{font-size:11px;color:var(--dim);margin-top:2px}
+
+  .btn{background:var(--card2);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent2)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:#fff}
+
+  .safety{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  @media(max-width:820px){.safety{grid-template-columns:1fr}}
+  .cav{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+  .cav h4{margin:0 0 5px;font-size:13.5px;color:var(--fat)}
+  .cav p{margin:0;font-size:12.5px;color:var(--muted)}
+
+  .foot{margin-top:26px;text-align:center;color:var(--dim);font-size:12px;line-height:1.6}
+  .grid-gap{margin-top:16px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;box-shadow:var(--sh);opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .hint{font-size:11px;color:var(--dim);margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">🥩</div>
+      <div>
+        <h1>CARB<span>MAXX</span></h1>
+        <p>Advanced carbmaxxing · lean-tissue protocol · built for you</p>
+      </div>
+    </div>
+    <div class="startchip" id="startChip">Starting point: <b>65.65 kg</b> · <b>174 cm</b> · goal: <b>lean muscle</b></div>
+  </header>
+
+  <!-- ============ YOU ============ -->
+  <div class="controls">
+    <div class="card pad">
+      <p class="section-title">Your Stats</p>
+
+      <div class="field">
+        <div class="lab"><label>Body weight</label>
+          <div class="valbox"><input class="num" id="kgNum" type="number" step="0.05" min="40" max="160" value="65.65"><span class="unit">kg</span></div>
+        </div>
+        <input type="range" id="kgRange" min="40" max="160" step="0.05" value="65.65">
+      </div>
+
+      <div class="field">
+        <div class="lab"><label>Height</label>
+          <div class="valbox"><input class="num" id="cmNum" type="number" step="1" min="140" max="210" value="174"><span class="unit">cm</span></div>
+        </div>
+        <input type="range" id="cmRange" min="140" max="210" step="1" value="174">
+      </div>
+
+      <div class="field">
+        <div class="lab"><label>Age</label>
+          <div class="valbox"><input class="num" id="ageNum" type="number" step="1" min="14" max="80" value="21"><span class="unit">yrs</span></div>
+        </div>
+        <input type="range" id="ageRange" min="14" max="80" step="1" value="21">
+      </div>
+    </div>
+
+    <div class="card pad">
+      <p class="section-title">Sex &amp; Activity</p>
+      <div class="field">
+        <div class="lab"><label>Sex <span style="color:var(--dim);font-weight:400">(for calorie math)</span></label></div>
+        <div class="seg" id="sexSeg">
+          <button data-sex="male" class="on">Male</button>
+          <button data-sex="female">Female</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="lab"><label>Training activity</label></div>
+        <select class="sel" id="actSel"></select>
+      </div>
+      <div class="hint">Mifflin–St Jeor BMR × activity = maintenance calories. Your goal below shifts it up or down.</div>
+    </div>
+  </div>
+
+  <!-- ============ GOAL ============ -->
+  <div class="card pad grid-gap">
+    <p class="section-title">Your Goal — foods &amp; macros auto-adjust</p>
+    <div class="goals" id="goals"></div>
+    <div class="goaldesc" id="goalDesc"></div>
+  </div>
+
+  <!-- ============ DASHBOARD ============ -->
+  <div class="card pad grid-gap">
+    <p class="section-title">Daily Targets</p>
+    <div class="dash">
+      <div class="kcal">
+        <div class="big" id="calVal">0</div>
+        <div class="lbl">kcal / day</div>
+        <div class="meta"><span>BMR <b id="bmrVal">0</b></span><span>Maint. <b id="tdeeVal">0</b></span></div>
+      </div>
+      <div class="bars">
+        <div class="bar">
+          <div class="bh"><span class="n"><span class="dot" style="background:var(--pro)"></span>Protein <span class="k" id="pPerLb"></span></span><span class="g" id="pG">0 g<span class="k" id="pK"></span></span></div>
+          <div class="track"><div class="fill" id="pBar" style="background:var(--pro);width:0%"></div></div>
+        </div>
+        <div class="bar">
+          <div class="bh"><span class="n"><span class="dot" style="background:var(--carb)"></span>Carbs</span><span class="g" id="cG">0 g<span class="k" id="cK"></span></span></div>
+          <div class="track"><div class="fill" id="cBar" style="background:var(--carb);width:0%"></div></div>
+          <div class="split" id="cSplit"></div>
+        </div>
+        <div class="bar">
+          <div class="bh"><span class="n"><span class="dot" style="background:var(--fat)"></span>Fat</span><span class="g" id="fG">0 g<span class="k" id="fK"></span></span></div>
+          <div class="track"><div class="fill" id="fBar" style="background:var(--fat);width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timeline grid-gap" id="timeline"></div>
+  </div>
+
+  <!-- ============ MEALS ============ -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin:26px 2px 14px">
+    <p class="section-title" style="margin:0">Your 5 Meals — pick any option, grams update</p>
+    <button class="btn primary" id="copyBtn">📋 Copy plan</button>
+  </div>
+  <div class="meals" id="meals"></div>
+
+  <!-- ============ SAFETY ============ -->
+  <div class="card pad grid-gap" style="margin-top:26px">
+    <p class="section-title">Prep &amp; Safety Notes</p>
+    <div class="safety" id="safety"></div>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="toast" id="toast">Copied ✓</div>
+
+<script>
+/* ============================================================
+   VERIFIED DATA  (Mifflin–St Jeor + USDA-style food densities)
+   ============================================================ */
+const ACTIVITY = [
+  {key:'sedentary', label:'Sedentary — desk, little exercise', mult:1.2},
+  {key:'light',     label:'Light — 1–3 gym days / week',       mult:1.375},
+  {key:'moderate',  label:'Moderate — 3–5 gym days / week',    mult:1.55},
+  {key:'active',    label:'Active — 6–7 gym days / week',      mult:1.725},
+];
+
+const GOALS = [
+  {key:'cut',        label:'Cut',        ico:'🔻', sub:'-20%', deltaPct:-20, pPerLb:1.1, fat:50, fastCarb:60,
+   desc:'Lose fat while keeping muscle. Calories ~20% below maintenance, protein pushed to the top of the range to protect lean mass, fat trimmed to the ~50 g hormonal floor, fast carbs eased to ~60 g. Carbs still fuel training.'},
+  {key:'recomp',     label:'Recomp',     ico:'⚖️', sub:'maint', deltaPct:0,  pPerLb:1.0, fat:60, fastCarb:80,
+   desc:'Eat at maintenance to slowly add muscle and drop fat at the same time. Protein 1.0 g/lb, fat at the 60 g natural minimum, ~80 g fast carbs around training, the rest of calories from carbs for performance and recovery.'},
+  {key:'slight_bulk',label:'Slight Bulk',ico:'📈', sub:'+10%', deltaPct:10, pPerLb:1.0, fat:60, fastCarb:80,
+   desc:'Lean gaining at +10% over maintenance for steady muscle with minimal fat spillover — this is your stated goal. Protein 1.0 g/lb, fat 60 g, ~80 g intra-workout fast carbs, and the surplus delivered almost entirely as carbs.'},
+  {key:'bulk',       label:'Bulk',       ico:'🚀', sub:'+20%', deltaPct:20, pPerLb:0.9, fat:60, fastCarb:80,
+   desc:'Aggressive mass gain at +20% over maintenance. Protein eased to 0.9 g/lb since plenty of energy spares it, fat kept at the 60 g floor to leave max room for carbs, ~80 g fast carbs around training, big carb surplus driving growth.'},
+];
+
+/* disp: weight (g), volume (mL), count (pieces), tbsp.  state: raw/dry.  cooked: multiplier for rice */
+const FOODS = {
+  protein: [
+    {id:'beef95', name:'Lean beef 95/5 (seared blue-rare)', p:21.4,c:0,f:5,  k:137, disp:'weight',state:'raw', note:'Whole-muscle trim is safe rare; sear the surface. Ground beef: sear well.'},
+    {id:'beef90', name:'Beef 90/10 ground',                 p:20,  c:0,f:10, k:176, disp:'weight',state:'raw', note:'Sear the surface thoroughly for ground beef.'},
+    {id:'lamb',   name:'Lamb, lean (leg/loin)',             p:20,  c:0,f:13, k:201, disp:'weight',state:'raw', note:'Sear to a rare/medium-rare centre.'},
+    {id:'bison',  name:'Bison, lean',                       p:21,  c:0,f:9,  k:166, disp:'weight',state:'raw', note:'Very lean — sear briefly and rest so it stays juicy.'},
+    {id:'chicken',name:'Chicken breast, skinless',          p:23.1,c:0,f:2.6,k:120, disp:'weight',state:'raw', note:'Cook FULLY to 74 °C / 165 °F. Never eat pink chicken.'},
+    {id:'liver',  name:'Beef liver',                        p:20.4,c:3.9,f:3.6,k:135,disp:'weight',state:'raw', note:'Vitamin-A dense — keep portions modest.'},
+  ],
+  starchy_carb: [
+    {id:'jasmine',name:'White jasmine rice',   p:7.1,c:80, f:0.7,k:360, disp:'weight',state:'dry',cooked:3, note:'Rinse until clear + cook in extra water & drain to cut arsenic.'},
+    {id:'sushi',  name:'White sushi rice',     p:6.5,c:79, f:0.6,k:358, disp:'weight',state:'dry',cooked:3, note:'Rinse well and soak 20–30 min before cooking.'},
+    {id:'wpotato',name:'Peeled white potato',  p:1.9,c:17, f:0.1,k:77,  disp:'weight',state:'raw', note:'Peel fully (solanine in skin); bin any green/sprouted bits.'},
+    {id:'russet', name:'Peeled russet potato', p:2.1,c:18.1,f:0.1,k:79, disp:'weight',state:'raw', note:'Peel; store cool & dark to stop greening.'},
+    {id:'sweet',  name:'Peeled sweet potato',  p:1.6,c:20.1,f:0.1,k:86, disp:'weight',state:'raw', note:'Nightshade-free; peel and cook for easy digestion.'},
+  ],
+  fast_carb: [
+    {id:'oj',     name:'Orange juice',              p:0.7,c:10.4,f:0.2,k:45, disp:'volume', note:'Fresh-squeezed keeps more vitamin C — drink promptly.'},
+    {id:'banana', name:'Ripe banana',               p:1.3,c:27,  f:0.4,k:105,disp:'count',piece:'banana', note:'Riper (spotted) = faster sugar.'},
+    {id:'honeyF', name:'Raw honey (in water)',      p:0.1,c:17.3,f:0,  k:64, disp:'tbsp', note:'Keep raw/unheated. Never for infants under 1 yr.'},
+    {id:'dates',  name:'Medjool dates',             p:0.4,c:18,  f:0,  k:66, disp:'count',piece:'date', note:'Remove the pit; very fast sugar + potassium.'},
+  ],
+  breakfast_carb: [
+    {id:'orange', name:'Whole orange',   p:1.2,c:15.4,f:0.2,k:62, disp:'count',piece:'orange', note:'Segments give fibre + vitamin C.'},
+    {id:'oj_b',   name:'Orange juice',   p:0.7,c:10.4,f:0.2,k:45, disp:'volume', note:'Fast liquid sugar to lower waking cortisol.'},
+    {id:'apple',  name:'Apple',          p:0.5,c:25,  f:0.3,k:95, disp:'count',piece:'apple', note:'Skin on for fibre; wash well.'},
+    {id:'berries',name:'Mixed berries',  p:0.9,c:12,  f:0.4,k:52, disp:'weight',state:'', note:'Lower sugar, high antioxidant. Rinse before eating.'},
+    {id:'ccwater',name:'Coconut water',  p:0.7,c:3.7, f:0.2,k:19, disp:'volume', note:'Potassium-rich; naturally low sugar.'},
+    {id:'honeyB', name:'Raw honey',      p:0.1,c:17.3,f:0,  k:64, disp:'tbsp', note:'Straight off the spoon or in warm tea.'},
+  ],
+  dairy_drink: [
+    {id:'rawmilk',name:'Raw whole milk',   p:3.3,c:4.8,f:3.7,k:64, disp:'volume', note:'Only from a trusted, tested dairy. Keep cold, use quickly.'},
+    {id:'kefir',  name:'Whole-milk kefir', p:3.3,c:4.5,f:3.5,k:62, disp:'volume', note:'Fermented — probiotics help gut balance & facial bloat.'},
+  ],
+};
+
+const SAFETY = {
+  disclaimer:'This page is general information for an adult following this protocol by choice — not medical, nutritional, or dietetic advice.',
+  caveats:[
+    {t:'Raw meat, dairy & liver carry real pathogen risk', n:'Source from suppliers you trust and keep everything cold and clean. Never eat raw or pink chicken — high Salmonella / Campylobacter risk.'},
+    {t:'Rinse & soak white rice', n:'Rinse until the water runs clear and cook in extra water, then drain — this lowers inorganic arsenic.'},
+    {t:'Peel potatoes, skip green parts', n:'Solanine concentrates in skin, eyes and green areas. Peel and discard sprouted / green-tinged pieces.'},
+    {t:'Keep liver portions modest', n:'Liver is very dense in preformed vitamin A, which accumulates. Small, occasional servings are plenty.'},
+    {t:'Glycine + magnesium glycinate at night', n:'~3 g glycine and 200–400 mg magnesium glycinate before bed are generally well tolerated. Start at the low end.'},
+    {t:'Early water & facial bloat is normal', n:'A big sudden carb jump pulls in water and can puff the face for a few days to a couple of weeks, then settles. Kefir helps gut balance.'},
+    {t:'Raw-dairy “growth factor” claims are unproven', n:'The performance/physique claims about growth factors in raw dairy are not well established — treat them as marketing.'},
+  ],
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const state = {
+  kg:65.65, cm:174, age:21, sex:'male', act:'moderate', goal:'slight_bulk',
+  eggs:4, liver:false, boneBroth:false,
+  breakfastCarbOn:true, dairyOn:true,
+  pick:{},          // key `${mealId}:${group}` -> food id
+  milkMl:250,
+};
+
+const MEALS = [
+  {id:1, name:'Breakfast Baseline', badge:'Morning', gym:false, time:'On waking / start of day',
+   note:'Whole eggs + optional liver to prime muscle-protein synthesis and lower waking cortisol.',
+   rows:[
+     {kind:'eggs'},
+     {kind:'food', label:'Breakfast carb', group:'breakfast_carb', target:'breakfastCarb', macro:'c'},
+   ]},
+  {id:2, name:'Pre-Workout Meal', badge:'Pre · 1.5–2 h', gym:false, time:'1.5–2 hours before the gym',
+   note:'Slow starch + lean protein so glycogen and amino acids peak right at training.',
+   rows:[
+     {kind:'food', label:'Starchy carb', group:'starchy_carb', target:'starchyPre', macro:'c'},
+     {kind:'food', label:'Lean protein', group:'protein', target:'beefPre', macro:'p'},
+   ]},
+  {id:3, name:'Pre-Gym Fast Pump', badge:'Fast · 30–45 min', gym:true, time:'30–45 min before the gym',
+   note:'Liquid / fast sugar for an intra-workout pump and drive.',
+   rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPre', macro:'c'} ]},
+  {id:4, name:'Post-Gym Fast Carb', badge:'Fast · <30 min', gym:true, time:'within 30 min after the gym',
+   note:'Immediate insulin spike to slam glycogen back into exhausted muscle and drop cortisol.',
+   rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPost', macro:'c'} ]},
+  {id:5, name:'Post-Workout Feast', badge:'Post · 1.5–2 h', gym:false, time:'1.5–2 hours after the gym',
+   note:'Big whole-food refeed to finish glycogen loading and drive overnight recovery.',
+   rows:[
+     {kind:'food', label:'Starchy carb', group:'starchy_carb', target:'starchyPost', macro:'c'},
+     {kind:'food', label:'Lean protein', group:'protein', target:'beefPost', macro:'p'},
+     {kind:'dairy', label:'Raw dairy', group:'dairy_drink', target:'milk', macro:'p'},
+   ]},
+];
+
+/* ============================================================
+   MATH
+   ============================================================ */
+function foodById(group,id){ return FOODS[group].find(f=>f.id===id) || FOODS[group][0]; }
+function r0(n){return Math.round(n);}
+function r1(n){return Math.round(n*10)/10;}
+function r5(n){return Math.round(n/5)*5;}
+function r10(n){return Math.round(n/10)*10;}
+
+function compute(){
+  const g = GOALS.find(x=>x.key===state.goal);
+  const a = ACTIVITY.find(x=>x.key===state.act);
+  const {kg,cm,age,sex} = state;
+  const lbs = kg*2.20462;
+  const bmr = sex==='male' ? (10*kg+6.25*cm-5*age+5) : (10*kg+6.25*cm-5*age-161);
+  const tdee = bmr*a.mult;
+  const cal = tdee*(1+g.deltaPct/100);
+
+  let protein = r0(lbs*g.pPerLb);
+  let fat = g.fat;
+  let carbs = Math.max(0, r0((cal - protein*4 - fat*9)/4));
+
+  // ---- carb buckets ----
+  let breakfastCarb = state.breakfastCarbOn ? Math.min(carbs, Math.max(15, Math.min(30, r0(carbs*0.06)))) : 0;
+  let fastCarbTotal = Math.min(g.fastCarb, Math.max(0, carbs-breakfastCarb));
+  let starchyTotal  = Math.max(0, carbs-breakfastCarb-fastCarbTotal);
+  const starchyPre  = r0(starchyTotal*0.45);
+  const starchyPost = starchyTotal-starchyPre;
+  const fastPre  = r0(fastCarbTotal/2);
+  const fastPost = fastCarbTotal-fastPre;
+
+  // ---- protein buckets ----
+  const eggProtein   = state.eggs*6.3;
+  const liverProtein = state.liver ? (40/100*20.4) : 0;
+  const brothProtein = state.boneBroth ? 9 : 0;                     // ~9 g / 250 mL
+  const milkProtein  = state.dairyOn ? (state.milkMl/100*3.3) : 0;
+  const beefTotal = Math.max(0, protein - eggProtein - liverProtein - brothProtein - milkProtein);
+  const beefPre  = r0(beefTotal*0.5);
+  const beefPost = r0(beefTotal-beefPre);
+
+  return {g,a,lbs,bmr,tdee,cal,protein,fat,carbs,
+    breakfastCarb,fastCarbTotal,starchyTotal,starchyPre,starchyPost,fastPre,fastPost,
+    beefPre,beefPost,milkMl:state.dairyOn ? state.milkMl : 0};
+}
+
+/* amount of a chosen food to hit `grams` of its `macro` (c or p) */
+function amountText(food, grams, macro){
+  const per = food[macro];
+  if(!per || grams<=0) return {main:'—', sub:''};
+  const q = grams/per;               // number of natural units
+  const kcal = r0(q*food.k);
+  let main='';
+  if(food.disp==='weight'){
+    const gm=r5(q*100);
+    main = gm+' g'+(food.state?(' '+food.state):'');
+    if(food.cooked) main += ' · ~'+r5(gm*food.cooked)+' g cooked';
+  } else if(food.disp==='volume'){
+    main = r10(q*100)+' mL';
+  } else if(food.disp==='count'){
+    const n=r1(q);
+    main = n+' '+food.piece+(n===1?'':'s');
+  } else if(food.disp==='tbsp'){
+    main = r1(q)+' tbsp';
+  }
+  return {main, sub:'≈ '+kcal+' kcal', note:food.note||''};
+}
+
+/* ============================================================
+   RENDER (build once, then patch)
+   ============================================================ */
+function buildActivity(){
+  const s=document.getElementById('actSel');
+  s.innerHTML = ACTIVITY.map(a=>`<option value="${a.key}"${a.key===state.act?' selected':''}>${a.label}</option>`).join('');
+  s.onchange=()=>{state.act=s.value;recompute();};
+}
+function buildGoals(){
+  const box=document.getElementById('goals');
+  box.innerHTML = GOALS.map(g=>`
+    <div class="goal${g.key===state.goal?' on':''}" data-goal="${g.key}">
+      <div class="ico">${g.ico}</div><div class="nm">${g.label}</div><div class="sub">${g.sub}</div>
+    </div>`).join('');
+  box.querySelectorAll('.goal').forEach(el=>el.onclick=()=>{
+    state.goal=el.dataset.goal;
+    box.querySelectorAll('.goal').forEach(x=>x.classList.toggle('on',x.dataset.goal===state.goal));
+    recompute();
+  });
+}
+
+let rowRefs=[]; // {span,sub,note,row, get target/food fn}
+function buildMeals(){
+  const box=document.getElementById('meals');
+  box.innerHTML='';
+  rowRefs=[];
+  MEALS.forEach(m=>{
+    const card=document.createElement('div');
+    card.className='card pad meal';
+    let rowsHtml='';
+    m.rows.forEach((row,ri)=>{
+      const rid=`${m.id}:${row.group||row.kind}:${ri}`;
+      if(row.kind==='eggs'){
+        rowsHtml+=`
+        <div class="row">
+          <div class="rl"><span class="rlab">Whole eggs + broth</span></div>
+          <div class="eggs">
+            <div class="stepper">
+              <button data-egg="-1">−</button><span class="ev" id="eggVal">${state.eggs}</span><button data-egg="1">+</button>
+            </div>
+            <span style="color:var(--muted);font-size:13px">yolks runny · cooked in butter</span>
+          </div>
+          <div class="kc" id="eggKc"></div>
+          <label class="toggle" style="margin-top:10px">
+            <input type="checkbox" id="liverChk" ${state.liver?'checked':''}><span class="tk"></span>
+            <span>+ 40 g beef liver (nature's multivitamin — optional)</span>
+          </label>
+          <label class="toggle" style="margin-top:8px">
+            <input type="checkbox" id="brothChk" ${state.boneBroth?'checked':''}><span class="tk"></span>
+            <span>+ 250 mL beef bone broth (gut health &amp; glycine)</span>
+          </label>
+        </div>`;
+      } else {
+        const grp=row.group;
+        const cur=state.pick[`${m.id}:${grp}`] || FOODS[grp][0].id;
+        state.pick[`${m.id}:${grp}`]=cur;
+        const opts=FOODS[grp].map(f=>`<option value="${f.id}"${f.id===cur?' selected':''}>${f.name}</option>`).join('');
+        let head='<span class="swaptip">eat this or this ▾</span>';
+        if(row.target==='breakfastCarb') head=`<label class="toggle mini" title="Include a breakfast carb"><input type="checkbox" id="bfCarbChk" ${state.breakfastCarbOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
+        else if(row.target==='milk') head=`<label class="toggle mini" title="Include raw dairy"><input type="checkbox" id="dairyChk" ${state.dairyOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
+        rowsHtml+=`
+        <div class="row" data-rid="${rid}">
+          <div class="rl">
+            <span class="rlab">${row.label}</span>
+            ${head}
+          </div>
+          <div class="amt" data-amt></div>
+          <div class="kc" data-kc></div>
+          <div class="sel-wrap" style="margin-top:9px">
+            <select class="sel" data-group="${grp}" data-meal="${m.id}">${opts}</select>
+          </div>
+          <div class="note" data-note></div>
+        </div>`;
+      }
+    });
+    card.innerHTML=`
+      <div class="mh"><span class="badge${m.gym?' gym':''}">${m.badge}</span><h3>${m.name}</h3></div>
+      <div class="time">🕒 ${m.time}</div>
+      ${rowsHtml}
+      <div class="mnote">${m.note}</div>`;
+    box.appendChild(card);
+
+    // wire eggs + liver + broth
+    const eggMinus=card.querySelector('[data-egg="-1"]');
+    if(eggMinus){
+      eggMinus.onclick=()=>{state.eggs=Math.max(2,state.eggs-1);recompute();};
+      card.querySelector('[data-egg="1"]').onclick=()=>{state.eggs=Math.min(8,state.eggs+1);recompute();};
+      card.querySelector('#liverChk').onchange=e=>{state.liver=e.target.checked;recompute();};
+      card.querySelector('#brothChk').onchange=e=>{state.boneBroth=e.target.checked;recompute();};
+    }
+    // wire include toggles
+    const bf=card.querySelector('#bfCarbChk'); if(bf) bf.onchange=e=>{state.breakfastCarbOn=e.target.checked;recompute();};
+    const dy=card.querySelector('#dairyChk'); if(dy) dy.onchange=e=>{state.dairyOn=e.target.checked;recompute();};
+    // wire food selects + collect refs
+    m.rows.forEach((row,ri)=>{
+      if(row.kind==='eggs') return;
+      const rid=`${m.id}:${row.group||row.kind}:${ri}`;
+      const rowEl=card.querySelector(`[data-rid="${rid}"]`);
+      const sel=rowEl.querySelector('select');
+      sel.onchange=()=>{ state.pick[`${m.id}:${row.group}`]=sel.value; recompute(); };
+      rowEl.querySelector('.amt').onclick=()=>rowEl.classList.toggle('shownote');
+      rowRefs.push({mealId:m.id, row, rowEl,
+        amt:rowEl.querySelector('[data-amt]'), kc:rowEl.querySelector('[data-kc]'),
+        note:rowEl.querySelector('[data-note]'), selWrap:rowEl.querySelector('.sel-wrap')});
+    });
+  });
+}
+
+function buildSafety(){
+  document.getElementById('safety').innerHTML =
+    SAFETY.caveats.map(c=>`<div class="cav"><h4>${c.t}</h4><p>${c.n}</p></div>`).join('');
+  document.getElementById('foot').innerHTML =
+    `⚠️ ${SAFETY.disclaimer}<br>Inspired by the “Advanced Carbmaxxing” protocol · numbers via Mifflin–St Jeor + standard food databases.`;
+}
+
+/* ---- patch dynamic numbers ---- */
+function recompute(){
+  const d=compute();
+
+  // dashboard
+  document.getElementById('calVal').textContent=r0(d.cal).toLocaleString();
+  document.getElementById('bmrVal').textContent=r0(d.bmr).toLocaleString();
+  document.getElementById('tdeeVal').textContent=r0(d.tdee).toLocaleString();
+
+  const pK=d.protein*4, cK=d.carbs*4, fK=d.fat*9, tot=pK+cK+fK||1;
+  document.getElementById('pG').innerHTML=`${d.protein} g<span class="k">${r0(pK)} kcal</span>`;
+  document.getElementById('cG').innerHTML=`${d.carbs} g<span class="k">${r0(cK)} kcal</span>`;
+  document.getElementById('fG').innerHTML=`${d.fat} g<span class="k">${r0(fK)} kcal</span>`;
+  document.getElementById('pBar').style.width=(pK/tot*100)+'%';
+  document.getElementById('cBar').style.width=(cK/tot*100)+'%';
+  document.getElementById('fBar').style.width=(fK/tot*100)+'%';
+  document.getElementById('pPerLb').textContent=`· ${r1(d.protein/d.lbs)} g/lb`;
+  document.getElementById('cSplit').innerHTML=
+    `🍚 starchy <b>${d.starchyTotal} g</b> &nbsp;·&nbsp; 🍯 fast <b>${d.fastCarbTotal} g</b> &nbsp;·&nbsp; 🍊 fruit <b>${d.breakfastCarb} g</b>`;
+
+  // timeline
+  document.getElementById('timeline').innerHTML=[
+    {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
+    {t:'Pre 1.5–2h',m:'Rice + beef',c:d.starchyPre,gym:false},
+    {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
+    {t:'💪 GYM',m:'Train',c:null,gym:true},
+    {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
+    {t:'Post 1.5–2h',m:'Rice + beef',c:d.starchyPost,gym:false},
+  ].map(n=>`<div class="tnode${n.gym?' gym':''}"><div class="t">${n.t}</div><div class="m">${n.m}</div>${n.c!=null?`<div class="c">${n.c} g C</div>`:''}</div>`).join('');
+
+  // eggs label
+  const ev=document.getElementById('eggVal'); if(ev) ev.textContent=state.eggs;
+  const ek=document.getElementById('eggKc');
+  if(ek){ ek.textContent=`≈ ${state.eggs} × egg = ${r0(state.eggs*6.3)} g protein · ${r0(state.eggs*72 + (state.liver?54:0) + (state.boneBroth?40:0))} kcal${state.liver?' · +40 g liver':''}${state.boneBroth?' · +250 mL broth':''}`; }
+
+  // meal rows
+  const targets={
+    breakfastCarb:d.breakfastCarb, starchyPre:d.starchyPre, starchyPost:d.starchyPost,
+    fastPre:d.fastPre, fastPost:d.fastPost, beefPre:d.beefPre, beefPost:d.beefPost, milk:d.milkMl,
+  };
+  rowRefs.forEach(ref=>{
+    const {row}=ref;
+    if(row.kind==='dairy'){
+      if(!state.dairyOn){
+        ref.amt.innerHTML=`<span style="color:var(--dim)">skipped</span>`;
+        ref.kc.textContent=`protein moved into your beef →`;
+        ref.note.textContent='';
+        if(ref.selWrap) ref.selWrap.style.display='none';
+        ref.rowEl.classList.remove('shownote');
+        return;
+      }
+      if(ref.selWrap) ref.selWrap.style.display='';
+      const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
+      ref.amt.innerHTML=`${d.milkMl} mL <small>${f.id==='kefir'?'kefir':'raw milk'}</small>`;
+      ref.kc.textContent=`≈ ${r0(d.milkMl/100*f.p)} g protein · ${r0(d.milkMl/100*f.k)} kcal`;
+      ref.note.textContent=f.note;
+      return;
+    }
+    if(row.target==='breakfastCarb' && !state.breakfastCarbOn){
+      ref.amt.innerHTML=`<span style="color:var(--dim)">skipped</span>`;
+      ref.kc.textContent=`carbs forwarded to your training meals →`;
+      ref.note.textContent='';
+      if(ref.selWrap) ref.selWrap.style.display='none';
+      ref.rowEl.classList.remove('shownote');
+      return;
+    }
+    if(ref.selWrap) ref.selWrap.style.display='';
+    const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
+    const t=amountText(f, targets[row.target], row.macro);
+    ref.amt.innerHTML=`${t.main}`;
+    ref.kc.textContent=`${targets[row.target]} g ${row.macro==='p'?'protein':'carbs'} · ${t.sub}`;
+    ref.note.textContent=t.note;
+  });
+
+  // start chip + range fills
+  syncRangeFill('kgRange');syncRangeFill('cmRange');syncRangeFill('ageRange');
+}
+
+/* ============================================================
+   INPUT WIRING
+   ============================================================ */
+function syncRangeFill(id){
+  const el=document.getElementById(id);
+  const pct=(el.value-el.min)/(el.max-el.min)*100;
+  el.style.setProperty('--fill',pct+'%');
+}
+function linkPair(rangeId,numId,key,parse){
+  const r=document.getElementById(rangeId), n=document.getElementById(numId);
+  const set=v=>{ v=parse(v); if(isNaN(v))return; state[key]=v; r.value=v; n.value=v; recompute(); };
+  r.oninput=()=>set(r.value);
+  n.oninput=()=>set(n.value);
+}
+function initSex(){
+  document.querySelectorAll('#sexSeg button').forEach(b=>b.onclick=()=>{
+    state.sex=b.dataset.sex;
+    document.querySelectorAll('#sexSeg button').forEach(x=>x.classList.toggle('on',x.dataset.sex===state.sex));
+    recompute();
+  });
+}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+
+function copyPlan(){
+  const d=compute(); const G=GOALS.find(x=>x.key===state.goal);
+  let s=`CARBMAXX — ${G.label} plan\n`;
+  s+=`${state.kg} kg · ${state.cm} cm · ${state.age} yrs · ${state.sex}\n`;
+  s+=`~${r0(d.cal)} kcal | P ${d.protein}g  C ${d.carbs}g  F ${d.fat}g  (${r1(d.protein/d.lbs)} g/lb)\n`;
+  s+=`Carbs: starchy ${d.starchyTotal}g · fast ${d.fastCarbTotal}g · fruit ${d.breakfastCarb}g\n\n`;
+  MEALS.forEach(m=>{
+    s+=`— ${m.name} (${m.time}) —\n`;
+    if(m.id===1) s+=`  ${state.eggs} whole eggs${state.liver?' + 40g liver':''}${state.boneBroth?' + 250mL bone broth':''}\n`;
+    m.rows.forEach(row=>{
+      if(row.kind==='eggs') return;
+      if(row.kind==='dairy'){ if(state.dairyOn){ const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]); s+=`  ${row.label}: ${d.milkMl} mL ${f.name}\n`; } return; }
+      if(row.target==='breakfastCarb' && !state.breakfastCarbOn) return;
+      const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]);
+      const tgt={breakfastCarb:d.breakfastCarb,starchyPre:d.starchyPre,starchyPost:d.starchyPost,fastPre:d.fastPre,fastPost:d.fastPost,beefPre:d.beefPre,beefPost:d.beefPost}[row.target];
+      const t=amountText(f,tgt,row.macro);
+      s+=`  ${row.label}: ${t.main}  (${f.name})\n`;
+    });
+    s+=`\n`;
+  });
+  s+=`Before bed: ~3g glycine + 200–400mg magnesium glycinate in warm water.\n`;
+  navigator.clipboard.writeText(s).then(()=>toast('Plan copied ✓')).catch(()=>toast('Copy failed'));
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+buildActivity();
+buildGoals();
+buildMeals();
+buildSafety();
+initSex();
+linkPair('kgRange','kgNum','kg',parseFloat);
+linkPair('cmRange','cmNum','cm',v=>parseInt(v,10));
+linkPair('ageRange','ageNum','age',v=>parseInt(v,10));
+document.getElementById('copyBtn').onclick=copyPlan;
+recompute();
+</script>
+</body>
+</html>
