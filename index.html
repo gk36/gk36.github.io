@@ -165,6 +165,9 @@
   .pb-left{display:flex;align-items:center;gap:12px;flex:1;min-width:200px}
   .pb-active{font-size:12.5px;font-weight:800;color:var(--muted);background:var(--bg);border:1px solid var(--line2);border-radius:999px;padding:6px 13px;white-space:nowrap}
   .pb-active.live{color:var(--carb);border-color:var(--carb)}
+  .pb-mode{font-size:11.5px;font-weight:800;color:var(--dim);white-space:nowrap;letter-spacing:.3px}
+  .pb-mode.cloud{color:var(--carb)}
+  .pb-mode.off{color:var(--fat)}
   .pb-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .pb-input{background:var(--bg);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:700;width:150px;letter-spacing:.5px}
   .pb-input:focus{outline:none;border-color:var(--accent)}
@@ -195,6 +198,7 @@
     <div class="pb-left">
       <span class="section-title" style="margin:0">Profile</span>
       <span class="pb-active" id="pbActive">Guest · defaults</span>
+      <span class="pb-mode" id="pbMode"></span>
     </div>
     <div class="pb-right">
       <input id="pName" class="pb-input" placeholder="name e.g. gk36" maxlength="20" autocomplete="off" spellcheck="false">
@@ -724,14 +728,46 @@ function copyPlan(){
 }
 
 /* ============================================================
-   PROFILES  (saved in THIS browser via localStorage)
+   PROFILES  (local cache + optional Firebase cloud sync)
    ============================================================ */
+/* ▼▼▼ SYNC ACROSS ALL DEVICES: paste your Firebase Realtime Database URL between the quotes.
+       e.g.  "https://carbmaxx-1234-default-rtdb.firebaseio.com"
+       Leave it ""  to keep profiles saved only in this browser.               ▼▼▼ */
+let FIREBASE_DB = "https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.app/";
+/* ▲▲▲ that's the only line you edit ▲▲▲ */
+
 const PKEY='carbmaxx_profiles_v1';
 const PFIELDS=['kg','cm','age','sex','act','goal','eggs','liver','boneBroth','breakfastCarbOn','dairyOn','milkMl','pick'];
+function cloudOn(){ return /^https:\/\/[^\s"']+\.(firebaseio\.com|firebasedatabase\.app)/i.test(FIREBASE_DB); }
+function cloudUrl(name){ return FIREBASE_DB.replace(/\/+$/,'') + '/carbmaxx/profiles' + (name?('/'+encodeURIComponent(name)):'') + '.json'; }
+
 function loadProfiles(){ try{return JSON.parse(localStorage.getItem(PKEY))||{};}catch(e){return {};} }
 function saveProfiles(o){ try{localStorage.setItem(PKEY,JSON.stringify(o));}catch(e){} }
 function snapshot(){ const s={}; PFIELDS.forEach(k=>{ s[k]= k==='pick'?JSON.parse(JSON.stringify(state.pick)):state[k]; }); return s; }
-function persistActive(){ if(!activeProfile) return; const all=loadProfiles(); all[activeProfile]=snapshot(); saveProfiles(all); }
+
+let cloudTimer=null;
+function cloudPut(name,snap){
+  if(!cloudOn()) return;
+  setCloudStatus('saving');
+  fetch(cloudUrl(name),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(snap)})
+    .then(r=>{ if(!r.ok) throw 0; setCloudStatus('saved'); }).catch(()=>setCloudStatus('offline'));
+}
+function persistActive(){
+  if(!activeProfile) return;
+  const snap=snapshot();
+  const all=loadProfiles(); all[activeProfile]=snap; saveProfiles(all);      // instant local cache
+  if(cloudOn()){ clearTimeout(cloudTimer); const name=activeProfile; cloudTimer=setTimeout(()=>cloudPut(name,snap),700); }  // debounced cloud write
+}
+async function cloudFetchAll(){
+  const r=await fetch(cloudUrl()); if(!r.ok) throw new Error('http '+r.status);
+  return (await r.json())||{};
+}
+async function cloudRefresh(){
+  if(!cloudOn()) return;
+  try{ const c=await cloudFetchAll(); saveProfiles(Object.assign({}, loadProfiles(), c)); renderProfileBar(); setCloudStatus('synced'); }
+  catch(e){ setCloudStatus('offline'); }
+}
+
 function syncControls(){
   document.getElementById('kgNum').value=state.kg;   document.getElementById('kgRange').value=state.kg;
   document.getElementById('cmNum').value=state.cm;   document.getElementById('cmRange').value=state.cm;
@@ -744,33 +780,51 @@ function applySnapshot(snap){
   PFIELDS.forEach(k=>{ if(snap[k]!==undefined) state[k]= k==='pick'?JSON.parse(JSON.stringify(snap[k])):snap[k]; });
   syncControls(); buildMeals(); recompute();
 }
+function setCloudStatus(s){
+  const el=document.getElementById('pbMode'); if(!el) return;
+  if(!cloudOn()){ el.textContent='💾 this browser only'; el.className='pb-mode'; return; }
+  const map={synced:'☁ cloud synced',saved:'☁ saved',saving:'☁ saving…',offline:'⚠ cloud offline — using this browser'};
+  el.textContent=map[s]||'☁ cloud sync on';
+  el.className='pb-mode '+(s==='offline'?'off':'cloud');
+}
 function renderProfileBar(){
   const lab=document.getElementById('pbActive');
   lab.textContent = activeProfile ? ('● '+activeProfile+' · auto-saving') : 'Guest · defaults';
   lab.classList.toggle('live',!!activeProfile);
+  setCloudStatus('synced');
   const all=loadProfiles(), names=Object.keys(all).sort();
   const box=document.getElementById('pChips');
   box.innerHTML = names.length
     ? names.map(n=>`<span class="chip${n===activeProfile?' on':''}" data-p="${n}">${n}<span class="x" data-del="${n}" title="delete profile">×</span></span>`).join('')
-    : '<span style="color:var(--dim);font-size:12px">No saved profiles in this browser yet — type a name and hit Load / Create.</span>';
+    : `<span style="color:var(--dim);font-size:12px">No saved profiles yet — type a name and hit Load / Create.${cloudOn()?' They sync to all your devices.':''}</span>`;
   box.querySelectorAll('.chip').forEach(c=>c.onclick=e=>{ if(e.target.hasAttribute('data-del')) return; loadProfile(c.dataset.p); });
   box.querySelectorAll('[data-del]').forEach(x=>x.onclick=e=>{ e.stopPropagation(); deleteProfile(x.getAttribute('data-del')); });
 }
-function loadProfile(name){
-  const all=loadProfiles(); if(!all[name]) return;
-  activeProfile=name; applySnapshot(all[name]);
-  document.getElementById('pName').value=name; renderProfileBar(); toast('Loaded "'+name+'"');
+async function loadProfile(name){
+  let data=loadProfiles()[name];
+  if(cloudOn()){
+    try{ const c=await cloudFetchAll(); saveProfiles(Object.assign({}, loadProfiles(), c)); if(c[name]) data=c[name]; setCloudStatus('synced'); }
+    catch(e){ setCloudStatus('offline'); }
+  }
+  if(!data) return;
+  activeProfile=name; applySnapshot(data);
+  document.getElementById('pName').value=name; renderProfileBar(); toast('Loaded "'+name+'"'+(cloudOn()?' ☁':''));
 }
 function profileLoadOrCreate(){
   const name=document.getElementById('pName').value.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'').slice(0,20);
   if(!name){ toast('Type a profile name (letters/numbers)'); return; }
   document.getElementById('pName').value=name;
-  if(loadProfiles()[name]) loadProfile(name);
-  else { activeProfile=name; persistActive(); renderProfileBar(); toast('Created "'+name+'" — now auto-saving ✓'); }
+  if(loadProfiles()[name]){ loadProfile(name); return; }
+  activeProfile=name;
+  const snap=snapshot();
+  const all=loadProfiles(); all[name]=snap; saveProfiles(all);
+  if(cloudOn()) cloudPut(name,snap);
+  renderProfileBar(); toast('Created "'+name+'"'+(cloudOn()?' — syncing to all devices ✓':' — auto-saving ✓'));
 }
 function goGuest(){ activeProfile=null; applySnapshot(DEFAULT_STATE); document.getElementById('pName').value=''; renderProfileBar(); toast('Guest — defaults loaded'); }
 function deleteProfile(name){
   const all=loadProfiles(); delete all[name]; saveProfiles(all);
+  if(cloudOn()) fetch(cloudUrl(name),{method:'DELETE'}).catch(()=>{});
   if(activeProfile===name) goGuest(); else renderProfileBar();
   toast('Deleted "'+name+'"');
 }
@@ -792,6 +846,7 @@ document.getElementById('pGuest').onclick=goGuest;
 document.getElementById('pName').addEventListener('keydown',e=>{ if(e.key==='Enter') profileLoadOrCreate(); });
 renderProfileBar();
 recompute();
+cloudRefresh();   // pulls any profiles saved on your other devices (no-op until FIREBASE_DB is set)
 </script>
 </body>
 </html>
