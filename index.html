@@ -847,6 +847,8 @@ document.getElementById('pName').addEventListener('keydown',e=>{ if(e.key==='Ent
 renderProfileBar();
 recompute();
 cloudRefresh();   // pulls any profiles saved on your other devices (no-op until FIREBASE_DB is set)
+
+(function(){var n=0,t=0,el=document.querySelector('.logo');if(!el)return;el.addEventListener('click',function(){var now=Date.now();if(now-t>2500)n=0;t=now;if(++n>=5){n=0;location.href='hub.html';}});})();
 </script>
 </body>
 </html>
