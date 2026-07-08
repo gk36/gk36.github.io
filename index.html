@@ -259,6 +259,16 @@
     <div class="goaldesc" id="goalDesc"></div>
   </div>
 
+  <!-- ============ DAY TYPE ============ -->
+  <div class="card pad grid-gap">
+    <p class="section-title">Today — gym or rest?</p>
+    <div class="seg" id="daySeg" style="max-width:440px">
+      <button data-day="gym" class="on">💪 Gym day</button>
+      <button data-day="rest">😴 Rest day</button>
+    </div>
+    <div class="goaldesc" id="dayDesc"></div>
+  </div>
+
   <!-- ============ DASHBOARD ============ -->
   <div class="card pad grid-gap">
     <p class="section-title">Daily Targets</p>
@@ -286,11 +296,12 @@
     </div>
 
     <div class="timeline grid-gap" id="timeline"></div>
+    <div class="split" id="planLine" style="margin-top:10px"></div>
   </div>
 
   <!-- ============ MEALS ============ -->
   <div style="display:flex;justify-content:space-between;align-items:center;margin:26px 2px 14px">
-    <p class="section-title" style="margin:0">Your 5 Meals — pick any option, grams update</p>
+    <p class="section-title" style="margin:0" id="mealsTitle">Your 5 Meals — pick any option, grams update</p>
     <button class="btn primary" id="copyBtn">📋 Copy plan</button>
   </div>
   <div class="meals" id="meals"></div>
@@ -328,40 +339,59 @@ const GOALS = [
    desc:'Aggressive mass gain at +20% over maintenance. Protein eased to 0.9 g/lb since plenty of energy spares it, fat kept at the 60 g floor to leave max room for carbs, ~80 g fast carbs around training, big carb surplus driving growth.'},
 ];
 
-/* disp: weight (g), volume (mL), count (pieces), tbsp.  state: raw/dry.  cooked: multiplier for rice */
+/* disp: weight (g), volume (mL), count (pieces), tbsp.  state: raw/dry.
+   cooked: raw/dry-weight -> cooked-weight multiplier (USDA cooking-yield tables;
+   meats assume the cooking method in the note, rice/pasta assume boiled & drained). */
 const FOODS = {
   protein: [
-    {id:'beef95', name:'Lean beef 95/5 (seared blue-rare)', p:21.4,c:0,f:5,  k:137, disp:'weight',state:'raw', note:'Whole-muscle trim is safe rare; sear the surface. Ground beef: sear well.'},
-    {id:'beef90', name:'Beef 90/10 ground',                 p:20,  c:0,f:10, k:176, disp:'weight',state:'raw', note:'Sear the surface thoroughly for ground beef.'},
-    {id:'lamb',   name:'Lamb, lean (leg/loin)',             p:20,  c:0,f:13, k:201, disp:'weight',state:'raw', note:'Sear to a rare/medium-rare centre.'},
-    {id:'bison',  name:'Bison, lean',                       p:21,  c:0,f:9,  k:166, disp:'weight',state:'raw', note:'Very lean — sear briefly and rest so it stays juicy.'},
-    {id:'chicken',name:'Chicken breast, skinless',          p:23.1,c:0,f:2.6,k:120, disp:'weight',state:'raw', note:'Cook FULLY to 74 °C / 165 °F. Never eat pink chicken.'},
-    {id:'liver',  name:'Beef liver',                        p:20.4,c:3.9,f:3.6,k:135,disp:'weight',state:'raw', note:'Vitamin-A dense — keep portions modest.'},
+    {id:'beef95', name:'Lean beef 95/5 (seared blue-rare)', p:21.4,c:0,f:5,  k:137, disp:'weight',state:'raw',cooked:0.9, note:'Whole-muscle trim is safe rare; sear the surface. Ground beef: sear well.'},
+    {id:'beef90', name:'Beef 90/10 ground',                 p:20,  c:0,f:10, k:176, disp:'weight',state:'raw',cooked:0.7, note:'Sear the surface thoroughly for ground beef.'},
+    {id:'lamb',   name:'Lamb, lean (leg/loin)',             p:20,  c:0,f:5.2,k:134, disp:'weight',state:'raw',cooked:0.8, note:'Trimmed lean lamb. Sear to a rare/medium-rare centre.'},
+    {id:'bison',  name:'Bison, lean',                       p:21.6,c:0,f:1.8,k:109, disp:'weight',state:'raw',cooked:0.85, note:'Very lean — sear briefly and rest so it stays juicy.'},
+    {id:'chicken',name:'Chicken breast, skinless',          p:23.1,c:0,f:2.6,k:120, disp:'weight',state:'raw',cooked:0.75, note:'Cook FULLY to 74 °C / 165 °F. Never eat pink chicken.'},
+    {id:'thigh',  name:'Chicken thigh, boneless skinless',  p:18.6,c:0,f:7.9,k:149, disp:'weight',state:'raw',cooked:0.75, note:'Cook FULLY to 74 °C like breast — thighs stay juicy well past where breast dries out.'},
+    {id:'turkey', name:'Turkey breast, skinless',           p:23.4,c:0,f:2.3,k:114, disp:'weight',state:'raw',cooked:0.72, note:'Leanest poultry — cook fully to 74 °C but pull promptly so it doesn’t dry out.'},
+    {id:'porktl', name:'Pork tenderloin, trimmed',          p:21,  c:0,f:2.2,k:109, disp:'weight',state:'raw',cooked:0.78, note:'Safe at 63 °C + 3 min rest — a light-pink centre is fine and keeps it juicy.'},
+    {id:'cod',    name:'Cod / white fish',                  p:17.8,c:0,f:0.7,k:82,  disp:'weight',state:'raw',cooked:0.78, note:'Virtually zero fat — cook gently, just until it flakes.'},
+    {id:'shrimp', name:'Shrimp, peeled',                    p:20.1,c:0.2,f:0.5,k:85,disp:'weight',state:'raw',cooked:0.8, note:'2–3 min until just pink — overcooking makes them rubbery.'},
+    {id:'tuna',   name:'Canned tuna in water (drained)',    p:19.4,c:0,f:1,  k:86,  disp:'weight',state:'', note:'Ready to eat — weigh DRAINED (a 160 g can ≈ 112–120 g drained). Light/skipjack = lower mercury.'},
+    {id:'liver',  name:'Beef liver',                        p:20.4,c:3.9,f:3.6,k:135,disp:'weight',state:'raw',cooked:0.7, note:'Vitamin-A dense — keep portions modest.'},
   ],
   starchy_carb: [
     {id:'jasmine',name:'White jasmine rice',   p:7.1,c:80, f:0.7,k:360, disp:'weight',state:'dry',cooked:3, note:'Rinse until clear + cook in extra water & drain to cut arsenic.'},
-    {id:'sushi',  name:'White sushi rice',     p:6.5,c:79, f:0.6,k:358, disp:'weight',state:'dry',cooked:3, note:'Rinse well and soak 20–30 min before cooking.'},
-    {id:'wpotato',name:'Peeled white potato',  p:1.9,c:17, f:0.1,k:77,  disp:'weight',state:'raw', note:'Peel fully (solanine in skin); bin any green/sprouted bits.'},
-    {id:'russet', name:'Peeled russet potato', p:2.1,c:18.1,f:0.1,k:79, disp:'weight',state:'raw', note:'Peel; store cool & dark to stop greening.'},
-    {id:'sweet',  name:'Peeled sweet potato',  p:1.6,c:20.1,f:0.1,k:86, disp:'weight',state:'raw', note:'Nightshade-free; peel and cook for easy digestion.'},
+    {id:'sushi',  name:'White sushi rice',     p:6.5,c:79, f:0.6,k:358, disp:'weight',state:'dry',cooked:2.3, note:'Rinse well and soak 20–30 min; absorption-cooked sushi rice ends drier than drained rice.'},
+    {id:'basmati',name:'Basmati rice',         p:9.2,c:76.8,f:1.1,k:354,disp:'weight',state:'dry',cooked:3, note:'Rinse until clear; lower GI than jasmine. Boil in extra water & drain to cut arsenic.'},
+    {id:'pasta',  name:'White pasta (semolina)',p:12.5,c:71.2,f:2,k:359,disp:'weight',state:'dry',cooked:2.25, note:'Boil 9–11 min al dente and drain — al dente = slower sugar release.'},
+    {id:'ricenoodle',name:'Rice noodles (Oriental Express)',p:6.6,c:84,f:0.3,k:365,disp:'weight',state:'dry',cooked:2.5, note:'Gluten-free. Soak in just-boiled water 6–8 min and drain — don’t overboil or they go mushy.'},
+    {id:'wpotato',name:'Peeled white potato',  p:1.9,c:17, f:0.1,k:77,  disp:'weight',state:'raw',cooked:0.97, note:'Peel fully (solanine in skin); bin any green/sprouted bits. Weights assume boiled.'},
+    {id:'russet', name:'Peeled russet potato', p:2.1,c:18.1,f:0.1,k:79, disp:'weight',state:'raw',cooked:0.97, note:'Peel; store cool & dark to stop greening. Weights assume boiled.'},
+    {id:'sweet',  name:'Peeled sweet potato',  p:1.6,c:20.1,f:0.1,k:86, disp:'weight',state:'raw',cooked:1, note:'Nightshade-free; peel and boil for easy digestion — boiled weight ≈ raw weight.'},
   ],
   fast_carb: [
     {id:'oj',     name:'Orange juice',              p:0.7,c:10.4,f:0.2,k:45, disp:'volume', note:'Fresh-squeezed keeps more vitamin C — drink promptly.'},
     {id:'banana', name:'Ripe banana',               p:1.3,c:27,  f:0.4,k:105,disp:'count',piece:'banana', note:'Riper (spotted) = faster sugar.'},
     {id:'honeyF', name:'Raw honey (in water)',      p:0.1,c:17.3,f:0,  k:64, disp:'tbsp', note:'Keep raw/unheated. Never for infants under 1 yr.'},
     {id:'dates',  name:'Medjool dates',             p:0.4,c:18,  f:0,  k:66, disp:'count',piece:'date', note:'Remove the pit; very fast sugar + potassium.'},
+    {id:'grapes', name:'Grapes',                    p:0.7,c:18.1,f:0.2,k:69, disp:'weight',state:'', note:'Wash well; fast, easy sugar around training.'},
+    {id:'melon',  name:'Watermelon',                p:0.6,c:7.6, f:0.2,k:30, disp:'weight',state:'', note:'Very fast watery sugar + hydration — great in heat or right after the gym.'},
+    {id:'sugar',  name:'White sugar (in water)',    p:0,  c:12.5,f:0,  k:48, disp:'tbsp', note:'Dissolve in a shaker of water; dextrose swaps 1:1.'},
+    {id:'ricecake',name:'Rice cakes, plain',        p:0.7,c:7.3, f:0.3,k:35, disp:'count',piece:'cake', note:'Near-pure fast starch — top with honey for an even faster hit.'},
   ],
   breakfast_carb: [
     {id:'orange', name:'Whole orange',   p:1.2,c:15.4,f:0.2,k:62, disp:'count',piece:'orange', note:'Segments give fibre + vitamin C.'},
     {id:'oj_b',   name:'Orange juice',   p:0.7,c:10.4,f:0.2,k:45, disp:'volume', note:'Fast liquid sugar to lower waking cortisol.'},
     {id:'apple',  name:'Apple',          p:0.5,c:25,  f:0.3,k:95, disp:'count',piece:'apple', note:'Skin on for fibre; wash well.'},
     {id:'berries',name:'Mixed berries',  p:0.9,c:12,  f:0.4,k:52, disp:'weight',state:'', note:'Lower sugar, high antioxidant. Rinse before eating.'},
+    {id:'grapes', name:'Grapes',         p:0.7,c:18.1,f:0.2,k:69, disp:'weight',state:'', note:'Wash well; quick morning sugar.'},
+    {id:'melon',  name:'Watermelon',     p:0.6,c:7.6, f:0.2,k:30, disp:'weight',state:'', note:'Hydrating, very light morning sugar.'},
     {id:'ccwater',name:'Coconut water',  p:0.7,c:3.7, f:0.2,k:19, disp:'volume', note:'Potassium-rich; naturally low sugar.'},
     {id:'honeyB', name:'Raw honey',      p:0.1,c:17.3,f:0,  k:64, disp:'tbsp', note:'Straight off the spoon or in warm tea.'},
   ],
   dairy_drink: [
-    {id:'rawmilk',name:'Raw whole milk',   p:3.3,c:4.8,f:3.7,k:64, disp:'volume', note:'Only from a trusted, tested dairy. Keep cold, use quickly.'},
-    {id:'kefir',  name:'Whole-milk kefir', p:3.3,c:4.5,f:3.5,k:62, disp:'volume', note:'Fermented — probiotics help gut balance & facial bloat.'},
+    {id:'rawmilk',name:'Raw whole milk',   p:3.3,c:4.8,f:3.7,k:64, disp:'volume',short:'raw milk', note:'Only from a trusted, tested dairy. Keep cold, use quickly.'},
+    {id:'kefir',  name:'Whole-milk kefir', p:3.3,c:4.5,f:3.5,k:62, disp:'volume',short:'kefir', note:'Fermented — probiotics help gut balance & facial bloat.'},
+    {id:'greekyog',name:'Greek yogurt 2% (strained)',p:9.9,c:3,f:2,k:70, disp:'weight',state:'',short:'yogurt', note:'Strained casein — slow-release protein, good evening dairy.'},
+    {id:'cottage',name:'Cottage cheese 2%',p:10.5,c:4.8,f:2.3,k:84, disp:'weight',state:'',short:'cottage', note:'Slow casein; Greek stores carry 2–5% versions — check the label.'},
   ],
 };
 
@@ -383,6 +413,7 @@ const SAFETY = {
    ============================================================ */
 const state = {
   kg:65.65, cm:174, age:21, sex:'male', act:'moderate', goal:'slight_bulk',
+  day:'gym',        // 'gym' | 'rest'
   eggs:4, liver:false, boneBroth:false,
   breakfastCarbOn:true, dairyOn:true,
   pick:{},          // key `${mealId}:${group}` -> food id
@@ -400,88 +431,169 @@ const MEALS = [
    ]},
   {id:2, name:'Pre-Workout Meal', badge:'Pre · 1.5–2 h', gym:false, time:'1.5–2 hours before the gym',
    note:'Slow starch + lean protein so glycogen and amino acids peak right at training.',
+   rest:{name:'Lunch', badge:'Midday', time:'~4–5 hours after breakfast',
+         note:'Same slow starch + lean protein — steady aminos and glycogen for recovery, no gym anchor needed.'},
    rows:[
      {kind:'food', label:'Starchy carb', group:'starchy_carb', target:'starchyPre', macro:'c'},
      {kind:'food', label:'Lean protein', group:'protein', target:'beefPre', macro:'p'},
    ]},
-  {id:3, name:'Pre-Gym Fast Pump', badge:'Fast · 30–45 min', gym:true, time:'30–45 min before the gym',
+  {id:3, name:'Pre-Gym Fast Pump', badge:'Fast · 30–45 min', gym:true, gymOnly:true, time:'30–45 min before the gym',
    note:'Liquid / fast sugar for an intra-workout pump and drive.',
    rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPre', macro:'c'} ]},
-  {id:4, name:'Post-Gym Fast Carb', badge:'Fast · <30 min', gym:true, time:'within 30 min after the gym',
+  {id:4, name:'Post-Gym Fast Carb', badge:'Fast · <30 min', gym:true, gymOnly:true, time:'within 30 min after the gym',
    note:'Immediate insulin spike to slam glycogen back into exhausted muscle and drop cortisol.',
    rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPost', macro:'c'} ]},
   {id:5, name:'Post-Workout Feast', badge:'Post · 1.5–2 h', gym:false, time:'1.5–2 hours after the gym',
    note:'Big whole-food refeed to finish glycogen loading and drive overnight recovery.',
+   rest:{name:'Dinner', badge:'Evening', time:'Evening · finish 2–3 h before bed',
+         note:'Same big whole-food meal — overnight muscle repair runs on tonight’s protein and starch.'},
    rows:[
      {kind:'food', label:'Starchy carb', group:'starchy_carb', target:'starchyPost', macro:'c'},
      {kind:'food', label:'Lean protein', group:'protein', target:'beefPost', macro:'p'},
-     {kind:'dairy', label:'Raw dairy', group:'dairy_drink', target:'milk', macro:'p'},
+     {kind:'dairy', label:'Dairy', group:'dairy_drink', target:'milk', macro:'p'},
    ]},
 ];
+function isRest(){ return state.day==='rest'; }
+function mealMeta(m){ return (isRest() && m.rest) ? Object.assign({}, m, m.rest, {gym:false}) : m; }
+function visibleMeals(){ return isRest() ? MEALS.filter(m=>!m.gymOnly) : MEALS; }
 
 /* ============================================================
    MATH
    ============================================================ */
 function foodById(group,id){ return FOODS[group].find(f=>f.id===id) || FOODS[group][0]; }
+function pickFood(mealId,group){ return foodById(group, state.pick[`${mealId}:${group}`]); }
 function r0(n){return Math.round(n);}
 function r1(n){return Math.round(n*10)/10;}
 function r5(n){return Math.round(n/5)*5;}
 function r10(n){return Math.round(n/10)*10;}
 
+/* single source of truth for the fixed breakfast items (also used by the label) */
+const EGG   = {p:6.3, f:4.8, k:72};        // per large egg, USDA
+const BROTH = {p:9,   f:0.5, k:40};        // per 250 mL beef bone broth
+const LIVER_G = 40;                        // breakfast liver portion, g
+
+/* true kcal / fat / protein of the amount of `food` that supplies `grams` of `macro` */
+function truKcal(food,grams,macro){ const per=food[macro]; return (per&&grams>0) ? grams/per*food.k : 0; }
+function truFat (food,grams,macro){ const per=food[macro]; return (per&&grams>0) ? grams/per*(food.f||0) : 0; }
+function truPro (food,grams,macro){ const per=food[macro]; return (per&&grams>0) ? grams/per*(food.p||0) : 0; }
+function truCarb(food,grams,macro){ const per=food[macro]; return (per&&grams>0) ? grams/per*(food.c||0) : 0; }
+
 function compute(){
   const g = GOALS.find(x=>x.key===state.goal);
   const a = ACTIVITY.find(x=>x.key===state.act);
   const {kg,cm,age,sex} = state;
+  const rest = isRest();
   const lbs = kg*2.20462;
   const bmr = sex==='male' ? (10*kg+6.25*cm-5*age+5) : (10*kg+6.25*cm-5*age-161);
   const tdee = bmr*a.mult;
-  const cal = tdee*(1+g.deltaPct/100);
+  let cal = tdee*(1+g.deltaPct/100);
 
   let protein = r0(lbs*g.pPerLb);
   let fat = g.fat;
   let carbs = Math.max(0, r0((cal - protein*4 - fat*9)/4));
 
   // ---- carb buckets ----
-  let breakfastCarb = state.breakfastCarbOn ? Math.min(carbs, Math.max(15, Math.min(30, r0(carbs*0.06)))) : 0;
+  // breakfast floor scales down when total carbs are scarce so it can't starve the main meals
+  let breakfastCarb = state.breakfastCarbOn
+    ? Math.min(carbs, Math.max(Math.min(15, r0(carbs*0.3)), Math.min(30, r0(carbs*0.06))))
+    : 0;
   let fastCarbTotal = Math.min(g.fastCarb, Math.max(0, carbs-breakfastCarb));
-  let starchyTotal  = Math.max(0, carbs-breakfastCarb-fastCarbTotal);
-  const starchyPre  = r0(starchyTotal*0.45);
-  const starchyPost = starchyTotal-starchyPre;
+  if(rest){ cal -= fastCarbTotal*4; carbs -= fastCarbTotal; fastCarbTotal = 0; }   // rest day: peri-workout sugars dropped, not converted
   const fastPre  = r0(fastCarbTotal/2);
   const fastPost = fastCarbTotal-fastPre;
 
   // ---- protein buckets ----
-  const eggProtein   = state.eggs*6.3;
-  const liverProtein = state.liver ? (40/100*20.4) : 0;
-  const brothProtein = state.boneBroth ? 9 : 0;                     // ~9 g / 250 mL
-  const milkProtein  = state.dairyOn ? (state.milkMl/100*3.3) : 0;
+  const liverFood  = foodById('protein','liver');
+  const dairyFood  = foodById('dairy_drink', state.pick['5:dairy_drink']);
+  const eggProtein   = state.eggs*EGG.p;
+  const liverProtein = state.liver ? (LIVER_G/100*liverFood.p) : 0;
+  const brothProtein = state.boneBroth ? BROTH.p : 0;
+  const milkProtein  = state.dairyOn ? (state.milkMl/100*dairyFood.p) : 0;
   const beefTotal = Math.max(0, protein - eggProtein - liverProtein - brothProtein - milkProtein);
   const beefPre  = r0(beefTotal*0.5);
   const beefPost = r0(beefTotal-beefPre);
 
+  // ---- reconcile: starch fills whatever calories the REAL foods leave over ----
+  // (protein foods carry fat, carb foods carry protein — the old pure-macro split ignored
+  //  those calories, so following the printed grams overshot the target by 8-25%)
+  const preP=pickFood(2,'protein'), postP=pickFood(5,'protein');
+  const preS=pickFood(2,'starchy_carb'), postS=pickFood(5,'starchy_carb');
+  const bfF=pickFood(1,'breakfast_carb'), fpF=pickFood(3,'fast_carb'), fqF=pickFood(4,'fast_carb');
+
+  let fixedK = state.eggs*EGG.k
+    + (state.liver? LIVER_G/100*liverFood.k : 0)
+    + (state.boneBroth? BROTH.k : 0)
+    + (state.dairyOn? state.milkMl/100*dairyFood.k : 0)
+    + truKcal(bfF,breakfastCarb,'c')
+    + truKcal(fpF,fastPre,'c') + truKcal(fqF,fastPost,'c')
+    + truKcal(preP,beefPre,'p') + truKcal(postP,beefPost,'p');
+  let fixedF = state.eggs*EGG.f
+    + (state.liver? LIVER_G/100*liverFood.f : 0)
+    + (state.boneBroth? BROTH.f : 0)
+    + (state.dairyOn? state.milkMl/100*dairyFood.f : 0)
+    + truFat(bfF,breakfastCarb,'c')
+    + truFat(fpF,fastPre,'c') + truFat(fqF,fastPost,'c')
+    + truFat(preP,beefPre,'p') + truFat(postP,beefPost,'p');
+
+  // carb grams a kcal budget buys from each chosen starch (its k covers its own protein+fat)
+  const starchFromBudget = b => ({ pre: Math.max(0, r0(b*0.45 * preS.c/preS.k)),
+                                   post: Math.max(0, r0(b*0.55 * postS.c/postS.k)) });
+  // pass 1: butter/oil headroom up to the fat floor, ignoring starch's own fat
+  let butter = Math.max(0, fat - fixedF);
+  let sp = starchFromBudget(Math.max(0, cal - fixedK - butter*9));
+  // pass 2: refine headroom with starch fat included
+  const stFat1 = sp.pre*(preS.f/preS.c) + sp.post*(postS.f/postS.c);
+  butter = Math.max(0, fat - fixedF - stFat1);
+  const starchBudget = cal - fixedK - butter*9;
+  sp = starchFromBudget(Math.max(0, starchBudget));
+
+  const starchyPre=sp.pre, starchyPost=sp.post, starchyTotal=sp.pre+sp.post;
+  const infeasible = starchBudget <= 0;
+
+  // ---- true plan totals (what the printed grams actually add up to) ----
+  const planK = fixedK + truKcal(preS,starchyPre,'c') + truKcal(postS,starchyPost,'c') + butter*9;
+  const planF = fixedF + starchyPre*(preS.f/preS.c) + starchyPost*(postS.f/postS.c) + butter;
+  const planP = eggProtein + liverProtein + brothProtein + milkProtein + beefPre + beefPost
+    + truPro(preS,starchyPre,'c') + truPro(postS,starchyPost,'c')
+    + truPro(bfF,breakfastCarb,'c') + truPro(fpF,fastPre,'c') + truPro(fqF,fastPost,'c');
+  const planC = breakfastCarb + fastCarbTotal + starchyTotal
+    + truCarb(preP,beefPre,'p') + truCarb(postP,beefPost,'p')
+    + (state.liver? LIVER_G/100*liverFood.c : 0)
+    + (state.dairyOn? state.milkMl/100*dairyFood.c : 0);
+
+  carbs = breakfastCarb + fastCarbTotal + starchyTotal;   // the carbs the plan actually prescribes
+
   return {g,a,lbs,bmr,tdee,cal,protein,fat,carbs,
     breakfastCarb,fastCarbTotal,starchyTotal,starchyPre,starchyPost,fastPre,fastPost,
-    beefPre,beefPost,milkMl:state.dairyOn ? state.milkMl : 0};
+    beefPre,beefPost,milkMl:state.dairyOn ? state.milkMl : 0,
+    planK,planP,planC,planF,butter,infeasible,rest};
 }
 
 /* amount of a chosen food to hit `grams` of its `macro` (c or p) */
 function amountText(food, grams, macro){
   const per = food[macro];
-  if(!per || grams<=0) return {main:'—', sub:''};
+  if(!per || grams<=0) return {main:'—', sub:'', note:food.note||''};
   const q = grams/per;               // number of natural units
-  const kcal = r0(q*food.k);
-  let main='';
+  let main='', kcal;
   if(food.disp==='weight'){
     const gm=r5(q*100);
+    kcal = r0(gm/100*food.k);
     main = gm+' g'+(food.state?(' '+food.state):'');
-    if(food.cooked) main += ' · ~'+r5(gm*food.cooked)+' g cooked';
+    if(food.cooked===1) main += ' · cooked ≈ same weight';
+    else if(food.cooked) main += ' · ~'+r5(gm*food.cooked)+' g cooked';
   } else if(food.disp==='volume'){
-    main = r10(q*100)+' mL';
+    const ml=r10(q*100);
+    kcal = r0(ml/100*food.k);
+    main = ml+' mL';
   } else if(food.disp==='count'){
     const n=r1(q);
+    if(!n) return {main:'—', sub:'', note:food.note||''};   // don't claim "0 bananas" for a positive target
+    kcal = r0(n*food.k);
     main = n+' '+food.piece+(n===1?'':'s');
   } else if(food.disp==='tbsp'){
-    main = r1(q)+' tbsp';
+    const n=r1(q);
+    kcal = r0(n*food.k);
+    main = n+' tbsp';
   }
   return {main, sub:'≈ '+kcal+' kcal', note:food.note||''};
 }
@@ -512,7 +624,8 @@ function buildMeals(){
   const box=document.getElementById('meals');
   box.innerHTML='';
   rowRefs=[];
-  MEALS.forEach(m=>{
+  visibleMeals().forEach(mm=>{
+    const m=mealMeta(mm);
     const card=document.createElement('div');
     card.className='card pad meal';
     let rowsHtml='';
@@ -540,12 +653,13 @@ function buildMeals(){
         </div>`;
       } else {
         const grp=row.group;
-        const cur=state.pick[`${m.id}:${grp}`] || FOODS[grp][0].id;
+        let cur=state.pick[`${m.id}:${grp}`] || FOODS[grp][0].id;
+        if(!FOODS[grp].some(f=>f.id===cur)) cur=FOODS[grp][0].id;   // self-heal stale picks
         state.pick[`${m.id}:${grp}`]=cur;
         const opts=FOODS[grp].map(f=>`<option value="${f.id}"${f.id===cur?' selected':''}>${f.name}</option>`).join('');
         let head='<span class="swaptip">eat this or this ▾</span>';
         if(row.target==='breakfastCarb') head=`<label class="toggle mini" title="Include a breakfast carb"><input type="checkbox" id="bfCarbChk" ${state.breakfastCarbOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
-        else if(row.target==='milk') head=`<label class="toggle mini" title="Include raw dairy"><input type="checkbox" id="dairyChk" ${state.dairyOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
+        else if(row.target==='milk') head=`<label class="toggle mini" title="Include dairy"><input type="checkbox" id="dairyChk" ${state.dairyOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
         rowsHtml+=`
         <div class="row" data-rid="${rid}">
           <div class="rl">
@@ -617,24 +731,44 @@ function recompute(){
   document.getElementById('pBar').style.width=(pK/tot*100)+'%';
   document.getElementById('cBar').style.width=(cK/tot*100)+'%';
   document.getElementById('fBar').style.width=(fK/tot*100)+'%';
-  document.getElementById('pPerLb').textContent=`· ${r1(d.protein/d.lbs)} g/lb`;
+  document.getElementById('pPerLb').textContent=`· ${d.lbs?r1(d.protein/d.lbs):0} g/lb`;
   document.getElementById('cSplit').innerHTML=
     `🍚 starchy <b>${d.starchyTotal} g</b> &nbsp;·&nbsp; 🍯 fast <b>${d.fastCarbTotal} g</b> &nbsp;·&nbsp; 🍊 fruit <b>${d.breakfastCarb} g</b>`;
 
+  // plan-totals reconciliation line
+  const pl=document.getElementById('planLine');
+  if(d.infeasible){
+    pl.innerHTML=`⚠️ <b style="color:var(--fat)">Heads up:</b> protein + fat minimums alone exceed this calorie target — the plan below can't fit. Raise calories (goal/activity) or accept running over.`;
+  } else {
+    const fWarn = d.planF > d.fat+8;
+    pl.innerHTML=`🧮 Plan as shown ≈ <b>${r0(d.planK).toLocaleString()} kcal</b> · P <b>${r0(d.planP)} g</b> · C <b>${r0(d.planC)} g</b> · F <b${fWarn?' style="color:var(--fat)" title="Fatty picks push fat above the target — starch shrank to keep calories on point"':''}>${r0(d.planF)} g</b>`
+      + (d.butter>=2?` <span style="color:var(--dim)">(incl. ~${r0(d.butter)} g cooking butter/oil)</span>`:'')
+      + (fWarn?` <span style="color:var(--dim)">— fatty picks raise fat; starch auto-shrinks so calories stay on target</span>`:'');
+  }
+
   // timeline
-  document.getElementById('timeline').innerHTML=[
+  const nodes = d.rest ? [
     {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
-    {t:'Pre 1.5–2h',m:'Rice + beef',c:d.starchyPre,gym:false},
+    {t:'Lunch',m:'Starch + protein',c:d.starchyPre,gym:false},
+    {t:'Dinner',m:'Starch + protein',c:d.starchyPost,gym:false},
+  ] : [
+    {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
+    {t:'Pre 1.5–2h',m:'Starch + protein',c:d.starchyPre,gym:false},
     {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
     {t:'💪 GYM',m:'Train',c:null,gym:true},
     {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
-    {t:'Post 1.5–2h',m:'Rice + beef',c:d.starchyPost,gym:false},
-  ].map(n=>`<div class="tnode${n.gym?' gym':''}"><div class="t">${n.t}</div><div class="m">${n.m}</div>${n.c!=null?`<div class="c">${n.c} g C</div>`:''}</div>`).join('');
+    {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPost,gym:false},
+  ];
+  document.getElementById('timeline').innerHTML=nodes
+    .map(n=>`<div class="tnode${n.gym?' gym':''}"><div class="t">${n.t}</div><div class="m">${n.m}</div>${n.c?`<div class="c">${n.c} g C</div>`:''}</div>`).join('');
 
   // eggs label
   const ev=document.getElementById('eggVal'); if(ev) ev.textContent=state.eggs;
   const ek=document.getElementById('eggKc');
-  if(ek){ ek.textContent=`≈ ${state.eggs} × egg = ${r0(state.eggs*6.3)} g protein · ${r0(state.eggs*72 + (state.liver?54:0) + (state.boneBroth?40:0))} kcal${state.liver?' · +40 g liver':''}${state.boneBroth?' · +250 mL broth':''}`; }
+  if(ek){
+    const liverK=r0(LIVER_G/100*foodById('protein','liver').k);
+    ek.textContent=`≈ ${state.eggs} × egg = ${r0(state.eggs*EGG.p)} g protein · ${r0(state.eggs*EGG.k + (state.liver?liverK:0) + (state.boneBroth?BROTH.k:0))} kcal${state.liver?` · +${LIVER_G} g liver`:''}${state.boneBroth?' · +250 mL broth':''}`;
+  }
 
   // meal rows
   const targets={
@@ -654,7 +788,7 @@ function recompute(){
       }
       if(ref.selWrap) ref.selWrap.style.display='';
       const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
-      ref.amt.innerHTML=`${d.milkMl} mL <small>${f.id==='kefir'?'kefir':'raw milk'}</small>`;
+      ref.amt.innerHTML=`${d.milkMl} ${f.disp==='weight'?'g':'mL'} <small>${f.short||f.name}</small>`;
       ref.kc.textContent=`≈ ${r0(d.milkMl/100*f.p)} g protein · ${r0(d.milkMl/100*f.k)} kcal`;
       ref.note.textContent=f.note;
       return;
@@ -671,7 +805,7 @@ function recompute(){
     const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
     const t=amountText(f, targets[row.target], row.macro);
     ref.amt.innerHTML=`${t.main}`;
-    ref.kc.textContent=`${targets[row.target]} g ${row.macro==='p'?'protein':'carbs'} · ${t.sub}`;
+    ref.kc.textContent=`${targets[row.target]} g ${row.macro==='p'?'protein':'carbs'}`+(t.sub?` · ${t.sub}`:'');
     ref.note.textContent=t.note;
   });
 
@@ -690,9 +824,29 @@ function syncRangeFill(id){
 }
 function linkPair(rangeId,numId,key,parse){
   const r=document.getElementById(rangeId), n=document.getElementById(numId);
-  const set=v=>{ v=parse(v); if(isNaN(v))return; state[key]=v; r.value=v; n.value=v; recompute(); };
-  r.oninput=()=>set(r.value);
-  n.oninput=()=>set(n.value);
+  const clamp=v=>Math.min(parseFloat(r.max),Math.max(parseFloat(r.min),v));
+  const set=(v,fromTyping)=>{ v=parse(v); if(isNaN(v))return; v=clamp(v);
+    state[key]=v; r.value=v; if(!fromTyping) n.value=v; recompute(); };
+  r.oninput=()=>set(r.value,false);
+  n.oninput=()=>set(n.value,true);            // don't rewrite the field mid-typing
+  n.onblur=()=>{ n.value=state[key]; };       // settle to the clamped value on blur
+}
+function initDay(){
+  document.querySelectorAll('#daySeg button').forEach(b=>b.onclick=()=>{
+    if(state.day===b.dataset.day) return;
+    state.day=b.dataset.day;
+    syncDayUI(); buildMeals(); recompute();
+  });
+}
+function syncDayUI(){
+  const rest=isRest();
+  document.querySelectorAll('#daySeg button').forEach(x=>x.classList.toggle('on',x.dataset.day===(rest?'rest':'gym')));
+  document.getElementById('dayDesc').innerHTML = rest
+    ? 'No training today — the peri-workout fast sugars are dropped entirely (they\'re the least useful calories without a session), while protein, fat and your whole-food meals stay identical. The day collapses to <b>Breakfast · Lunch · Dinner</b>, landing ~300 kcal lighter. Full fuel returns automatically on your next gym day.'
+    : 'Full protocol — five feedings timed around your session, with fast sugars before and after the gym to fuel the workout and slam glycogen back in.';
+  document.getElementById('mealsTitle').textContent = rest
+    ? 'Your 3 Meals — rest day · pick any option, grams update'
+    : 'Your 5 Meals — pick any option, grams update';
 }
 function initSex(){
   document.querySelectorAll('#sexSeg button').forEach(b=>b.onclick=()=>{
@@ -705,16 +859,20 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 
 function copyPlan(){
   const d=compute(); const G=GOALS.find(x=>x.key===state.goal);
-  let s=`CARBMAXX — ${G.label} plan\n`;
+  let s=`CARBMAXX — ${G.label} plan · ${d.rest?'😴 REST day':'💪 GYM day'}\n`;
   s+=`${state.kg} kg · ${state.cm} cm · ${state.age} yrs · ${state.sex}\n`;
-  s+=`~${r0(d.cal)} kcal | P ${d.protein}g  C ${d.carbs}g  F ${d.fat}g  (${r1(d.protein/d.lbs)} g/lb)\n`;
+  s+=`Target ~${r0(d.cal)} kcal | P ${d.protein}g  C ${d.carbs}g  F ${d.fat}g  (${d.lbs?r1(d.protein/d.lbs):0} g/lb)\n`;
+  s+=`Plan as shown ≈ ${r0(d.planK)} kcal | P ${r0(d.planP)}g  C ${r0(d.planC)}g  F ${r0(d.planF)}g\n`;
+  if(d.butter>=2) s+=`(includes ~${r0(d.butter)} g cooking butter/oil across meals)\n`;
+  if(d.infeasible) s+=`!! Heads up: protein + fat minimums alone exceed this calorie target — the plan runs over.\n`;
   s+=`Carbs: starchy ${d.starchyTotal}g · fast ${d.fastCarbTotal}g · fruit ${d.breakfastCarb}g\n\n`;
-  MEALS.forEach(m=>{
+  visibleMeals().forEach(mm=>{
+    const m=mealMeta(mm);
     s+=`— ${m.name} (${m.time}) —\n`;
-    if(m.id===1) s+=`  ${state.eggs} whole eggs${state.liver?' + 40g liver':''}${state.boneBroth?' + 250mL bone broth':''}\n`;
+    if(m.id===1) s+=`  ${state.eggs} whole eggs${state.liver?` + ${LIVER_G}g liver`:''}${state.boneBroth?' + 250mL bone broth':''}\n`;
     m.rows.forEach(row=>{
       if(row.kind==='eggs') return;
-      if(row.kind==='dairy'){ if(state.dairyOn){ const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]); s+=`  ${row.label}: ${d.milkMl} mL ${f.name}\n`; } return; }
+      if(row.kind==='dairy'){ if(state.dairyOn){ const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]); s+=`  ${row.label}: ${d.milkMl} ${f.disp==='weight'?'g':'mL'} ${f.name}\n`; } return; }
       if(row.target==='breakfastCarb' && !state.breakfastCarbOn) return;
       const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]);
       const tgt={breakfastCarb:d.breakfastCarb,starchyPre:d.starchyPre,starchyPost:d.starchyPost,fastPre:d.fastPre,fastPost:d.fastPost,beefPre:d.beefPre,beefPost:d.beefPost}[row.target];
@@ -737,34 +895,59 @@ let FIREBASE_DB = "https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.a
 /* ▲▲▲ that's the only line you edit ▲▲▲ */
 
 const PKEY='carbmaxx_profiles_v1';
-const PFIELDS=['kg','cm','age','sex','act','goal','eggs','liver','boneBroth','breakfastCarbOn','dairyOn','milkMl','pick'];
+const PFIELDS=['kg','cm','age','sex','act','goal','day','eggs','liver','boneBroth','breakfastCarbOn','dairyOn','milkMl','pick'];
 function cloudOn(){ return /^https:\/\/[^\s"']+\.(firebaseio\.com|firebasedatabase\.app)/i.test(FIREBASE_DB); }
 function cloudUrl(name){ return FIREBASE_DB.replace(/\/+$/,'') + '/carbmaxx/profiles' + (name?('/'+encodeURIComponent(name)):'') + '.json'; }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function validName(n){ return /^[a-z0-9_\-]{1,20}$/.test(n); }
 
 function loadProfiles(){ try{return JSON.parse(localStorage.getItem(PKEY))||{};}catch(e){return {};} }
 function saveProfiles(o){ try{localStorage.setItem(PKEY,JSON.stringify(o));}catch(e){} }
-function snapshot(){ const s={}; PFIELDS.forEach(k=>{ s[k]= k==='pick'?JSON.parse(JSON.stringify(state.pick)):state[k]; }); return s; }
+function snapshot(){ const s={}; PFIELDS.forEach(k=>{ s[k]= k==='pick'?JSON.parse(JSON.stringify(state.pick)):state[k]; }); s.updatedAt=Date.now(); return s; }
+/* newer-wins merge; only well-formed cloud names are accepted (also blocks stored-XSS via profile keys) */
+function mergeProfiles(local,cloud){
+  const out=Object.assign({},local);
+  Object.keys(cloud||{}).forEach(n=>{
+    if(!validName(n) || !cloud[n] || typeof cloud[n]!=='object') return;
+    const l=out[n];
+    if(!l || (cloud[n].updatedAt||0) >= (l.updatedAt||0)) out[n]=cloud[n];
+  });
+  return out;
+}
 
-let cloudTimer=null;
+let cloudTimer=null, cloudPendName=null, cloudPendSnap=null, hydrating=false;
+const cloudInflight={};                                    // name -> last PUT promise
 function cloudPut(name,snap){
   if(!cloudOn()) return;
   setCloudStatus('saving');
-  fetch(cloudUrl(name),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(snap)})
+  const p=fetch(cloudUrl(name),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(snap),keepalive:true})
     .then(r=>{ if(!r.ok) throw 0; setCloudStatus('saved'); }).catch(()=>setCloudStatus('offline'));
+  cloudInflight[name]=p;
+  p.finally(()=>{ if(cloudInflight[name]===p) delete cloudInflight[name]; });
+}
+function flushCloud(){          // fire any pending debounced write before switching context
+  if(cloudTimer){ clearTimeout(cloudTimer); cloudTimer=null;
+    if(cloudPendName) cloudPut(cloudPendName,cloudPendSnap);
+    cloudPendName=cloudPendSnap=null; }
 }
 function persistActive(){
-  if(!activeProfile) return;
+  if(!activeProfile || hydrating) return;   // loading a profile must not count as an edit
   const snap=snapshot();
   const all=loadProfiles(); all[activeProfile]=snap; saveProfiles(all);      // instant local cache
-  if(cloudOn()){ clearTimeout(cloudTimer); const name=activeProfile; cloudTimer=setTimeout(()=>cloudPut(name,snap),700); }  // debounced cloud write
+  if(cloudOn()){
+    clearTimeout(cloudTimer);
+    cloudPendName=activeProfile; cloudPendSnap=snap;
+    cloudTimer=setTimeout(()=>{ cloudTimer=null; const n=cloudPendName, s=cloudPendSnap; cloudPendName=cloudPendSnap=null; cloudPut(n,s); },700);
+  }
 }
+window.addEventListener('pagehide',flushCloud);
 async function cloudFetchAll(){
   const r=await fetch(cloudUrl()); if(!r.ok) throw new Error('http '+r.status);
   return (await r.json())||{};
 }
 async function cloudRefresh(){
   if(!cloudOn()) return;
-  try{ const c=await cloudFetchAll(); saveProfiles(Object.assign({}, loadProfiles(), c)); renderProfileBar(); setCloudStatus('synced'); }
+  try{ const c=await cloudFetchAll(); saveProfiles(mergeProfiles(loadProfiles(), c)); renderProfileBar(); setCloudStatus('synced'); }
   catch(e){ setCloudStatus('offline'); }
 }
 
@@ -775,10 +958,31 @@ function syncControls(){
   document.querySelectorAll('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sex===state.sex));
   document.getElementById('actSel').value=state.act;
   document.querySelectorAll('#goals .goal').forEach(el=>el.classList.toggle('on',el.dataset.goal===state.goal));
+  syncDayUI();
 }
 function applySnapshot(snap){
-  PFIELDS.forEach(k=>{ if(snap[k]!==undefined) state[k]= k==='pick'?JSON.parse(JSON.stringify(snap[k])):snap[k]; });
-  syncControls(); buildMeals(); recompute();
+  // reset to defaults first so fields missing from older snapshots don't leak between profiles
+  PFIELDS.forEach(k=>{
+    const v = snap[k]!==undefined ? snap[k] : DEFAULT_STATE[k];
+    state[k] = (k==='pick') ? JSON.parse(JSON.stringify(v||{})) : v;
+  });
+  // validate — cloud snapshots are user-writable and older versions may hold unknown keys
+  state.day = state.day==='rest' ? 'rest' : 'gym';
+  state.sex = state.sex==='female' ? 'female' : 'male';
+  if(!GOALS.some(x=>x.key===state.goal)) state.goal=DEFAULT_STATE.goal;
+  if(!ACTIVITY.some(x=>x.key===state.act)) state.act=DEFAULT_STATE.act;
+  const num=(v,lo,hi,dflt)=>{ v=parseFloat(v); return isNaN(v)?dflt:Math.min(hi,Math.max(lo,v)); };
+  state.kg=num(state.kg,40,160,DEFAULT_STATE.kg);
+  state.cm=r0(num(state.cm,140,210,DEFAULT_STATE.cm));
+  state.age=r0(num(state.age,14,80,DEFAULT_STATE.age));
+  state.eggs=r0(num(state.eggs,2,8,DEFAULT_STATE.eggs));
+  state.milkMl=r0(num(state.milkMl,50,1000,DEFAULT_STATE.milkMl));
+  state.liver=!!state.liver; state.boneBroth=!!state.boneBroth;
+  state.breakfastCarbOn=!!state.breakfastCarbOn; state.dairyOn=!!state.dairyOn;
+  if(!state.pick || typeof state.pick!=='object' || Array.isArray(state.pick)) state.pick={};
+  hydrating=true;
+  try{ syncControls(); buildMeals(); recompute(); }
+  finally{ hydrating=false; }
 }
 function setCloudStatus(s){
   const el=document.getElementById('pbMode'); if(!el) return;
@@ -795,17 +999,21 @@ function renderProfileBar(){
   const all=loadProfiles(), names=Object.keys(all).sort();
   const box=document.getElementById('pChips');
   box.innerHTML = names.length
-    ? names.map(n=>`<span class="chip${n===activeProfile?' on':''}" data-p="${n}">${n}<span class="x" data-del="${n}" title="delete profile">×</span></span>`).join('')
+    ? names.map(n=>`<span class="chip${n===activeProfile?' on':''}" data-p="${esc(n)}">${esc(n)}<span class="x" data-del="${esc(n)}" title="delete profile">×</span></span>`).join('')
     : `<span style="color:var(--dim);font-size:12px">No saved profiles yet — type a name and hit Load / Create.${cloudOn()?' They sync to all your devices.':''}</span>`;
   box.querySelectorAll('.chip').forEach(c=>c.onclick=e=>{ if(e.target.hasAttribute('data-del')) return; loadProfile(c.dataset.p); });
   box.querySelectorAll('[data-del]').forEach(x=>x.onclick=e=>{ e.stopPropagation(); deleteProfile(x.getAttribute('data-del')); });
 }
+let loadSeq=0;
 async function loadProfile(name){
-  let data=loadProfiles()[name];
+  flushCloud();
+  const my=++loadSeq;                        // guard against out-of-order loads on rapid clicks
   if(cloudOn()){
-    try{ const c=await cloudFetchAll(); saveProfiles(Object.assign({}, loadProfiles(), c)); if(c[name]) data=c[name]; setCloudStatus('synced'); }
+    try{ const c=await cloudFetchAll(); saveProfiles(mergeProfiles(loadProfiles(), c)); setCloudStatus('synced'); }
     catch(e){ setCloudStatus('offline'); }
   }
+  if(my!==loadSeq) return;
+  const data=loadProfiles()[name];
   if(!data) return;
   activeProfile=name; applySnapshot(data);
   document.getElementById('pName').value=name; renderProfileBar(); toast('Loaded "'+name+'"'+(cloudOn()?' ☁':''));
@@ -815,16 +1023,23 @@ function profileLoadOrCreate(){
   if(!name){ toast('Type a profile name (letters/numbers)'); return; }
   document.getElementById('pName').value=name;
   if(loadProfiles()[name]){ loadProfile(name); return; }
+  flushCloud();
   activeProfile=name;
   const snap=snapshot();
   const all=loadProfiles(); all[name]=snap; saveProfiles(all);
   if(cloudOn()) cloudPut(name,snap);
   renderProfileBar(); toast('Created "'+name+'"'+(cloudOn()?' — syncing to all devices ✓':' — auto-saving ✓'));
 }
-function goGuest(){ activeProfile=null; applySnapshot(DEFAULT_STATE); document.getElementById('pName').value=''; renderProfileBar(); toast('Guest — defaults loaded'); }
+function goGuest(){ flushCloud(); activeProfile=null; applySnapshot(DEFAULT_STATE); document.getElementById('pName').value=''; renderProfileBar(); toast('Guest — defaults loaded'); }
 function deleteProfile(name){
+  if(cloudPendName===name){ clearTimeout(cloudTimer); cloudTimer=null; cloudPendName=cloudPendSnap=null; }  // don't resurrect it
+  else flushCloud();
   const all=loadProfiles(); delete all[name]; saveProfiles(all);
-  if(cloudOn()) fetch(cloudUrl(name),{method:'DELETE'}).catch(()=>{});
+  if(cloudOn()){
+    const del=()=>fetch(cloudUrl(name),{method:'DELETE'}).catch(()=>{});
+    const inflight=cloudInflight[name];
+    inflight ? inflight.finally(del) : del();   // order the DELETE after any still-travelling save
+  }
   if(activeProfile===name) goGuest(); else renderProfileBar();
   toast('Deleted "'+name+'"');
 }
@@ -837,6 +1052,8 @@ buildGoals();
 buildMeals();
 buildSafety();
 initSex();
+initDay();
+syncDayUI();
 linkPair('kgRange','kgNum','kg',parseFloat);
 linkPair('cmRange','cmNum','cm',v=>parseInt(v,10));
 linkPair('ageRange','ageNum','age',v=>parseInt(v,10));
