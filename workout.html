@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CARBMAXX · Workout</title>
+<style>
+  :root{
+    --bg:#0e0f13; --bg2:#15171e; --card:#181b23; --card2:#1e222c;
+    --line:#2a2f3b; --line2:#353c4a;
+    --txt:#eef1f6; --muted:#98a1b3; --dim:#6b7488;
+    --pro:#ff5a5f; --carb:#3ecf8e; --fat:#f6c453;
+    --accent:#ff6a3d; --accent2:#ff8c42;
+    --radius:18px;
+    --sh:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1100px 600px at 80% -10%,rgba(255,106,61,.10),transparent 60%),
+               radial-gradient(900px 500px at -10% 10%,rgba(62,207,142,.07),transparent 55%),
+               var(--bg);
+    color:var(--txt); line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;
+        background:linear-gradient(135deg,var(--accent),var(--accent2));font-size:26px;box-shadow:var(--sh)}
+  .brand h1{margin:0;font-size:26px;letter-spacing:.5px}
+  .brand h1 span{color:var(--accent2)}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+  .startchip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:12.5px;color:var(--muted)}
+  .startchip b{color:var(--txt)}
+
+  .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:5px;width:fit-content;margin-bottom:18px;box-shadow:var(--sh)}
+  .tab{padding:9px 18px;border-radius:9px;font-size:13.5px;font-weight:800;color:var(--muted);text-decoration:none;letter-spacing:.3px;transition:.15s}
+  .tab:hover{color:var(--txt)}
+  .tab.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+
+  .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--sh)}
+  .pad{padding:20px}
+  .section-title{font-size:12px;text-transform:uppercase;letter-spacing:1.6px;color:var(--dim);margin:0 0 14px;font-weight:700}
+  .btn{background:var(--card2);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--accent);color:var(--accent2)}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border:0;color:#fff}
+  .btn.primary:hover{color:#fff;filter:brightness(1.08)}
+  .btn.danger:hover{border-color:var(--pro);color:var(--pro)}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--accent);color:#fff;padding:12px 20px;border-radius:12px;font-weight:700;box-shadow:var(--sh);opacity:0;transition:.25s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ---- profiles (same system as the nutrition page) ---- */
+  .profilebar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:16px}
+  .pb-left{display:flex;align-items:center;gap:12px;flex:1;min-width:200px}
+  .pb-active{font-size:12.5px;font-weight:800;color:var(--muted);background:var(--bg);border:1px solid var(--line2);border-radius:999px;padding:6px 13px;white-space:nowrap}
+  .pb-active.live{color:var(--carb);border-color:var(--carb)}
+  .pb-mode{font-size:11.5px;font-weight:800;color:var(--dim);white-space:nowrap;letter-spacing:.3px}
+  .pb-mode.cloud{color:var(--carb)}
+  .pb-mode.off{color:var(--fat)}
+  .pb-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .pb-input{background:var(--bg);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:700;width:150px;letter-spacing:.5px}
+  .pb-input:focus{outline:none;border-color:var(--accent)}
+  .pb-chips{display:flex;gap:8px;flex-wrap:wrap;width:100%;margin-top:2px}
+  .chip{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line2);border-radius:999px;padding:5px 6px 5px 13px;font-size:12.5px;font-weight:800;cursor:pointer;transition:.15s;letter-spacing:.4px}
+  .chip:hover{border-color:var(--accent)}
+  .chip.on{border-color:var(--carb);color:var(--carb);background:linear-gradient(180deg,rgba(62,207,142,.12),transparent)}
+  .chip .x{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:var(--card2);color:var(--muted);font-size:13px;line-height:1}
+  .chip .x:hover{background:var(--pro);color:#fff}
+
+  /* ---- toolbar ---- */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 2px 14px}
+  .toolbar .right{display:flex;gap:8px;flex-wrap:wrap}
+  .btn.editing{background:linear-gradient(135deg,var(--carb),#2fae76);border:0;color:#06281a}
+
+  /* ---- days ---- */
+  .days{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:860px){.days{grid-template-columns:1fr}}
+  .day{display:flex;flex-direction:column}
+  .day .dh{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  .daynum{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:4px 10px;border-radius:999px;
+          background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;white-space:nowrap}
+  .daynum.rest{background:var(--card2);color:var(--dim);border:1px solid var(--line2)}
+  .day h3{margin:0;font-size:17px;flex:1;min-width:120px}
+  .restcard{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:26px 16px;color:var(--dim)}
+  .restcard .z{font-size:34px}
+  .restcard .r1{font-weight:800;font-size:15px;color:var(--muted);letter-spacing:1px}
+  .restcard .r2{font-size:12px;text-align:center}
+  .restcard .r2 a{color:var(--carb);text-decoration:none;font-weight:700}
+
+  .ex{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+  .ex .xr{display:flex;align-items:center;gap:10px}
+  .ex .nm{font-weight:700;font-size:14px;flex:1}
+  .ex .sr{font-variant-numeric:tabular-nums;font-weight:800;font-size:13.5px;color:var(--carb);background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.25);border-radius:8px;padding:3px 9px;white-space:nowrap}
+  .ex .nt{font-size:11.5px;color:var(--dim);margin-top:4px}
+  .ssgroup{position:relative;border:1px solid rgba(255,140,66,.35);border-radius:14px;padding:9px 9px 2px;margin-bottom:8px;background:linear-gradient(180deg,rgba(255,106,61,.06),transparent)}
+  .ssgroup .sstag{position:absolute;top:-9px;left:12px;font-size:9.5px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+                  background:var(--accent);color:#fff;border-radius:999px;padding:2px 9px}
+  .ssgroup .ex{margin-bottom:7px;border-color:var(--line)}
+  .sslink{display:flex;align-items:center;gap:6px;color:var(--accent2);font-size:10px;font-weight:800;letter-spacing:1px;margin:-3px 0 4px 14px}
+
+  /* ---- edit mode ---- */
+  .ctl{display:flex;gap:4px;align-items:center}
+  .ctl button{background:var(--card2);border:1px solid var(--line2);color:var(--muted);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:13px;line-height:1;padding:0}
+  .ctl button:hover{border-color:var(--accent);color:var(--accent2)}
+  .ctl button.del:hover{border-color:var(--pro);color:var(--pro)}
+  .ex.edit .xr{flex-wrap:wrap}
+  .ein{background:var(--card2);border:1px solid var(--line2);color:var(--txt);border-radius:8px;padding:6px 8px;font-size:13px;font-weight:600}
+  .ein:focus{outline:none;border-color:var(--accent)}
+  .ein.nm{flex:1;min-width:150px}
+  .ein.sets{width:44px;text-align:center}
+  .ein.reps{width:86px;text-align:center}
+  .ein.note{width:100%;margin-top:6px;font-weight:500;color:var(--muted)}
+  .ein.dname{flex:1;min-width:140px;font-weight:800;font-size:15px}
+  .xx{color:var(--dim);font-weight:800}
+  .sstog{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--dim);font-weight:700;user-select:none;margin:2px 0 6px 4px}
+  .sstog input{accent-color:var(--accent)}
+  .sstog.on{color:var(--accent2)}
+  .addex{width:100%;border:1px dashed var(--line2);background:transparent;color:var(--dim);border-radius:10px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;margin-top:2px}
+  .addex:hover{border-color:var(--accent);color:var(--accent2)}
+  .resttog{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:var(--dim);font-weight:700;user-select:none}
+  .resttog input{accent-color:var(--accent)}
+  .addday{border:1px dashed var(--line2);background:transparent;color:var(--dim);border-radius:var(--radius);padding:26px;font-size:14px;font-weight:800;cursor:pointer;display:grid;place-items:center}
+  .addday:hover{border-color:var(--accent);color:var(--accent2)}
+  .hint{font-size:11.5px;color:var(--dim);margin:10px 2px 0}
+  .foot{margin-top:26px;text-align:center;color:var(--dim);font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">💪</div>
+      <div>
+        <h1>CARB<span>MAXX</span></h1>
+        <p>Training split · arms &amp; delts specialization · 4 lifting days</p>
+      </div>
+    </div>
+    <div class="startchip">Progression: <b>add weight or a rep</b> every week on the first lift of each day</div>
+  </header>
+
+  <nav class="tabs">
+    <a class="tab" href="index.html">🍚 Nutrition</a>
+    <a class="tab on" href="workout.html">🏋️ Workout</a>
+  </nav>
+
+  <!-- ============ PROFILE ============ -->
+  <div class="card pad profilebar" id="profileBar">
+    <div class="pb-left">
+      <span class="section-title" style="margin:0">Profile</span>
+      <span class="pb-active" id="pbActive">Guest · default plan</span>
+      <span class="pb-mode" id="pbMode"></span>
+    </div>
+    <div class="pb-right">
+      <input id="pName" class="pb-input" placeholder="name e.g. gk36" maxlength="20" autocomplete="off" spellcheck="false">
+      <button class="btn primary" id="pLoad">Load / Create</button>
+      <button class="btn" id="pGuest">Guest</button>
+    </div>
+    <div class="pb-chips" id="pChips"></div>
+  </div>
+
+  <!-- ============ TOOLBAR ============ -->
+  <div class="toolbar">
+    <p class="section-title" style="margin:0" id="planTitle">Your Week — tap Edit to change anything</p>
+    <div class="right">
+      <button class="btn" id="copyBtn">📋 Copy plan</button>
+      <button class="btn danger" id="resetBtn">↺ Reset to default</button>
+      <button class="btn primary" id="editBtn">✏️ Edit plan</button>
+    </div>
+  </div>
+
+  <div class="days" id="days"></div>
+  <div class="hint" id="editHint" style="display:none">
+    Edit mode: ↑↓ reorder · × delete · <b>⛓ superset</b> links an exercise with the one below it (chains allowed) ·
+    changes save automatically to your profile.
+  </div>
+
+  <div class="foot">Built around your split · supersets share equipment on purpose — zero setup change between the two moves.</div>
+</div>
+
+<div class="toast" id="toast">Saved ✓</div>
+
+<script>
+/* ============================================================
+   DEFAULT PROGRAM
+   ============================================================ */
+const DEFAULT_PROGRAM = { days: [
+  { name:'Arms & Delts (Heavy)', rest:false, ex:[
+    {name:'Seated DB Shoulder Press', sets:'4', reps:'6–8', note:'Strength anchor for 3D delts.', ss:false},
+    {name:'EZ-Bar Skull Crushers', sets:'3', reps:'8–12', note:'Same bar, same flat bench as the curls — lie down, stand up, zero setup change.', ss:true},
+    {name:'EZ-Bar Curls', sets:'3', reps:'8–12', note:'', ss:false},
+    {name:'Rope Pushdowns', sets:'3', reps:'10–12', note:'Same stack, same rope attachment as the hammers.', ss:true},
+    {name:'Rope Hammer Curls', sets:'3', reps:'10–12', note:'', ss:false},
+    {name:'Cable Lateral Raises', sets:'4', reps:'12–15', note:'', ss:true},
+    {name:'Cable Rear Delt Flyes', sets:'4', reps:'12–15', note:'', ss:false},
+    {name:'Reverse EZ Curls', sets:'3', reps:'12–15', note:'Forearms — this is where the inches on the lower arm come from.', ss:true},
+    {name:'Behind-Back Wrist Curls', sets:'3', reps:'12–15', note:'', ss:false},
+  ]},
+  { name:'Legs (Heavy · quad priority)', rest:false, ex:[
+    {name:'Hack Squat or High-Bar Squat', sets:'4', reps:'5–8', note:'Add weight weekly.', ss:false},
+    {name:'Leg Press, feet low on platform', sets:'3', reps:'10–12', note:'', ss:false},
+    {name:'Bulgarian Split Squats', sets:'2', reps:'8–10 /leg', note:'', ss:false},
+    {name:'Leg Extensions', sets:'3', reps:'12–15', note:'1-second squeeze at the top — the teardrop above the knee.', ss:false},
+    {name:'Seated Calf Raises', sets:'4', reps:'12–15', note:'Full stretch at the bottom.', ss:false},
+    {name:'Hanging Leg Raises', sets:'3', reps:'to failure', note:'', ss:false},
+  ]},
+  { name:'Rest', rest:true, ex:[] },
+  { name:'Upper (Back priority · chest maintenance)', rest:false, ex:[
+    {name:'Weighted Pull-Ups', sets:'4', reps:'5–8', note:'First while you\'re fresh — width + strength.', ss:false},
+    {name:'T-Bar Rows', sets:'4', reps:'6–8', note:'Heavy.', ss:false},
+    {name:'Chest-Supported Rows', sets:'3', reps:'10–12', note:'', ss:false},
+    {name:'Incline DB Press', sets:'3', reps:'8–10', note:'Your entire upper-chest maintenance right here.', ss:false},
+    {name:'Low-to-High Cable Flies', sets:'2', reps:'12–15', note:'', ss:false},
+    {name:'DB Pullovers', sets:'3', reps:'12–15', note:'', ss:true},
+    {name:'Face Pulls', sets:'3', reps:'12–15', note:'', ss:false},
+  ]},
+  { name:'Arms & Delts (Volume · pump)', rest:false, ex:[
+    {name:'Incline DB Curls', sets:'3', reps:'10–12', note:'Lie back on the same bench with the same dumbbells for the skulls.', ss:true},
+    {name:'Incline DB Skull Crushers', sets:'3', reps:'10–12', note:'', ss:false},
+    {name:'Weighted Dips', sets:'3', reps:'8–12', note:'', ss:true},
+    {name:'Spider Curls', sets:'3', reps:'8–12', note:'', ss:false},
+    {name:'Machine Shoulder Press', sets:'3', reps:'8–12', note:'', ss:false},
+    {name:'DB Lateral Raises', sets:'4', reps:'12–15', note:'Drop set on the last one.', ss:false},
+    {name:'Reverse Pec Deck', sets:'3', reps:'15', note:'', ss:false},
+    {name:'Farmer\'s Carries or Heavy Holds', sets:'3', reps:'30–45 sec', note:'Forearms + grip.', ss:false},
+  ]},
+  { name:'Legs (Posterior + quad pump)', rest:false, ex:[
+    {name:'Romanian Deadlifts', sets:'4', reps:'6–8', note:'Heavy.', ss:false},
+    {name:'Lying or Seated Leg Curls', sets:'3', reps:'10–12', note:'', ss:false},
+    {name:'Leg Press or Hack Squat, lighter', sets:'3', reps:'12–15', note:'', ss:false},
+    {name:'Leg Extensions', sets:'3', reps:'15–20', note:'Paused reps again.', ss:false},
+    {name:'Standing Calf Raises', sets:'4', reps:'8–12', note:'Heavy.', ss:false},
+    {name:'Cable Crunches', sets:'3', reps:'12–15', note:'', ss:false},
+  ]},
+  { name:'Rest', rest:true, ex:[] },
+]};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const deep = o => JSON.parse(JSON.stringify(o));
+let program = deep(DEFAULT_PROGRAM);
+let editMode = false;
+let activeProfile = null;
+let guestDirty = false;
+
+/* sanitize any loaded/synced program back into a known-good shape */
+function normProgram(p){
+  const days = Array.isArray(p && p.days) ? p.days : [];
+  const out = days.slice(0,14).map(d=>({
+    name: String((d&&d.name)||'Day').slice(0,60),
+    rest: !!(d&&d.rest),
+    ex: (Array.isArray(d&&d.ex)?d.ex:[]).slice(0,25).map(e=>({
+      name: String((e&&e.name)||'Exercise').slice(0,80),
+      sets: String((e&&e.sets)!=null?e.sets:'3').slice(0,6),
+      reps: String((e&&e.reps)!=null?e.reps:'10').slice(0,20),
+      note: String((e&&e.note)||'').slice(0,180),
+      ss: !!(e&&e.ss),
+    })),
+  }));
+  return out.length ? {days:out} : deep(DEFAULT_PROGRAM);
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+
+/* group consecutive ss-linked exercises: ex[i].ss chains i with i+1 */
+function ssGroups(list){
+  const groups=[]; let i=0;
+  while(i<list.length){
+    let j=i;
+    while(j<list.length-1 && list[j].ss) j++;
+    groups.push({from:i, to:j});
+    i=j+1;
+  }
+  return groups;
+}
+
+function exViewHtml(e){
+  return `<div class="ex">
+    <div class="xr">
+      <div class="nm">${esc(e.name)}</div>
+      <div class="sr">${esc(e.sets)} × ${esc(e.reps)}</div>
+    </div>
+    ${e.note?`<div class="nt">${esc(e.note)}</div>`:''}
+  </div>`;
+}
+function exEditHtml(e,di,xi,last){
+  return `<div class="ex edit">
+    <div class="xr">
+      <div class="ctl">
+        <button data-a="xup" data-d="${di}" data-x="${xi}" title="move up">↑</button>
+        <button data-a="xdn" data-d="${di}" data-x="${xi}" title="move down">↓</button>
+        <button class="del" data-a="xdel" data-d="${di}" data-x="${xi}" title="delete">×</button>
+      </div>
+      <input class="ein nm" data-f="name" data-d="${di}" data-x="${xi}" value="${esc(e.name)}" maxlength="80" placeholder="exercise">
+      <input class="ein sets" data-f="sets" data-d="${di}" data-x="${xi}" value="${esc(e.sets)}" maxlength="6" placeholder="4">
+      <span class="xx">×</span>
+      <input class="ein reps" data-f="reps" data-d="${di}" data-x="${xi}" value="${esc(e.reps)}" maxlength="20" placeholder="8–12">
+      <input class="ein note" data-f="note" data-d="${di}" data-x="${xi}" value="${esc(e.note)}" maxlength="180" placeholder="note (optional)">
+    </div>
+  </div>
+  ${!last?`<label class="sstog${e.ss?' on':''}"><input type="checkbox" data-a="ss" data-d="${di}" data-x="${xi}" ${e.ss?'checked':''}>⛓ superset with next</label>`:''}`;
+}
+
+function render(){
+  const box=document.getElementById('days');
+  box.innerHTML='';
+  program.days.forEach((d,di)=>{
+    const card=document.createElement('div');
+    card.className='card pad day';
+    let head, body='';
+
+    if(editMode){
+      head=`<div class="dh">
+        <span class="daynum${d.rest?' rest':''}">Day ${di+1}</span>
+        <input class="ein dname" data-f="dname" data-d="${di}" value="${esc(d.name)}" maxlength="60">
+        <div class="ctl">
+          <button data-a="dup" data-d="${di}" title="move day up">↑</button>
+          <button data-a="ddn" data-d="${di}" title="move day down">↓</button>
+          <button class="del" data-a="ddel" data-d="${di}" title="delete day">×</button>
+        </div>
+        <label class="resttog"><input type="checkbox" data-a="rest" data-d="${di}" ${d.rest?'checked':''}>😴 rest day</label>
+      </div>`;
+      if(d.rest){
+        body=`<div class="restcard"><div class="z">😴</div><div class="r1">REST DAY</div></div>`;
+      } else {
+        d.ex.forEach((e,xi)=>{ body+=exEditHtml(e,di,xi,xi===d.ex.length-1); });
+        body+=`<button class="addex" data-a="xadd" data-d="${di}">+ add exercise</button>`;
+      }
+    } else {
+      head=`<div class="dh">
+        <span class="daynum${d.rest?' rest':''}">Day ${di+1}</span>
+        <h3>${d.rest?'😴 Rest':esc(d.name)}</h3>
+      </div>`;
+      if(d.rest){
+        body=`<div class="restcard">
+          <div class="z">😴</div><div class="r1">REST &amp; GROW</div>
+          <div class="r2">Recovery is where the muscle is built.<br>Flip the <a href="index.html">Nutrition tab</a> to <b>Rest day</b> — same meals, no gym sugars.</div>
+        </div>`;
+      } else {
+        ssGroups(d.ex).forEach(g=>{
+          if(g.to>g.from){
+            body+=`<div class="ssgroup"><span class="sstag">Superset</span>`;
+            for(let i=g.from;i<=g.to;i++) body+=exViewHtml(d.ex[i]);
+            body+=`</div>`;
+          } else {
+            body+=exViewHtml(d.ex[g.from]);
+          }
+        });
+        if(!d.ex.length) body=`<div class="restcard"><div class="r2">No exercises yet — hit ✏️ Edit plan to add some.</div></div>`;
+      }
+    }
+    card.innerHTML=head+body;
+    box.appendChild(card);
+  });
+
+  if(editMode){
+    const add=document.createElement('button');
+    add.className='addday'; add.textContent='+ add day';
+    add.onclick=()=>{ program.days.push({name:'New Day', rest:false, ex:[]}); mutated(); render(); };
+    box.appendChild(add);
+  }
+
+  document.getElementById('editHint').style.display = editMode?'':'none';
+  document.getElementById('editBtn').textContent = editMode?'✅ Done editing':'✏️ Edit plan';
+  document.getElementById('editBtn').classList.toggle('editing',editMode);
+  document.getElementById('planTitle').textContent = editMode
+    ? 'Editing — everything is click-to-change'
+    : 'Your Week — tap Edit to change anything';
+
+  wire(box);
+}
+
+function wire(box){
+  // structural buttons
+  box.querySelectorAll('[data-a]').forEach(el=>{
+    const a=el.dataset.a, di=+el.dataset.d, xi=+el.dataset.x;
+    if(a==='ss'||a==='rest'){ el.onchange=()=>act(a,di,xi,el.checked); }
+    else el.onclick=()=>act(a,di,xi);
+  });
+  // text fields: update model live, no re-render (keeps focus)
+  box.querySelectorAll('.ein').forEach(inp=>{
+    inp.oninput=()=>{
+      const di=+inp.dataset.d, f=inp.dataset.f;
+      if(f==='dname'){ program.days[di].name=inp.value; }
+      else { program.days[di].ex[+inp.dataset.x][f]=inp.value; }
+      mutated();
+    };
+  });
+}
+
+function act(a,di,xi,val){
+  const days=program.days;
+  if(a==='xup'&&xi>0){ const e=days[di].ex; [e[xi-1],e[xi]]=[e[xi],e[xi-1]]; }
+  else if(a==='xdn'&&xi<days[di].ex.length-1){ const e=days[di].ex; [e[xi+1],e[xi]]=[e[xi],e[xi+1]]; }
+  else if(a==='xdel'){ days[di].ex.splice(xi,1); }
+  else if(a==='xadd'){ days[di].ex.push({name:'', sets:'3', reps:'8–12', note:'', ss:false}); }
+  else if(a==='ss'){ days[di].ex[xi].ss=!!val; }
+  else if(a==='dup'&&di>0){ [days[di-1],days[di]]=[days[di],days[di-1]]; }
+  else if(a==='ddn'&&di<days.length-1){ [days[di+1],days[di]]=[days[di],days[di+1]]; }
+  else if(a==='ddel'){ if(days.length<=1){ toast('Keep at least one day'); return; } if(!confirm(`Delete Day ${di+1} — ${days[di].name}?`)) return; days.splice(di,1); }
+  else if(a==='rest'){ days[di].rest=!!val; }
+  else return;
+  mutated(); render();
+  if(a==='xadd'){ const ins=[...document.querySelectorAll(`.ein.nm[data-d="${di}"]`)]; const last=ins[ins.length-1]; if(last) last.focus(); }
+}
+
+function mutated(){
+  if(activeProfile) persistActive();
+  else { guestDirty=true; renderProfileBar(); }
+}
+
+/* ============================================================
+   COPY PLAN
+   ============================================================ */
+function copyPlan(){
+  let s='CARBMAXX — training split\n\n';
+  program.days.forEach((d,di)=>{
+    s+=`DAY ${di+1} — ${d.rest?'REST':d.name.toUpperCase()}\n`;
+    if(!d.rest){
+      ssGroups(d.ex).forEach(g=>{
+        if(g.to>g.from){
+          const names=d.ex.slice(g.from,g.to+1).map(e=>e.name).join(' + ');
+          const e0=d.ex[g.from];
+          s+=`  Superset: ${names} — ${e0.sets} × ${e0.reps}\n`;
+          for(let i=g.from;i<=g.to;i++){ if(d.ex[i].note) s+=`      (${d.ex[i].note})\n`; }
+        } else {
+          const e=d.ex[g.from];
+          s+=`  ${e.name} — ${e.sets} × ${e.reps}${e.note?`  (${e.note})`:''}\n`;
+        }
+      });
+    }
+    s+='\n';
+  });
+  navigator.clipboard.writeText(s).then(()=>toast('Plan copied ✓')).catch(()=>toast('Copy failed'));
+}
+
+/* ============================================================
+   PROFILES — same hardened sync as the nutrition page
+   ============================================================ */
+let FIREBASE_DB = "https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.app/";
+const PKEY='carbmaxx_workout_profiles_v1';
+function cloudOn(){ return /^https:\/\/[^\s"']+\.(firebaseio\.com|firebasedatabase\.app)/i.test(FIREBASE_DB); }
+function cloudUrl(name){ return FIREBASE_DB.replace(/\/+$/,'') + '/carbmaxx/workouts' + (name?('/'+encodeURIComponent(name)):'') + '.json'; }
+function validName(n){ return /^[a-z0-9_\-]{1,20}$/.test(n); }
+
+function loadProfiles(){ try{return JSON.parse(localStorage.getItem(PKEY))||{};}catch(e){return {};} }
+function saveProfiles(o){ try{localStorage.setItem(PKEY,JSON.stringify(o));}catch(e){} }
+function snapshot(){ const s=normProgram(program); s.updatedAt=Date.now(); return s; }
+function mergeProfiles(local,cloud){
+  const out=Object.assign({},local);
+  Object.keys(cloud||{}).forEach(n=>{
+    if(!validName(n) || !cloud[n] || typeof cloud[n]!=='object') return;
+    const l=out[n];
+    if(!l || (cloud[n].updatedAt||0) >= (l.updatedAt||0)) out[n]=cloud[n];
+  });
+  return out;
+}
+
+let cloudTimer=null, cloudPendName=null, cloudPendSnap=null, hydrating=false;
+const cloudInflight={};
+function cloudPut(name,snap){
+  if(!cloudOn()) return;
+  setCloudStatus('saving');
+  const p=fetch(cloudUrl(name),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(snap),keepalive:true})
+    .then(r=>{ if(!r.ok) throw 0; setCloudStatus('saved'); }).catch(()=>setCloudStatus('offline'));
+  cloudInflight[name]=p;
+  p.finally(()=>{ if(cloudInflight[name]===p) delete cloudInflight[name]; });
+}
+function flushCloud(){
+  if(cloudTimer){ clearTimeout(cloudTimer); cloudTimer=null;
+    if(cloudPendName) cloudPut(cloudPendName,cloudPendSnap);
+    cloudPendName=cloudPendSnap=null; }
+}
+window.addEventListener('pagehide',flushCloud);
+function persistActive(){
+  if(!activeProfile || hydrating) return;
+  const snap=snapshot();
+  const all=loadProfiles(); all[activeProfile]=snap; saveProfiles(all);
+  if(cloudOn()){
+    clearTimeout(cloudTimer);
+    cloudPendName=activeProfile; cloudPendSnap=snap;
+    cloudTimer=setTimeout(()=>{ cloudTimer=null; const n=cloudPendName, s=cloudPendSnap; cloudPendName=cloudPendSnap=null; cloudPut(n,s); },700);
+  }
+}
+async function cloudFetchAll(){
+  const r=await fetch(cloudUrl()); if(!r.ok) throw new Error('http '+r.status);
+  return (await r.json())||{};
+}
+async function cloudRefresh(){
+  if(!cloudOn()) return;
+  try{ const c=await cloudFetchAll(); saveProfiles(mergeProfiles(loadProfiles(), c)); renderProfileBar(); setCloudStatus('synced'); }
+  catch(e){ setCloudStatus('offline'); }
+}
+function setCloudStatus(s){
+  const el=document.getElementById('pbMode'); if(!el) return;
+  if(!cloudOn()){ el.textContent='💾 this browser only'; el.className='pb-mode'; return; }
+  const map={synced:'☁ cloud synced',saved:'☁ saved',saving:'☁ saving…',offline:'⚠ cloud offline — using this browser'};
+  el.textContent=map[s]||'☁ cloud sync on';
+  el.className='pb-mode '+(s==='offline'?'off':'cloud');
+}
+function applySnapshot(snap){
+  program=normProgram(snap);
+  hydrating=true;
+  try{ render(); } finally{ hydrating=false; }
+}
+function renderProfileBar(){
+  const lab=document.getElementById('pbActive');
+  lab.textContent = activeProfile ? ('● '+activeProfile+' · auto-saving')
+                  : (guestDirty ? 'Guest · edits NOT saved — create a profile' : 'Guest · default plan');
+  lab.classList.toggle('live',!!activeProfile);
+  setCloudStatus('synced');
+  const all=loadProfiles(), names=Object.keys(all).sort();
+  const box=document.getElementById('pChips');
+  box.innerHTML = names.length
+    ? names.map(n=>`<span class="chip${n===activeProfile?' on':''}" data-p="${esc(n)}">${esc(n)}<span class="x" data-del="${esc(n)}" title="delete profile">×</span></span>`).join('')
+    : `<span style="color:var(--dim);font-size:12px">No saved profiles yet — type a name and hit Load / Create to keep your plan on all your devices.</span>`;
+  box.querySelectorAll('.chip').forEach(c=>c.onclick=e=>{ if(e.target.hasAttribute('data-del')) return; loadProfile(c.dataset.p); });
+  box.querySelectorAll('[data-del]').forEach(x=>x.onclick=e=>{ e.stopPropagation(); deleteProfile(x.getAttribute('data-del')); });
+}
+let loadSeq=0;
+async function loadProfile(name){
+  flushCloud();
+  const my=++loadSeq;
+  if(cloudOn()){
+    try{ const c=await cloudFetchAll(); saveProfiles(mergeProfiles(loadProfiles(), c)); setCloudStatus('synced'); }
+    catch(e){ setCloudStatus('offline'); }
+  }
+  if(my!==loadSeq) return;
+  const data=loadProfiles()[name];
+  if(!data) return;
+  activeProfile=name; guestDirty=false; applySnapshot(data);
+  document.getElementById('pName').value=name; renderProfileBar(); toast('Loaded "'+name+'"'+(cloudOn()?' ☁':''));
+}
+function profileLoadOrCreate(){
+  const name=document.getElementById('pName').value.trim().toLowerCase().replace(/[^a-z0-9_\-]/g,'').slice(0,20);
+  if(!name){ toast('Type a profile name (letters/numbers)'); return; }
+  document.getElementById('pName').value=name;
+  if(loadProfiles()[name]){ loadProfile(name); return; }
+  flushCloud();
+  activeProfile=name; guestDirty=false;
+  const snap=snapshot();
+  const all=loadProfiles(); all[name]=snap; saveProfiles(all);
+  if(cloudOn()) cloudPut(name,snap);
+  renderProfileBar(); toast('Created "'+name+'" — your current plan is saved'+(cloudOn()?' ☁':''));
+}
+function goGuest(){ flushCloud(); activeProfile=null; guestDirty=false; applySnapshot(DEFAULT_PROGRAM); document.getElementById('pName').value=''; renderProfileBar(); toast('Guest — default plan loaded'); }
+function deleteProfile(name){
+  if(!confirm(`Delete profile "${name}" and its plan?`)) return;
+  if(cloudPendName===name){ clearTimeout(cloudTimer); cloudTimer=null; cloudPendName=cloudPendSnap=null; }
+  else flushCloud();
+  const all=loadProfiles(); delete all[name]; saveProfiles(all);
+  if(cloudOn()){
+    const del=()=>fetch(cloudUrl(name),{method:'DELETE'}).catch(()=>{});
+    const inflight=cloudInflight[name];
+    inflight ? inflight.finally(del) : del();
+  }
+  if(activeProfile===name) goGuest(); else renderProfileBar();
+  toast('Deleted "'+name+'"');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.getElementById('editBtn').onclick=()=>{ editMode=!editMode; render(); };
+document.getElementById('copyBtn').onclick=copyPlan;
+document.getElementById('resetBtn').onclick=()=>{
+  if(!confirm('Reset to the default program? This overwrites the current plan'+(activeProfile?` saved on "${activeProfile}"`:'')+'.')) return;
+  program=deep(DEFAULT_PROGRAM); mutated(); render(); toast('Default plan restored');
+};
+document.getElementById('pLoad').onclick=profileLoadOrCreate;
+document.getElementById('pGuest').onclick=goGuest;
+document.getElementById('pName').addEventListener('keydown',e=>{ if(e.key==='Enter') profileLoadOrCreate(); });
+
+render();
+renderProfileBar();
+cloudRefresh();
+</script>
+</body>
+</html>
