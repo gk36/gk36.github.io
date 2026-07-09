@@ -124,6 +124,39 @@
   .addday:hover{border-color:var(--accent);color:var(--accent2)}
   .hint{font-size:11.5px;color:var(--dim);margin:10px 2px 0}
   .foot{margin-top:26px;text-align:center;color:var(--dim);font-size:12px;line-height:1.6}
+
+  /* ---- muscle chips ---- */
+  .mrow{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;align-items:center}
+  .mch{font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:2.5px 9px;border-radius:999px;border:1px solid;line-height:1.5;white-space:nowrap}
+  .mch.rm{cursor:pointer}
+  .mch.rm:hover{filter:brightness(1.35)}
+  .madd{background:transparent;border:1px dashed var(--line2);color:var(--dim);border-radius:999px;font-size:10px;font-weight:700;padding:2.5px 6px;cursor:pointer;max-width:96px}
+  .madd:focus{outline:none;border-color:var(--accent)}
+  .ex.view{cursor:pointer;transition:border-color .12s, transform .12s}
+  .ex.view:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .ex .peek{float:right;color:var(--dim);font-size:11px;margin-left:8px}
+
+  /* ---- modals ---- */
+  .modal{position:fixed;inset:0;background:rgba(8,9,12,.74);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:40;padding:14px;overscroll-behavior:contain}
+  .modal[hidden]{display:none}
+  .mbox{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line2);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.6);width:100%;max-width:560px;max-height:92vh;overflow:auto;padding:18px;overscroll-behavior:contain}
+  .mbox.code{max-width:660px}
+  .mhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .mhead h3{margin:0;font-size:18px}
+  .mclose{background:var(--card2);border:1px solid var(--line2);color:var(--muted);width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer;line-height:1;flex:none}
+  .mclose:hover{border-color:var(--pro);color:var(--pro)}
+  .exmSr{font-variant-numeric:tabular-nums;font-weight:800;font-size:15px;color:var(--carb);margin-top:8px}
+  .exmSr small{color:var(--dim);font-weight:600;font-size:11.5px}
+  .stage{position:relative;background:radial-gradient(480px 300px at 50% 0%,rgba(255,106,61,.10),transparent 70%),#0a0b0f;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:12px}
+  .stage canvas{width:100%;height:340px;display:block;touch-action:none;cursor:grab}
+  .stagehint{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:10.5px;color:var(--dim);pointer-events:none}
+  #exLoad{position:absolute;inset:0;display:grid;place-items:center;color:var(--dim);font-size:13px;pointer-events:none}
+  .exmNote{font-size:12.5px;color:var(--muted);margin-top:12px;background:var(--bg);border:1px dashed var(--line2);border-radius:11px;padding:10px 13px}
+  .mhint{font-size:12.5px;color:var(--muted);margin:10px 0}
+  #codeTa{width:100%;height:300px;background:#0a0b0f;border:1px solid var(--line2);border-radius:12px;color:var(--txt);font-family:Consolas,Menlo,monospace;font-size:12px;padding:12px;resize:vertical;white-space:pre;overflow:auto}
+  #codeTa:focus{outline:none;border-color:var(--accent)}
+  .mbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .codeerr{color:var(--pro);font-size:12px;font-weight:700;flex:1;min-width:120px}
 </style>
 </head>
 <body>
@@ -165,6 +198,7 @@
     <p class="section-title" style="margin:0" id="planTitle">Your Week — tap Edit to change anything</p>
     <div class="right">
       <button class="btn" id="copyBtn">📋 Copy plan</button>
+      <button class="btn" id="codeBtn">{ } Plan code</button>
       <button class="btn danger" id="resetBtn">↺ Reset to default</button>
       <button class="btn primary" id="editBtn">✏️ Edit plan</button>
     </div>
@@ -177,6 +211,43 @@
   </div>
 
   <div class="foot">Built around your split · supersets share equipment on purpose — zero setup change between the two moves.</div>
+</div>
+
+<!-- ============ EXERCISE 3D POPUP ============ -->
+<div class="modal" id="exModal" hidden>
+  <div class="mbox">
+    <div class="mhead">
+      <div style="min-width:0">
+        <h3 id="exmName"></h3>
+        <div class="mrow" id="exmChips"></div>
+      </div>
+      <button class="mclose" id="exmClose">×</button>
+    </div>
+    <div class="exmSr" id="exmSr"></div>
+    <div class="stage">
+      <canvas id="exCanvas"></canvas>
+      <div id="exLoad">loading 3D…</div>
+      <div class="stagehint">drag to rotate · scroll / pinch to zoom</div>
+    </div>
+    <div class="exmNote" id="exmNote" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ============ PLAN CODE (AI) MODAL ============ -->
+<div class="modal" id="codeModal" hidden>
+  <div class="mbox code">
+    <div class="mhead"><h3>{ } Plan code</h3><button class="mclose" id="codeClose">×</button></div>
+    <p class="mhint">Your whole program as JSON. <b>🤖 Copy AI prompt</b> copies it with full instructions —
+      paste that into ChatGPT/Claude, describe what you want changed, then paste the JSON it returns back
+      in here and hit <b>Apply</b>.</p>
+    <textarea id="codeTa" spellcheck="false" autocomplete="off"></textarea>
+    <div class="mbtns">
+      <button class="btn" id="codeCopy">📋 Copy JSON</button>
+      <button class="btn" id="codeAI">🤖 Copy AI prompt</button>
+      <span class="codeerr" id="codeErr"></span>
+      <button class="btn primary" id="codeApply">✔ Apply to my plan</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast">Saved ✓</div>
@@ -237,10 +308,98 @@ const DEFAULT_PROGRAM = { days: [
 ]};
 
 /* ============================================================
+   MUSCLES & ANIMATION INFERENCE
+   ============================================================ */
+const MUSCLES={
+  frontdelt:{n:'Front Delts', c:'#ffa94d'},
+  sidedelt: {n:'Side Delts',  c:'#ff8c42'},
+  reardelt: {n:'Rear Delts',  c:'#ff6a3d'},
+  biceps:   {n:'Biceps',      c:'#f472b6'},
+  triceps:  {n:'Triceps',     c:'#c084fc'},
+  forearms: {n:'Forearms',    c:'#fb7185'},
+  chest:    {n:'Chest',       c:'#ff5a5f'},
+  upperchest:{n:'Upper Chest',c:'#ff7f9e'},
+  lats:     {n:'Lats',        c:'#38bdf8'},
+  upperback:{n:'Upper Back',  c:'#60a5fa'},
+  traps:    {n:'Traps',       c:'#818cf8'},
+  lowerback:{n:'Lower Back',  c:'#7dd3fc'},
+  quads:    {n:'Quads',       c:'#3ecf8e'},
+  hamstrings:{n:'Hamstrings', c:'#2fae76'},
+  glutes:   {n:'Glutes',      c:'#86efac'},
+  calves:   {n:'Calves',      c:'#14b8a6'},
+  abs:      {n:'Abs',         c:'#f6c453'},
+};
+const ANIMKEYS=['press','curl','skullcrusher','pushdown','lateralraise','rearfly','row','pullup','chestpress','fly','pullover','facepull','squat','splitsquat','kneext','hinge','legcurl','calfraise','hangraise','crunch','carry','wristcurl'];
+
+/* keyword inference — used for the default plan, older saved plans, and AI-written exercises without tags */
+function inferMuscles(name){
+  const n=String(name).toLowerCase();
+  const has=(...w)=>w.some(x=>n.includes(x));
+  if(has('wrist')) return ['forearms'];
+  if(has('leg curl')) return ['hamstrings'];
+  if(has('leg extension')) return ['quads'];
+  if(has('leg raise','crunch','sit-up','situp','plank','ab wheel')) return ['abs'];
+  if(has('calf')) return ['calves'];
+  if(has('deadlift','rdl','good morning','back extension')) return ['hamstrings','glutes','lowerback'];
+  if(has('split squat','lunge','step-up','step up')) return ['quads','glutes'];
+  if(has('squat','leg press','hack')) return ['quads','glutes'];
+  if(has('hip thrust','glute')) return ['glutes','hamstrings'];
+  if(has('reverse curl','reverse ez')) return ['forearms','biceps'];
+  if(has('hammer')) return ['biceps','forearms'];
+  if(has('curl')) return ['biceps'];
+  if(has('dip')) return ['triceps','chest'];
+  if(has('skull','pushdown','push-down','tricep','kickback','close-grip','jm press','overhead extension')) return ['triceps'];
+  if(has('lateral raise','lat raise','side raise')) return ['sidedelt'];
+  if(has('rear delt','face pull','facepull','reverse fly','reverse flye','reverse pec')) return ['reardelt','upperback'];
+  if(has('front raise')) return ['frontdelt'];
+  if(has('shoulder press','overhead press','ohp','arnold','military')) return ['frontdelt','sidedelt','triceps'];
+  if(has('pull-up','pullup','pull up','chin','pulldown','pull-down')) return ['lats','biceps'];
+  if(has('pullover')) return ['lats','chest'];
+  if(has('shrug')) return ['traps'];
+  if(has('row')) return ['upperback','lats'];
+  if(has('incline')&&has('press','fly','flye','flies')) return ['upperchest','frontdelt','triceps'];
+  if(has('bench','chest press','pec','fly','flye','flies')) return ['chest','frontdelt','triceps'];
+  if(has('carry','farmer','hold','grip')) return ['forearms','traps'];
+  if(has('extension')) return ['triceps'];
+  if(has('press')) return ['frontdelt','triceps'];
+  return [];
+}
+function inferAnim(name){
+  const n=String(name).toLowerCase();
+  const has=(...w)=>w.some(x=>n.includes(x));
+  if(has('wrist')) return 'wristcurl';
+  if(has('leg curl')) return 'legcurl';
+  if(has('leg extension')) return 'kneext';
+  if(has('hanging')&&has('raise')) return 'hangraise';
+  if(has('leg raise')) return 'hangraise';
+  if(has('crunch','sit-up','situp')) return 'crunch';
+  if(has('calf')) return 'calfraise';
+  if(has('deadlift','rdl','good morning')) return 'hinge';
+  if(has('split squat','lunge','step-up','step up')) return 'splitsquat';
+  if(has('squat','leg press','hack')) return 'squat';
+  if(has('hammer','curl')&&!has('leg')) return 'curl';
+  if(has('skull','overhead extension')) return 'skullcrusher';
+  if(has('pushdown','push-down','kickback')) return 'pushdown';
+  if(has('dip')) return 'chestpress';
+  if(has('lateral raise','lat raise','side raise','front raise')) return 'lateralraise';
+  if(has('rear delt','reverse fly','reverse flye','reverse pec')) return 'rearfly';
+  if(has('face pull','facepull')) return 'facepull';
+  if(has('shoulder press','overhead press','ohp','arnold','military','machine shoulder')) return 'press';
+  if(has('pull-up','pullup','pull up','chin','pulldown','pull-down')) return 'pullup';
+  if(has('pullover')) return 'pullover';
+  if(has('row')) return 'row';
+  if(has('fly','flye','flies','pec deck')) return 'fly';
+  if(has('bench','chest press','press')) return 'chestpress';
+  if(has('carry','farmer','hold')) return 'carry';
+  if(has('extension')) return 'skullcrusher';
+  return '';
+}
+
+/* ============================================================
    STATE
    ============================================================ */
 const deep = o => JSON.parse(JSON.stringify(o));
-let program = deep(DEFAULT_PROGRAM);
+let program;   // set below once normProgram exists (tags/anims are inferred into it)
 let editMode = false;
 let activeProfile = null;
 let guestDirty = false;
@@ -251,15 +410,20 @@ function normProgram(p){
   const out = days.slice(0,14).map(d=>({
     name: String((d&&d.name)||'Day').slice(0,60),
     rest: !!(d&&d.rest),
-    ex: (Array.isArray(d&&d.ex)?d.ex:[]).slice(0,25).map(e=>({
-      name: String((e&&e.name)||'Exercise').slice(0,80),
-      sets: String((e&&e.sets)!=null?e.sets:'3').slice(0,6),
-      reps: String((e&&e.reps)!=null?e.reps:'10').slice(0,20),
-      note: String((e&&e.note)||'').slice(0,180),
-      ss: !!(e&&e.ss),
-    })),
+    ex: (Array.isArray(d&&d.ex)?d.ex:[]).slice(0,25).map(e=>{
+      const name=String((e&&e.name)||'Exercise').slice(0,80);
+      return {
+        name,
+        sets: String((e&&e.sets)!=null?e.sets:'3').slice(0,6),
+        reps: String((e&&e.reps)!=null?e.reps:'10').slice(0,20),
+        note: String((e&&e.note)||'').slice(0,180),
+        ss: !!(e&&e.ss),
+        m: Array.isArray(e&&e.m) ? e.m.filter(k=>Object.prototype.hasOwnProperty.call(MUSCLES,k)).slice(0,4) : inferMuscles(name),
+        anim: (e&&typeof e.anim==='string'&&ANIMKEYS.includes(e.anim)) ? e.anim : inferAnim(name),
+      };
+    }),
   }));
-  return out.length ? {days:out} : deep(DEFAULT_PROGRAM);
+  return out.length ? {days:out} : normProgram(deep(DEFAULT_PROGRAM));   // fallback still gets tags/anims
 }
 
 /* ============================================================
@@ -280,16 +444,28 @@ function ssGroups(list){
   return groups;
 }
 
-function exViewHtml(e){
-  return `<div class="ex">
+function chipHtml(k,extra){
+  if(!Object.prototype.hasOwnProperty.call(MUSCLES,k)) return '';
+  const m=MUSCLES[k];
+  return `<span class="mch${extra?' '+extra.cls:''}" style="color:${m.c};border-color:${m.c}55;background:${m.c}14"${extra?` data-a="${extra.a}" data-d="${extra.d}" data-x="${extra.x}" data-k="${k}" title="remove"`:''}>${m.n}${extra?' ×':''}</span>`;
+}
+function muscleChips(e){
+  const ms=Array.isArray(e.m)?e.m:inferMuscles(e.name);
+  return ms.length?`<div class="mrow">${ms.map(k=>chipHtml(k)).join('')}</div>`:'';
+}
+function exViewHtml(e,di,xi){
+  return `<div class="ex view" data-a="open" data-d="${di}" data-x="${xi}" title="tap for muscle map & demo">
     <div class="xr">
       <div class="nm">${esc(e.name)}</div>
       <div class="sr">${esc(e.sets)} × ${esc(e.reps)}</div>
     </div>
+    ${muscleChips(e)}
     ${e.note?`<div class="nt">${esc(e.note)}</div>`:''}
   </div>`;
 }
 function exEditHtml(e,di,xi,last){
+  const ms=e.m||[];
+  const remaining=Object.keys(MUSCLES).filter(k=>!ms.includes(k));
   return `<div class="ex edit">
     <div class="xr">
       <div class="ctl">
@@ -302,6 +478,10 @@ function exEditHtml(e,di,xi,last){
       <span class="xx">×</span>
       <input class="ein reps" data-f="reps" data-d="${di}" data-x="${xi}" value="${esc(e.reps)}" maxlength="20" placeholder="8–12">
       <input class="ein note" data-f="note" data-d="${di}" data-x="${xi}" value="${esc(e.note)}" maxlength="180" placeholder="note (optional)">
+    </div>
+    <div class="mrow">
+      ${ms.map(k=>chipHtml(k,{cls:'rm',a:'mdel',d:di,x:xi})).join('')}
+      ${ms.length<4?`<select class="madd" data-a="madd" data-d="${di}" data-x="${xi}"><option value="">+ muscle</option>${remaining.map(k=>`<option value="${k}">${MUSCLES[k].n}</option>`).join('')}</select>`:''}
     </div>
   </div>
   ${!last?`<label class="sstog${e.ss?' on':''}"><input type="checkbox" data-a="ss" data-d="${di}" data-x="${xi}" ${e.ss?'checked':''}>⛓ superset with next</label>`:''}`;
@@ -346,10 +526,10 @@ function render(){
         ssGroups(d.ex).forEach(g=>{
           if(g.to>g.from){
             body+=`<div class="ssgroup"><span class="sstag">Superset</span>`;
-            for(let i=g.from;i<=g.to;i++) body+=exViewHtml(d.ex[i]);
+            for(let i=g.from;i<=g.to;i++) body+=exViewHtml(d.ex[i],di,i);
             body+=`</div>`;
           } else {
-            body+=exViewHtml(d.ex[g.from]);
+            body+=exViewHtml(d.ex[g.from],di,g.from);
           }
         });
         if(!d.ex.length) body=`<div class="restcard"><div class="r2">No exercises yet — hit ✏️ Edit plan to add some.</div></div>`;
@@ -381,6 +561,13 @@ function wire(box){
   box.querySelectorAll('[data-a]').forEach(el=>{
     const a=el.dataset.a, di=+el.dataset.d, xi=+el.dataset.x;
     if(a==='ss'||a==='rest'){ el.onchange=()=>act(a,di,xi,el.checked); }
+    else if(a==='madd'){ el.onchange=()=>{ if(el.value) act(a,di,xi,el.value); }; }
+    else if(a==='mdel'){ el.onclick=()=>act(a,di,xi,el.dataset.k); }
+    else if(a==='open'){ el.onclick=ev=>{
+      const s=window.getSelection(); if(s&&!s.isCollapsed) return;             // don't hijack text selection
+      if(ev.target.closest&&ev.target.closest('a,button,input,select')) return;
+      openExercise(di,xi);
+    }; }
     else el.onclick=()=>act(a,di,xi);
   });
   // text fields: update model live, no re-render (keeps focus)
@@ -388,6 +575,13 @@ function wire(box){
     inp.oninput=()=>{
       const di=+inp.dataset.d, f=inp.dataset.f;
       if(f==='dname'){ program.days[di].name=inp.value; }
+      else if(f==='name'){
+        const e=program.days[di].ex[+inp.dataset.x];
+        // keep auto-tags in sync with the new name, but never clobber hand-picked ones
+        if((e.m||[]).join()===inferMuscles(e.name).join()) e.m=inferMuscles(inp.value);
+        if((e.anim||'')===inferAnim(e.name)) e.anim=inferAnim(inp.value);
+        e.name=inp.value;
+      }
       else { program.days[di].ex[+inp.dataset.x][f]=inp.value; }
       mutated();
     };
@@ -399,8 +593,10 @@ function act(a,di,xi,val){
   if(a==='xup'&&xi>0){ const e=days[di].ex; [e[xi-1],e[xi]]=[e[xi],e[xi-1]]; }
   else if(a==='xdn'&&xi<days[di].ex.length-1){ const e=days[di].ex; [e[xi+1],e[xi]]=[e[xi],e[xi+1]]; }
   else if(a==='xdel'){ days[di].ex.splice(xi,1); }
-  else if(a==='xadd'){ days[di].ex.push({name:'', sets:'3', reps:'8–12', note:'', ss:false}); }
+  else if(a==='xadd'){ days[di].ex.push({name:'', sets:'3', reps:'8–12', note:'', ss:false, m:[], anim:''}); }
   else if(a==='ss'){ days[di].ex[xi].ss=!!val; }
+  else if(a==='madd'){ const e=days[di].ex[xi]; e.m=e.m||[]; if(MKEYS.has(val)&&!e.m.includes(val)&&e.m.length<4) e.m.push(val); }
+  else if(a==='mdel'){ const e=days[di].ex[xi]; e.m=(e.m||[]).filter(k=>k!==val); }
   else if(a==='dup'&&di>0){ [days[di-1],days[di]]=[days[di],days[di-1]]; }
   else if(a==='ddn'&&di<days.length-1){ [days[di+1],days[di]]=[days[di],days[di+1]]; }
   else if(a==='ddel'){ if(days.length<=1){ toast('Keep at least one day'); return; } if(!confirm(`Delete Day ${di+1} — ${days[di].name}?`)) return; days.splice(di,1); }
@@ -565,17 +761,427 @@ function deleteProfile(name){
 }
 
 /* ============================================================
+   3D EXERCISE VIEWER
+   ============================================================ */
+const V={ready:false,renderer:null,scene:null,camera:null,pivot:null,F:null,mats:{},raf:0,t0:0,anim:'',lit:[],camY:1.05,dist:3.45};
+const d2r=x=>x*Math.PI/180;
+const osc=t=>(1-Math.cos(t*2*Math.PI))/2;
+
+let threeP=null;
+function ensureThree(){
+  if(window.THREE) return Promise.resolve();
+  if(!threeP){
+    threeP=new Promise((res,rej)=>{
+      const s=document.createElement('script'); s.src='vendor/three.min.js';
+      s.onload=()=>res(); s.onerror=()=>{ threeP=null; rej(new Error('no3d')); };
+      document.head.appendChild(s);
+    });
+  }
+  return threeP;
+}
+const MKEYS=new Set(Object.keys(MUSCLES));
+
+const SKIN_BASE=0xd7d1c6, MUSC_BASE=0xc7bfb1;   // anatomy-chart tones
+function buildFigure(){
+  const skin=new THREE.MeshStandardMaterial({color:SKIN_BASE,roughness:.62,metalness:.02});
+  const dark=new THREE.MeshStandardMaterial({color:0x2b303c,roughness:.75,metalness:.05});   // shorts + shoes
+  Object.keys(MUSCLES).forEach(k=>{ V.mats[k]=new THREE.MeshStandardMaterial({color:MUSC_BASE,roughness:.5,metalness:.02}); });
+  const mm=k=>V.mats[k];
+  const sph=(r,m,x,y,z,sx=1,sy=1,sz=1,rx=0,rz=0)=>{ const o=new THREE.Mesh(new THREE.SphereGeometry(r,22,16),m); o.position.set(x,y,z); o.scale.set(sx,sy,sz); o.rotation.x=rx; o.rotation.z=rz; return o; };
+  const taper=(rBot,rTop,len,m)=>{ const g=new THREE.Group();
+    g.add(new THREE.Mesh(new THREE.CylinderGeometry(rTop,rBot,len,18),m));
+    const a=new THREE.Mesh(new THREE.SphereGeometry(rTop,16,12),m); a.position.y=len/2;
+    const b=new THREE.Mesh(new THREE.SphereGeometry(rBot,16,12),m); b.position.y=-len/2;
+    g.add(a,b); return g; };
+  const at=(g,x,y,z)=>{ g.position.set(x,y,z); return g; };
+
+  const fig=new THREE.Group();
+  const hips=new THREE.Group(); hips.position.y=1.0; fig.add(hips);
+  hips.add(sph(.15,dark,0,.01,0,1.15,.78,.85));                          // shorts / pelvis
+  hips.add(sph(.10,mm('glutes'),-.075,-.015,-.105,1,1,.95));
+  hips.add(sph(.10,mm('glutes'), .075,-.015,-.105,1,1,.95));
+
+  const spine=new THREE.Group(); spine.position.y=.10; hips.add(spine);
+  // V-taper torso: broad chest tapering into the waist
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.165,.118,.34,20),skin); torso.position.y=.27; torso.scale.set(1.28,1,.78); spine.add(torso);
+  const waist=new THREE.Mesh(new THREE.CylinderGeometry(.118,.128,.16,20),skin); waist.position.y=.02; waist.scale.set(1.12,1,.8); spine.add(waist);
+  // six-pack on a rectus base
+  spine.add(sph(.075,mm('abs'),0,.13,.082,.95,1.5,.4));
+  for(let r=0;r<3;r++) for(let c=0;c<2;c++) spine.add(sph(.032,mm('abs'),(c?1:-1)*.034,.215-r*.062,.115,1,1.05,.55));
+  spine.add(sph(.05,skin,-.108,.10,.045,.7,1.5,.7));                     // obliques
+  spine.add(sph(.05,skin, .108,.10,.045,.7,1.5,.7));
+  spine.add(sph(.08,mm('lowerback'),0,.05,-.095,1.15,.8,.45));
+  // pecs + upper-chest shelf
+  spine.add(sph(.082,mm('chest'),-.082,.315,.10,1.3,.95,.5,-.15,-.08));
+  spine.add(sph(.082,mm('chest'), .082,.315,.10,1.3,.95,.5,-.15,.08));
+  spine.add(sph(.06,mm('upperchest'),0,.40,.085,2.3,.62,.5));
+  // lat wings for the V silhouette
+  spine.add(sph(.085,mm('lats'),-.125,.20,-.03,.62,1.75,.62,0,-.20));
+  spine.add(sph(.085,mm('lats'), .125,.20,-.03,.62,1.75,.62,0,.20));
+  spine.add(sph(.085,mm('upperback'),0,.34,-.09,1.7,1.0,.5));
+  // trap slope from neck to shoulders
+  spine.add(sph(.07,mm('traps'),-.10,.455,-.015,1.35,.6,.85,0,-.5));
+  spine.add(sph(.07,mm('traps'), .10,.455,-.015,1.35,.6,.85,0,.5));
+  spine.add(sph(.05,mm('traps'),0,.475,-.02,1.6,.5,.8));
+  const neck=new THREE.Mesh(new THREE.CylinderGeometry(.052,.058,.09,14),skin); neck.position.set(0,.505,0); spine.add(neck);
+  spine.add(sph(.092,skin,0,.625,.008,.88,1.18,1.0));                    // head
+  spine.add(sph(.035,skin,0,.582,.072,1.1,.7,.6));                       // jaw
+
+  const F={fig,hips,spine};
+  [['L',-1],['R',1]].forEach(([S,s])=>{
+    const sh=new THREE.Group(); sh.position.set(s*.24,.415,0); spine.add(sh);
+    sh.add(sph(.062,mm('frontdelt'),s*.012,.015,.052,1.05,.95,.9));
+    sh.add(sph(.068,mm('sidedelt'),s*.052,.02,0,.95,1.05,1.05));
+    sh.add(sph(.06,mm('reardelt'),s*.012,.015,-.05,1.05,.95,.9));
+    sh.add(at(taper(.045,.052,.24,skin),0,-.145,0));                     // tapered upper arm
+    sh.add(sph(.05,mm('biceps'),0,-.14,.036,.95,1.55,.9));               // fusiform biceps
+    sh.add(sph(.052,mm('triceps'),0,-.15,-.038,.95,1.6,.9));
+    const el=new THREE.Group(); el.position.set(0,-.30,0); sh.add(el);
+    el.add(at(taper(.028,.046,.22,mm('forearms')),0,-.125,0));           // tapered forearm
+    const hand=new THREE.Group(); hand.position.set(0,-.26,0); el.add(hand);
+    hand.add(sph(.048,skin,0,-.025,0,.75,1.15,.5));
+    F['sh'+S]=sh; F['el'+S]=el; F['hand'+S]=hand;
+  });
+  [['L',-1],['R',1]].forEach(([S,s])=>{
+    const hip=new THREE.Group(); hip.position.set(s*.115,-.055,0); hips.add(hip);
+    hip.add(at(taper(.055,.085,.34,skin),0,-.21,0));                     // tapered thigh
+    hip.add(sph(.03,dark,0,-.05,0,3.0,1.7,2.5));                          // shorts leg band
+    hip.add(sph(.075,mm('quads'),0,-.185,.05,.95,1.75,.62));
+    hip.add(sph(.042,mm('quads'),s*-.02,-.345,.042,.9,1.0,.7));          // vastus medialis teardrop
+    hip.add(sph(.068,mm('hamstrings'),0,-.19,-.05,.95,1.7,.6));
+    const knee=new THREE.Group(); knee.position.set(0,-.43,0); hip.add(knee);
+    knee.add(sph(.048,skin,0,0,.01,.9,.8,.9));
+    knee.add(at(taper(.026,.048,.30,skin),0,-.19,0));                    // tapered shin
+    knee.add(sph(.045,mm('calves'),-.018,-.135,-.038,.8,1.5,.75));       // twin gastroc heads
+    knee.add(sph(.045,mm('calves'), .018,-.135,-.038,.8,1.5,.75));
+    const ank=new THREE.Group(); ank.position.set(0,-.40,0); knee.add(ank);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(.085,.055,.2),dark); foot.position.set(0,-.015,.045); ank.add(foot);
+    ank.add(sph(.04,dark,0,-.025,.14,1.1,.6,.8));                        // shoe toe
+    F['hip'+S]=hip; F['knee'+S]=knee; F['ank'+S]=ank;
+  });
+  return F;
+}
+
+/* ---------- equipment: dumbbells, barbell, cable, pull-up bar, bench, machine seat ---------- */
+function buildEquipment(F){
+  const iron=new THREE.MeshStandardMaterial({color:0x22262f,roughness:.45,metalness:.65});
+  const steel=new THREE.MeshStandardMaterial({color:0x9aa1ad,roughness:.3,metalness:.85});
+  const padM=new THREE.MeshStandardMaterial({color:0x30364a,roughness:.85});
+  const cylX=(r,len,m)=>{ const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,16),m); o.rotation.z=Math.PI/2; return o; };
+  const E={};
+  function dumbbell(){
+    const g=new THREE.Group();
+    g.add(cylX(.015,.17,steel));
+    [-1,1].forEach(s=>{
+      const p=new THREE.Mesh(new THREE.CylinderGeometry(.052,.052,.055,18),iron); p.rotation.z=Math.PI/2; p.position.x=s*.10; g.add(p);
+      const c=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.024,10),steel); c.rotation.z=Math.PI/2; c.position.x=s*.135; g.add(c);
+    });
+    return g;
+  }
+  E.dbL=dumbbell(); E.dbL.position.set(0,-.045,0); F.handL.add(E.dbL);
+  E.dbR=dumbbell(); E.dbR.position.set(0,-.045,0); F.handR.add(E.dbR);
+  E.bar=new THREE.Group();
+  E.bar.add(cylX(.014,1.8,steel));
+  [-1,1].forEach(s=>{
+    const p1=new THREE.Mesh(new THREE.CylinderGeometry(.115,.115,.045,22),iron); p1.rotation.z=Math.PI/2; p1.position.x=s*.72; E.bar.add(p1);
+    const p2=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,.04,20),iron); p2.rotation.z=Math.PI/2; p2.position.x=s*.775; E.bar.add(p2);
+  });
+  V.pivot.add(E.bar);
+  E.pullbar=new THREE.Group();
+  E.pullbar.add(cylX(.018,1.15,steel));
+  [-1,1].forEach(s=>{ const post=new THREE.Mesh(new THREE.CylinderGeometry(.02,.02,.45,10),iron); post.position.set(s*.55,.22,0); E.pullbar.add(post); });
+  E.pullbar.position.set(0,2.26,0); V.pivot.add(E.pullbar);
+  E.cableGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  E.cable=new THREE.Line(E.cableGeo,new THREE.LineBasicMaterial({color:0x8a919e}));
+  V.pivot.add(E.cable);
+  E.handle=cylX(.012,.42,steel); V.pivot.add(E.handle);
+  E.bench=new THREE.Group();
+  const pad=new THREE.Mesh(new THREE.BoxGeometry(.34,.07,1.3),padM); E.bench.add(pad);
+  [-.5,.5].forEach(z=>{ const post=new THREE.Mesh(new THREE.CylinderGeometry(.024,.024,.38,10),iron); post.position.set(0,-.21,z); E.bench.add(post);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(.3,.04,.08),iron); foot.position.set(0,-.4,z); E.bench.add(foot); });
+  E.bench.position.y=.42; V.pivot.add(E.bench);
+  E.seat=new THREE.Group();
+  const sp=new THREE.Mesh(new THREE.BoxGeometry(.44,.08,.46),padM); E.seat.add(sp);
+  const bk=new THREE.Mesh(new THREE.BoxGeometry(.44,.52,.07),padM); bk.position.set(0,.27,-.25); bk.rotation.x=.12; E.seat.add(bk);
+  const base=new THREE.Mesh(new THREE.BoxGeometry(.36,.44,.32),iron); base.position.y=-.28; E.seat.add(base);
+  V.pivot.add(E.seat);
+  E.roller=cylX(.045,.46,padM); E.roller.position.set(.115,-.345,.10); F.kneeL.add(E.roller);
+  E.world=[E.bar,E.pullbar,E.cable,E.handle,E.bench,E.seat];
+  return E;
+}
+/* which gear each movement uses */
+const EQUIP={
+  press:{db:1}, curl:{db:1}, lateralraise:{db:1}, rearfly:{db:1}, fly:{db:1}, splitsquat:{db:1},
+  calfraise:{db:1}, carry:{db:1}, wristcurl:{db:1}, pullover:{db:1},
+  hinge:{barHands:1}, row:{barHands:1},
+  squat:{barBack:1},
+  skullcrusher:{barHands:1, benchFlat:1},
+  chestpress:{barHands:1, benchIncline:1},
+  pushdown:{cable:[0,2.35,.62], handle:1}, facepull:{cable:[0,1.6,1.4], handle:1}, crunch:{cable:[0,2.5,.55], handle:1},
+  pullup:{pullbar:1}, hangraise:{pullbar:1},
+  kneext:{seat:1, roller:1},
+};
+function applyEquip(anim){
+  const E=V.E; if(!E) return;
+  const q=EQUIP[anim]||{};
+  E.dbL.visible=E.dbR.visible=!!q.db;
+  E.world.forEach(o=>o.visible=false);
+  E.roller.visible=!!q.roller;
+  V.barMode='';
+  if(q.barHands){ E.bar.visible=true; V.barMode='hands'; V.pivot.add(E.bar); }
+  if(q.barBack){ E.bar.visible=true; V.F.spine.add(E.bar); E.bar.position.set(0,.46,-.085); E.bar.quaternion.set(0,0,0,1); }
+  if(q.pullbar) E.pullbar.visible=true;
+  if(q.cable){ E.cable.visible=true; E.handle.visible=!!q.handle; V.cableAnchor=q.cable; }
+  if(q.benchFlat){ E.bench.rotation.x=0; E.bench.position.set(0,.42,-.35); E.bench.visible=true; }
+  if(q.benchIncline){ E.bench.rotation.x=d2r(42); E.bench.position.set(0,.66,-.19); E.bench.visible=true; }
+  if(q.seat){ E.seat.visible=true; E.seat.position.set(0,.56,-.10); }
+}
+function updateEquip(){
+  const E=V.E; if(!E) return;
+  const needBar=V.barMode==='hands'&&E.bar.visible, needCable=E.cable.visible;
+  if(!needBar&&!needCable) return;
+  const a=new THREE.Vector3(), b=new THREE.Vector3();
+  V.F.handL.getWorldPosition(a); V.F.handR.getWorldPosition(b);
+  V.pivot.worldToLocal(a); V.pivot.worldToLocal(b);
+  const mid=a.clone().add(b).multiplyScalar(.5);
+  const dir=b.clone().sub(a); if(dir.lengthSq()<1e-6) dir.set(1,0,0); dir.normalize();
+  if(needBar){
+    E.bar.position.copy(mid);
+    E.bar.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  }
+  if(needCable){
+    const anc=V.cableAnchor||[0,2.5,.3];
+    E.cableGeo.setFromPoints([new THREE.Vector3(anc[0],anc[1],anc[2]),mid]);
+    E.handle.position.copy(mid);
+    E.handle.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir);
+  }
+}
+
+/* zero everything, slight natural stance */
+function resetPose(F){
+  ['shL','shR','elL','elR','handL','handR','hipL','hipR','kneeL','kneeR','ankL','ankR','spine','hips'].forEach(k=>F[k].rotation.set(0,0,0));
+  F.fig.position.set(0,0,0);
+  F.fig.rotation.set(0,0,0);
+  F.shL.rotation.z=-.10; F.shR.rotation.z=.10;
+}
+/* symmetric arm setter — flex: forward raise°, abd: out-to-side°, elbow: bend° */
+function arms(F,{flex=0,abd=0,elbow=0}={}){
+  F.shL.rotation.set(-d2r(flex),0,-d2r(abd)-.10);
+  F.shR.rotation.set(-d2r(flex),0, d2r(abd)+.10);
+  F.elL.rotation.x=-d2r(elbow); F.elR.rotation.x=-d2r(elbow);
+}
+function legs(F,{hip=0,knee=0,ank=0}={}){
+  F.hipL.rotation.x=-d2r(hip); F.hipR.rotation.x=-d2r(hip);
+  F.kneeL.rotation.x=d2r(knee); F.kneeR.rotation.x=d2r(knee);
+  F.ankL.rotation.x=d2r(ank);  F.ankR.rotation.x=d2r(ank);
+}
+const ANIMS={
+  press:       (F,o)=>{ arms(F,{abd:95+75*o, elbow:95-88*o}); },
+  curl:        (F,o)=>{ arms(F,{flex:10*o, elbow:15+115*o}); },
+  skullcrusher:(F,o)=>{ F.fig.rotation.x=-Math.PI/2; F.fig.position.set(0,.56,.85); legs(F,{hip:-28,knee:78}); arms(F,{flex:95, elbow:12+88*(1-o)}); },
+  pushdown:    (F,o)=>{ arms(F,{flex:18, elbow:95-88*o}); },
+  lateralraise:(F,o)=>{ arms(F,{abd:8+78*o, elbow:12}); },
+  rearfly:     (F,o)=>{ F.spine.rotation.x=d2r(48); arms(F,{flex:62-10*o, abd:10+62*o, elbow:16}); legs(F,{hip:22,knee:14}); },
+  row:         (F,o)=>{ F.spine.rotation.x=d2r(34); arms(F,{flex:52-16*o, elbow:12+82*o}); legs(F,{hip:24,knee:16}); },
+  pullup:      (F,o)=>{ arms(F,{abd:158, elbow:14+92*o}); F.fig.position.y=.20+.13*o; legs(F,{hip:16,knee:45}); },
+  chestpress:  (F,o)=>{ const R=48; F.fig.rotation.x=-d2r(R); F.fig.position.set(0,.03,.42); legs(F,{hip:76,knee:66}); arms(F,{flex:95, abd:16, elbow:85-77*o}); },
+  fly:         (F,o)=>{ arms(F,{flex:76, abd:62-54*o, elbow:20}); },
+  pullover:    (F,o)=>{ arms(F,{flex:165-102*o, elbow:18}); },
+  facepull:    (F,o)=>{ arms(F,{flex:85-14*o, abd:14+22*o, elbow:12+86*o}); },
+  squat:       (F,o)=>{ legs(F,{hip:8+84*o, knee:12+96*o, ank:-16*o}); F.fig.position.y=-.50*o;
+                        F.shL.rotation.set(-d2r(15),d2r(60),-d2r(78)); F.shR.rotation.set(-d2r(15),-d2r(60),d2r(78));
+                        F.elL.rotation.x=-d2r(95); F.elR.rotation.x=-d2r(95); },
+  splitsquat:  (F,o)=>{ F.hipL.rotation.x=-d2r(32+22*o); F.kneeL.rotation.x=d2r(22+62*o); F.hipR.rotation.x=d2r(14); F.kneeR.rotation.x=d2r(28+48*o); F.fig.position.y=-.19*o; arms(F,{flex:12, elbow:14}); },
+  kneext:      (F,o)=>{ legs(F,{hip:82, knee:86-80*o}); F.fig.position.y=-.36; arms(F,{flex:8, elbow:68}); },
+  hinge:       (F,o)=>{ const b=62*o; F.hips.rotation.x=d2r(b); F.hipL.rotation.x=-d2r(b); F.hipR.rotation.x=-d2r(b); F.kneeL.rotation.x=d2r(16*o); F.kneeR.rotation.x=d2r(16*o); arms(F,{flex:b*.92, elbow:5}); },
+  legcurl:     (F,o)=>{ F.kneeR.rotation.x=d2r(12+112*o); arms(F,{flex:18, elbow:22}); },
+  calfraise:   (F,o)=>{ F.fig.position.y=.07*o; legs(F,{ank:24*o}); arms(F,{flex:4, elbow:8}); },
+  hangraise:   (F,o)=>{ arms(F,{abd:158, elbow:8}); F.fig.position.y=.22; legs(F,{hip:14+72*o, knee:34}); },
+  crunch:      (F,o)=>{ F.spine.rotation.x=d2r(12+44*o); arms(F,{flex:148-18*o, elbow:108}); legs(F,{knee:14}); F.kneeL.rotation.x=d2r(14); F.kneeR.rotation.x=d2r(14); },
+  carry:       (F,o,t)=>{ const s=Math.sin(t*4*Math.PI); arms(F,{elbow:4}); F.hipL.rotation.x=-d2r(16)*s; F.hipR.rotation.x=d2r(16)*s; F.kneeL.rotation.x=d2r(12+10*Math.max(0,s)); F.kneeR.rotation.x=d2r(12+10*Math.max(0,-s)); F.fig.position.y=.018*Math.abs(s); },
+  wristcurl:   (F,o)=>{ arms(F,{elbow:95}); F.handL.rotation.x=d2r(28)-d2r(56*o); F.handR.rotation.x=d2r(28)-d2r(56*o); },
+};
+
+function initStage(){
+  if(V.ready) return;
+  const canvas=document.getElementById('exCanvas');
+  V.renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+  V.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  V.scene=new THREE.Scene();
+  V.camera=new THREE.PerspectiveCamera(38,1,.1,50);
+  V.scene.add(new THREE.HemisphereLight(0xcfe0ff,0x1a1410,.95));
+  const key=new THREE.DirectionalLight(0xffffff,.85); key.position.set(2.2,3.2,3.5); V.scene.add(key);
+  const fill=new THREE.DirectionalLight(0xff8c42,.22); fill.position.set(-2.5,1.2,-2.5); V.scene.add(fill);
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(.85,40), new THREE.MeshStandardMaterial({color:0x14161d,roughness:1}));
+  disc.rotation.x=-Math.PI/2; disc.position.y=.005;
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.84,.88,40), new THREE.MeshBasicMaterial({color:0xff6a3d,transparent:true,opacity:.35}));
+  ring.rotation.x=-Math.PI/2; ring.position.y=.006;
+  V.pivot=new THREE.Group(); V.pivot.add(disc,ring);
+  V.F=buildFigure(); V.pivot.add(V.F.fig);
+  V.E=buildEquipment(V.F);
+  V.scene.add(V.pivot);
+
+  // drag rotate + zoom (mouse & touch)
+  const ptrs=new Map(); let lastPinch=0;
+  canvas.addEventListener('pointerdown',e=>{ canvas.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY}); });
+  canvas.addEventListener('pointermove',e=>{
+    if(!ptrs.has(e.pointerId)) return;
+    const p=ptrs.get(e.pointerId);
+    if(ptrs.size===1){
+      V.pivot.rotation.y += (e.clientX-p.x)*.011;
+      V.camY = Math.min(1.9, Math.max(.45, V.camY + (e.clientY-p.y)*.004));
+    }
+    ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(ptrs.size===2){
+      const a=[...ptrs.values()], dx=a[0].x-a[1].x, dy=a[0].y-a[1].y, dist=Math.hypot(dx,dy);
+      if(lastPinch) V.dist=Math.min(4.6,Math.max(1.6,V.dist*(lastPinch/dist)));
+      lastPinch=dist;
+    }
+  });
+  const up=e=>{ ptrs.delete(e.pointerId); if(ptrs.size<2) lastPinch=0; };
+  canvas.addEventListener('pointerup',up); canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',e=>{ e.preventDefault(); V.dist=Math.min(4.6,Math.max(1.6,V.dist+(e.deltaY>0?.25:-.25))); },{passive:false});
+  V.ready=true;
+}
+function stageSize(){
+  const canvas=V.renderer.domElement;
+  const w=canvas.clientWidth||520, h=canvas.clientHeight||340;
+  const pr=Math.min(window.devicePixelRatio||1,2);
+  if(V.renderer.getPixelRatio()!==pr) V.renderer.setPixelRatio(pr);
+  V.renderer.setSize(w,h,false);
+  V.camera.aspect=w/h; V.camera.updateProjectionMatrix();
+}
+function setSubject(e){
+  V.anim = (e.anim&&ANIMS[e.anim]) ? e.anim : (ANIMS[inferAnim(e.name)]?inferAnim(e.name):'');
+  const ms=Array.isArray(e.m)?e.m:inferMuscles(e.name);
+  V.lit=ms.filter(k=>MKEYS.has(k));
+  Object.keys(V.mats).forEach(k=>{ V.mats[k].color.set(MUSC_BASE); V.mats[k].emissive.set(0x000000); V.mats[k].emissiveIntensity=0; });
+  V.lit.forEach(k=>{ V.mats[k].color.set(MUSCLES[k].c); });
+  applyEquip(V.anim);
+  const hint={skullcrusher:{y:.6,cy:.9},chestpress:{y:.75,cy:1.0},kneext:{y:.8,cy:1.0},squat:{y:.85,cy:1.0},pullup:{y:1.35,cy:1.4},hangraise:{y:1.35,cy:1.4}}[V.anim]||{};
+  V.lookY=hint.y||1.0;
+  V.pivot.rotation.y=.35; V.camY=hint.cy||1.05; V.dist=3.45; V.t0=performance.now();
+}
+function loop(){
+  V.raf=requestAnimationFrame(loop);
+  try{ loopBody(); }catch(err){ stopLoop(); }   // a render error must not spam rAF forever
+}
+function loopBody(){
+  const el=(performance.now()-V.t0)/1000;
+  const t=(el/2.4)%1, o=osc(t);
+  resetPose(V.F);
+  if(V.anim) ANIMS[V.anim](V.F,o,t);
+  else V.F.fig.position.y=.006*Math.sin(el*2);
+  updateEquip();
+  const pulse=.5+.28*Math.sin(el*5);
+  V.lit.forEach(k=>{ V.mats[k].emissive.set(MUSCLES[k].c); V.mats[k].emissiveIntensity=pulse; });
+  V.camera.position.set(0,V.camY,V.dist);
+  V.camera.lookAt(0,V.lookY||1.0,0);
+  stageSize();
+  V.renderer.render(V.scene,V.camera);
+}
+function stopLoop(){ if(V.raf){ cancelAnimationFrame(V.raf); V.raf=0; } }
+
+let openSeq=0;
+async function openExercise(di,xi){
+  const e=program.days[di]&&program.days[di].ex[xi]; if(!e) return;
+  const my=++openSeq;
+  document.getElementById('exmName').textContent=e.name||'Exercise';
+  const ms=Array.isArray(e.m)?e.m:inferMuscles(e.name);
+  document.getElementById('exmChips').innerHTML = ms.length
+    ? ms.map(k=>chipHtml(k)).join('')
+    : `<span class="mch" style="color:var(--dim);border-color:var(--line2);background:transparent">Full body</span>`;
+  document.getElementById('exmSr').innerHTML=`${esc(e.sets)} × ${esc(e.reps)} <small>sets × reps</small>`;
+  const nt=document.getElementById('exmNote');
+  if(e.note){ nt.textContent='💡 '+e.note; nt.style.display=''; } else nt.style.display='none';
+  document.getElementById('exModal').hidden=false;
+  document.body.style.overflow='hidden';
+  const load=document.getElementById('exLoad');
+  load.textContent='loading 3D…'; load.style.display='';
+  try{
+    await ensureThree();
+    if(my!==openSeq || document.getElementById('exModal').hidden) return;   // closed or superseded meanwhile
+    initStage(); setSubject(e);
+    load.style.display='none';
+    stopLoop(); loop();
+  }catch(err){
+    if(my!==openSeq) return;
+    load.textContent = (err&&err.message==='no3d')
+      ? '3D viewer needs internet once to load — muscle tags above still apply.'
+      : '3D not supported on this device — muscle tags above still apply.';
+  }
+}
+function closeExercise(){ openSeq++; stopLoop(); document.getElementById('exModal').hidden=true; if(document.getElementById('codeModal').hidden) document.body.style.overflow=''; }
+
+/* ============================================================
+   PLAN CODE (AI) MODAL
+   ============================================================ */
+function aiPrompt(json){
+  return `You are an expert hypertrophy coach. Below is my current weekly training program as JSON. Modify it (or build a new one) based on my request.
+
+MY REQUEST: [describe what you want changed here]
+
+Rules for your answer:
+- Return ONLY the JSON object - no markdown fences, no commentary.
+- Keep the exact schema: {"days":[{"name":string,"rest":boolean,"ex":[{"name":string,"sets":string,"reps":string,"note":string,"ss":boolean,"m":string[],"anim":string}]}]}
+- "ss": true links an exercise into a superset with the NEXT exercise in the list.
+- "m" = target muscles (max 4), allowed values: ${Object.keys(MUSCLES).join(', ')}
+- "anim" = closest movement pattern for the 3D demo, allowed values: ${ANIMKEYS.join(', ')} (or "" if none fits)
+- Keep "note" short and practical. sets/reps are strings like "4" and "6-8".
+
+MY CURRENT PROGRAM:
+${json}`;
+}
+let codeDirty=false;
+function openCode(){
+  document.getElementById('codeTa').value=JSON.stringify({days:program.days},null,2);
+  document.getElementById('codeErr').textContent='';
+  codeDirty=false;
+  document.getElementById('codeModal').hidden=false;
+  document.body.style.overflow='hidden';
+}
+function closeCode(force){
+  if(document.getElementById('codeModal').hidden) return;
+  if(codeDirty && !force && !confirm('Discard the JSON you pasted without applying it?')) return;
+  document.getElementById('codeModal').hidden=true;
+  if(document.getElementById('exModal').hidden) document.body.style.overflow='';
+}
+function applyCode(){
+  const err=document.getElementById('codeErr');
+  let txt=document.getElementById('codeTa').value.trim();
+  txt=txt.replace(/^```(json)?/i,'').replace(/```$/,'').trim();   // forgive pasted markdown fences
+  let parsed;
+  try{ parsed=JSON.parse(txt); }
+  catch(e){ err.textContent='Not valid JSON — '+String(e.message||e).slice(0,80); return; }
+  if(!Array.isArray(parsed&&parsed.days) || !parsed.days.length){ err.textContent='JSON needs a non-empty "days" array.'; return; }
+  program=normProgram(parsed); mutated(); render(); codeDirty=false; closeCode(true); toast('Plan applied ✓');
+}
+
+/* ============================================================
    INIT
    ============================================================ */
+program = normProgram(DEFAULT_PROGRAM);   // fills in muscle tags + animations
+
 document.getElementById('editBtn').onclick=()=>{ editMode=!editMode; render(); };
 document.getElementById('copyBtn').onclick=copyPlan;
+document.getElementById('codeBtn').onclick=openCode;
 document.getElementById('resetBtn').onclick=()=>{
   if(!confirm('Reset to the default program? This overwrites the current plan'+(activeProfile?` saved on "${activeProfile}"`:'')+'.')) return;
-  program=deep(DEFAULT_PROGRAM); mutated(); render(); toast('Default plan restored');
+  program=normProgram(DEFAULT_PROGRAM); mutated(); render(); toast('Default plan restored');
 };
 document.getElementById('pLoad').onclick=profileLoadOrCreate;
 document.getElementById('pGuest').onclick=goGuest;
 document.getElementById('pName').addEventListener('keydown',e=>{ if(e.key==='Enter') profileLoadOrCreate(); });
+
+document.getElementById('exmClose').onclick=closeExercise;
+document.getElementById('exModal').addEventListener('click',e=>{ if(e.target.id==='exModal') closeExercise(); });
+document.getElementById('codeClose').onclick=closeCode;
+document.getElementById('codeModal').addEventListener('click',e=>{ if(e.target.id==='codeModal') closeCode(); });
+document.getElementById('codeCopy').onclick=()=>{ navigator.clipboard.writeText(document.getElementById('codeTa').value).then(()=>toast('JSON copied ✓')).catch(()=>toast('Copy failed')); };
+document.getElementById('codeAI').onclick=()=>{ navigator.clipboard.writeText(aiPrompt(document.getElementById('codeTa').value)).then(()=>toast('AI prompt copied — paste it to ChatGPT/Claude ✓')).catch(()=>toast('Copy failed')); };
+document.getElementById('codeApply').onclick=applyCode;
+document.getElementById('codeTa').addEventListener('input',()=>{ codeDirty=true; });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&!e.isComposing){ closeExercise(); closeCode(); } });
 
 render();
 renderProfileBar();
