@@ -331,7 +331,98 @@ function patchCycleHub(html){
 
     return html;
 }
-function boot(html){ html = patchCycleHub(patchProtocolHub(html)); document.open(); document.write(html); document.close(); }
+function patchCategoryHub(html){
+    function rep(source, search, replacement, label){
+        if(source.indexOf(search) < 0){
+            console.error('Protocol Hub category patch missed: ' + label);
+            return source;
+        }
+        return source.replace(search, replacement);
+    }
+
+    html = rep(html,
+        '<label for="addType">Category Type</label>',
+        '<label for="addType">Dose Type</label>',
+        'dose type label');
+    html = rep(html,
+        '<option value="iu">IU / Reconstitution (HGH, HCG)</option>',
+        '<option value="iu">Peptides / IU Reconstitution (HGH, HCG)</option>',
+        'iu option');
+    html = rep(html,
+        '<option value="pep">Microgram / Reconstitution (Peptides)</option>',
+        '<option value="pep">Peptides / Microgram Reconstitution</option>',
+        'peptide option');
+    html = rep(html,
+        '<option value="oral">Powder / Tablets / Orals (mg)</option>',
+        '<option value="oral">Nootropics / Oral (mg)</option>',
+        'nootropic option');
+
+    html = rep(html,
+        "const TYPE_META = {\n    oil: { badge: 'Oil / Gear', cls: 'type-oil' },\n    iu:  { badge: 'IU / Recon', cls: 'type-iu'  },\n    pep: { badge: 'mcg / Recon', cls: 'type-pep' },\n    oral: { badge: 'Oral / mg', cls: 'type-oral' }\n};",
+        "const TYPE_META = {\n    oil: { badge: 'Oil / Gear', cls: 'type-oil' },\n    iu:  { badge: 'Peptides', cls: 'type-pep' },\n    pep: { badge: 'Peptides', cls: 'type-pep' },\n    oral: { badge: 'Nootropics', cls: 'type-oral' }\n};\nconst GROUP_META = {\n    gear:       { label:'Oil / Gear', badge:'Oil / Gear', cls:'type-oil', rank:0 },\n    peptides:   { label:'Peptides', badge:'Peptides', cls:'type-pep', rank:1 },\n    nootropics: { label:'Nootropics', badge:'Nootropics', cls:'type-oral', rank:2 },\n    other:      { label:'Other', badge:'Other', cls:'', rank:99 }\n};\nfunction defaultGroupFor(c) {\n    if (c.type === 'oil') return 'gear';\n    if (c.type === 'iu' || c.type === 'pep') return 'peptides';\n    if (c.type === 'oral') return 'nootropics';\n    return 'other';\n}\nfunction groupKeyFor(c) {\n    return c.displayGroup && GROUP_META[c.displayGroup] ? c.displayGroup : defaultGroupFor(c);\n}\nfunction groupMetaFor(c) { return GROUP_META[groupKeyFor(c)] || GROUP_META.other; }\nfunction compareCompoundsByGroup(a, b) {\n    const rank = groupMetaFor(a).rank - groupMetaFor(b).rank;\n    return rank || stack.indexOf(a) - stack.indexOf(b);\n}\nfunction sortedStackForDisplay() {\n    return stack.map((c, index) => ({ c:c, index:index }))\n        .sort((a, b) => groupMetaFor(a.c).rank - groupMetaFor(b.c).rank || a.index - b.index)\n        .map(item => item.c);\n}",
+        'group metadata');
+
+    html = rep(html,
+        ".cal-entry.pep { border-left-color: #a78bfa; }",
+        ".cal-entry.pep { border-left-color: #a78bfa; }\n    .cal-entry.gear { border-left-color: #fbbf24; }\n    .cal-entry.peptides { border-left-color: #a78bfa; }\n    .cal-entry.nootropics { border-left-color: #34d399; }\n    .c-category { display:inline-block; margin:0 0 3px; padding:2px 5px; border:1px solid currentColor; border-radius:999px; font-size:8px; line-height:1.1; font-weight:800; letter-spacing:.45px; text-transform:uppercase; opacity:.9; }\n    .c-category.type-oil { color:#fbbf24; }\n    .c-category.type-pep { color:#a78bfa; }\n    .c-category.type-oral { color:#34d399; }",
+        'group calendar styles');
+
+    html = rep(html,
+        "    for (const c of stack) {\n        const meta = TYPE_META[c.type];\n        const card = document.createElement('div');",
+        "    for (const c of sortedStackForDisplay()) {\n        const meta = groupMetaFor(c);\n        const card = document.createElement('div');",
+        'sorted stack cards');
+
+    html = rep(html,
+        "        const freqSel = `<div>\n            <label>Frequency</label>",
+        "        const selectedGroup = c.displayGroup || '';\n        const autoGroup = GROUP_META[defaultGroupFor(c)].label;\n        const groupHTML = `<div>\n            <label>Display Group</label>\n            <select data-id=\"${c.id}\" data-key=\"displayGroup\">\n                <option value=\"\" ${selectedGroup === '' ? 'selected' : ''}>Auto · ${autoGroup}</option>\n                <option value=\"gear\" ${selectedGroup === 'gear' ? 'selected' : ''}>Oil / Gear</option>\n                <option value=\"peptides\" ${selectedGroup === 'peptides' ? 'selected' : ''}>Peptides</option>\n                <option value=\"nootropics\" ${selectedGroup === 'nootropics' ? 'selected' : ''}>Nootropics</option>\n            </select>\n        </div>`;\n\n        const freqSel = `<div>\n            <label>Frequency</label>",
+        'display group control');
+
+    html = rep(html,
+        "                ${syrSel}\n                ${freqSel}",
+        "                ${syrSel}\n                ${groupHTML}\n                ${freqSel}",
+        'display group placement');
+
+    html = rep(html,
+        "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay' || e.target.dataset.key === 'cycleMode') renderStack();",
+        "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay' || e.target.dataset.key === 'cycleMode' || e.target.dataset.key === 'displayGroup') renderStack();",
+        'group rerender');
+
+    html = rep(html,
+        "    const cycleSummary = stack.filter(c => (c.cycleMode || 'none') !== 'none').map(c => escapeHTML(c.name) + ': ' + cycleStatusText(cycleStateFor(c, viewWeek)));",
+        "    const cycleSummary = sortedStackForDisplay().filter(c => (c.cycleMode || 'none') !== 'none').map(c => escapeHTML(c.name) + ': ' + cycleStatusText(cycleStateFor(c, viewWeek)));",
+        'sorted cycle summary');
+
+    html = rep(html,
+        "    for (const c of stack) {\n        if (c.freq === 'eod') anyEOD = true;",
+        "    for (const c of sortedStackForDisplay()) {\n        if (c.freq === 'eod') anyEOD = true;",
+        'sorted calendar source');
+
+    html = rep(html,
+        "        const items = perDay[d];\n        const isDone = isCurrentView",
+        "        const items = perDay[d];\n        items.sort((a, b) => compareCompoundsByGroup(a.c, b.c));\n        const isDone = isCurrentView",
+        'sorted calendar day');
+
+    html = rep(html,
+        "inner += `<div class=\"cal-entry ${c.type} missed\">",
+        "inner += `<div class=\"cal-entry ${groupKeyFor(c)} missed\">",
+        'missed group class');
+    html = rep(html,
+        "inner += `<div class=\"cal-entry ${c.type}${isLogged ? ' logged' : ''}\">",
+        "inner += `<div class=\"cal-entry ${groupKeyFor(c)}${isLogged ? ' logged' : ''}\">",
+        'active group class');
+
+    html = rep(html,
+        "                            <span class=\"c-name\">${escapeHTML(c.name)}</span>\n                            <span class=\"miss-tag\">",
+        "                            <span class=\"c-category ${groupMetaFor(c).cls}\">${groupMetaFor(c).label}</span>\n                            <span class=\"c-name\">${escapeHTML(c.name)}</span>\n                            <span class=\"miss-tag\">",
+        'missed group label');
+    html = rep(html,
+        "                            <span class=\"c-name\">${escapeHTML(c.name)}</span>\n                            <span class=\"c-dose\">",
+        "                            <span class=\"c-category ${groupMetaFor(c).cls}\">${groupMetaFor(c).label}</span>\n                            <span class=\"c-name\">${escapeHTML(c.name)}</span>\n                            <span class=\"c-dose\">",
+        'active group label');
+
+    return html;
+}
+function boot(html){ html = patchCategoryHub(patchCycleHub(patchProtocolHub(html))); document.open(); document.write(html); document.close(); }
 
 async function unlock(){
     var code = document.getElementById('codeIn').value;
