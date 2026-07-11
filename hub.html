@@ -190,7 +190,148 @@ function patchProtocolHub(html){
     html = html.replace('Pins / Week', 'Doses / Week');
     return html;
 }
-function boot(html){ html = patchProtocolHub(html); document.open(); document.write(html); document.close(); }
+function patchCycleHub(html){
+    function rep(source, search, replacement, label){
+        if(source.indexOf(search) < 0){
+            console.error('Protocol Hub cycle patch missed: ' + label);
+            return source;
+        }
+        return source.replace(search, replacement);
+    }
+
+    html = rep(html,
+        "let activeProfile = null;",
+        "let activeProfile = null;\nlet programStartDate = currentWeekStart();\nlet calendarViewWeek = null;",
+        'state');
+
+    html = rep(html,
+        "function todayIdx() { return (new Date().getDay() + 6) % 7; }",
+        "function todayIdx() { return (new Date().getDay() + 6) % 7; }\n\nfunction normalizeWeekIso(value) {\n    const d = value ? new Date(value + 'T12:00:00') : new Date();\n    return isNaN(d) ? currentWeekStart() : isoDate(mondayOf(d));\n}\nfunction weekOrdinal(value) {\n    const p = String(value).split('-').map(Number);\n    return Math.floor(Date.UTC(p[0], p[1] - 1, p[2]) / 604800000);\n}\nfunction addWeeksIso(value, amount) {\n    const p = String(value).split('-').map(Number);\n    const d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + Math.round(amount) * 7, 12));\n    return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');\n}\nfunction programWeekFor(value) {\n    return weekOrdinal(normalizeWeekIso(value)) - weekOrdinal(programStartDate) + 1;\n}\nfunction weekForProgramWeek(programWeek) {\n    return addWeeksIso(programStartDate, Math.max(1, Math.round(num(programWeek) || 1)) - 1);\n}\nfunction cycleStateFor(c, value) {\n    const programWeek = programWeekFor(value);\n    const mode = c.cycleMode || 'none';\n    const startWeek = Math.max(1, Math.round(num(c.cycleStartWeek) || 1));\n    const onWeeks = Math.max(1, Math.round(num(c.cycleOnWeeks) || 1));\n    if (mode === 'none') return { enabled:false, state:'on', programWeek:programWeek };\n    if (programWeek < startWeek) return { enabled:true, mode:mode, state:'upcoming', programWeek:programWeek, startWeek:startWeek, onWeeks:onWeeks };\n    const elapsed = programWeek - startWeek;\n    if (mode === 'fixed') {\n        if (elapsed >= onWeeks) return { enabled:true, mode:mode, state:'complete', programWeek:programWeek, startWeek:startWeek, onWeeks:onWeeks, endWeek:startWeek + onWeeks - 1 };\n        return { enabled:true, mode:mode, state:'on', programWeek:programWeek, startWeek:startWeek, onWeeks:onWeeks, phaseWeek:elapsed + 1, endWeek:startWeek + onWeeks - 1 };\n    }\n    const offWeeks = Math.max(1, Math.round(num(c.cycleOffWeeks) || 1));\n    const span = onWeeks + offWeeks;\n    const phase = elapsed % span;\n    if (phase < onWeeks) return { enabled:true, mode:mode, state:'on', programWeek:programWeek, startWeek:startWeek, onWeeks:onWeeks, offWeeks:offWeeks, phaseWeek:phase + 1 };\n    const offWeek = phase - onWeeks + 1;\n    return { enabled:true, mode:mode, state:'off', programWeek:programWeek, startWeek:startWeek, onWeeks:onWeeks, offWeeks:offWeeks, phaseWeek:offWeek, resumeWeek:programWeek + (offWeeks - offWeek + 1) };\n}\nfunction cycleStatusText(state) {\n    if (!state.enabled) return 'Always active';\n    if (state.state === 'upcoming') return 'UPCOMING · starts W' + state.startWeek;\n    if (state.state === 'complete') return 'COMPLETE · ended W' + state.endWeek;\n    if (state.state === 'off') return 'OFF · ' + state.phaseWeek + '/' + state.offWeeks + ' · resumes W' + state.resumeWeek;\n    if (state.mode === 'fixed') return 'ON · ' + state.phaseWeek + '/' + state.onWeeks + ' · ends W' + state.endWeek;\n    return 'ON · ' + state.phaseWeek + '/' + state.onWeeks;\n}\nfunction cycleNoteText(state) {\n    if (!state.enabled || state.state === 'on') return '';\n    if (state.state === 'upcoming') return 'Cycle starts in program week ' + state.startWeek;\n    if (state.state === 'off') return 'Cycle OFF week ' + state.phaseWeek + ' of ' + state.offWeeks + ' · resumes program week ' + state.resumeWeek;\n    return 'Cycle complete · active through program week ' + state.endWeek;\n}",
+        'week helpers');
+
+    html = rep(html,
+        "totalMg: 5, bacWaterPep: 2, doseMcg: 250, oralDoseMg: 10, oralDosesPerDay: 1, notes: ''",
+        "totalMg: 5, bacWaterPep: 2, doseMcg: 250, oralDoseMg: 10, oralDosesPerDay: 1, notes: '',\n        cycleMode: 'none', cycleStartWeek: 1, cycleOnWeeks: 1, cycleOffWeeks: 1",
+        'compound defaults');
+
+    html = rep(html,
+        "return JSON.parse(JSON.stringify({ stack: stack, weekLog: weekLog }));",
+        "return JSON.parse(JSON.stringify({ stack: stack, weekLog: weekLog, programStartDate: programStartDate }));",
+        'snapshot');
+
+    html = rep(html,
+        "    weekLog = (s.weekLog && typeof s.weekLog === 'object') ? s.weekLog : { weekStart: '', entries: {} };\n    ensureWeek();",
+        "    weekLog = (s.weekLog && typeof s.weekLog === 'object') ? s.weekLog : { weekStart: '', entries: {} };\n    programStartDate = normalizeWeekIso(s.programStartDate || currentWeekStart());\n    calendarViewWeek = null;\n    ensureWeek();",
+        'profile migration');
+
+    html = rep(html,
+        "        if (!raw) return;",
+        "        if (!raw) { stack = []; weekLog = { weekStart:'', entries:{} }; programStartDate = currentWeekStart(); calendarViewWeek = null; return; }",
+        'guest migration');
+
+    html = rep(html,
+        ".c-note { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; font-style: italic; }",
+        ".c-note { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; font-style: italic; }\n    .timeline-panel { margin: 0 0 16px; padding: 14px 16px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--card-bg); }\n    .timeline-main, .week-nav { display:flex; align-items:end; gap:10px; flex-wrap:wrap; }\n    .timeline-main { justify-content:space-between; margin-bottom:10px; }\n    .timeline-field label { display:block; margin-bottom:5px; }\n    .timeline-field input { width:auto; min-width:155px; }\n    .timeline-now { color:var(--accent-color); font-weight:700; }\n    .week-nav .btn { width:auto; margin:0; padding:9px 12px; }\n    .week-jump { display:flex; align-items:end; gap:7px; margin-left:auto; }\n    .week-jump input { width:86px; }\n    .cycle-week-summary { margin-top:10px; color:var(--text-muted); font-size:13px; }\n    .cycle-wrap { border:1px solid var(--border-color); border-radius:10px; padding:12px; background:rgba(15,23,42,.35); }\n    .cycle-title-row { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }\n    .cycle-title-row label { margin:0; }\n    .cycle-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-top:10px; }\n    .cycle-inline-status { font-size:11px; font-weight:800; letter-spacing:.35px; color:var(--text-muted); }\n    .cycle-inline-status.on { color:var(--success); }\n    .cycle-inline-status.off { color:#fbbf24; }\n    .cycle-inline-status.upcoming { color:var(--accent-color); }\n    .cycle-inline-status.complete { color:var(--text-muted); }\n    .cal-preview-tag { flex:0 0 auto; font-size:9px; font-weight:800; color:var(--accent-color); border:1px solid rgba(56,189,248,.35); border-radius:5px; padding:3px 5px; }\n    @media (max-width:700px) { .week-jump { margin-left:0; width:100%; } .timeline-main { align-items:flex-start; } }",
+        'cycle styles');
+
+    html = rep(html,
+        "<!-- ============ CALENDAR ============ -->\n    <div class=\"cal-head\">",
+        "<!-- ============ CALENDAR ============ -->\n    <div class=\"timeline-panel\">\n        <div class=\"timeline-main\">\n            <div class=\"timeline-field\"><label for=\"programStartInput\">Program start week</label><input type=\"date\" id=\"programStartInput\"></div>\n            <div class=\"timeline-now\" id=\"programNow\"></div>\n        </div>\n        <div class=\"week-nav\">\n            <button class=\"btn ghost\" id=\"weekPrev\">← Previous</button>\n            <button class=\"btn ghost\" id=\"weekCurrent\">Current week</button>\n            <button class=\"btn ghost\" id=\"weekNext\">Next →</button>\n            <div class=\"week-jump timeline-field\"><label for=\"weekJump\">Go to program week</label><input type=\"number\" id=\"weekJump\" min=\"1\" step=\"1\"><button class=\"btn\" id=\"weekGo\">Go</button></div>\n        </div>\n        <div class=\"cycle-week-summary\" id=\"cycleWeekSummary\"></div>\n    </div>\n    <div class=\"cal-head\">",
+        'timeline panel');
+
+    html = rep(html,
+        "        let reconHTML = '';",
+        "        const cycleMode = c.cycleMode || 'none';\n        let cycleFields = '';\n        if (cycleMode === 'fixed') {\n            cycleFields = `<div class=\"cycle-grid\">\n                <div><label>Start at Program Week</label><input type=\"number\" min=\"1\" step=\"1\" data-id=\"${c.id}\" data-key=\"cycleStartWeek\" value=\"${Math.max(1, Math.round(num(c.cycleStartWeek) || 1))}\"></div>\n                <div><label>Run for (weeks)</label><input type=\"number\" min=\"1\" step=\"1\" data-id=\"${c.id}\" data-key=\"cycleOnWeeks\" value=\"${Math.max(1, Math.round(num(c.cycleOnWeeks) || 1))}\"></div>\n            </div>`;\n        } else if (cycleMode === 'repeat') {\n            cycleFields = `<div class=\"cycle-grid\">\n                <div><label>Start at Program Week</label><input type=\"number\" min=\"1\" step=\"1\" data-id=\"${c.id}\" data-key=\"cycleStartWeek\" value=\"${Math.max(1, Math.round(num(c.cycleStartWeek) || 1))}\"></div>\n                <div><label>Weeks On</label><input type=\"number\" min=\"1\" step=\"1\" data-id=\"${c.id}\" data-key=\"cycleOnWeeks\" value=\"${Math.max(1, Math.round(num(c.cycleOnWeeks) || 1))}\"></div>\n                <div><label>Weeks Off</label><input type=\"number\" min=\"1\" step=\"1\" data-id=\"${c.id}\" data-key=\"cycleOffWeeks\" value=\"${Math.max(1, Math.round(num(c.cycleOffWeeks) || 1))}\"></div>\n            </div>`;\n        }\n        const cycleHTML = `<div class=\"cycle-wrap full\">\n            <div class=\"cycle-title-row\"><label>Cycle Schedule</label><span class=\"cycle-inline-status\" data-cycleinline=\"${c.id}\"></span></div>\n            <select data-id=\"${c.id}\" data-key=\"cycleMode\">\n                <option value=\"none\" ${cycleMode === 'none' ? 'selected' : ''}>Always active (no cycle)</option>\n                <option value=\"fixed\" ${cycleMode === 'fixed' ? 'selected' : ''}>Fixed course</option>\n                <option value=\"repeat\" ${cycleMode === 'repeat' ? 'selected' : ''}>Repeating on / off</option>\n            </select>\n            ${cycleFields}\n        </div>`;\n\n        let reconHTML = '';",
+        'cycle card controls');
+
+    html = rep(html,
+        "                ${freqExtra}\n                ${reconHTML}",
+        "                ${freqExtra}\n                ${cycleHTML}\n                ${reconHTML}",
+        'cycle card placement');
+
+    html = rep(html,
+        "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay') renderStack();",
+        "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay' || e.target.dataset.key === 'cycleMode') renderStack();",
+        'cycle mode rerender');
+
+    html = rep(html,
+        "    const noteEl = document.querySelector(`[data-plannote=\"${c.id}\"]`);",
+        "    const noteEl = document.querySelector(`[data-plannote=\"${c.id}\"]`);\n    const cycleEl = document.querySelector(`[data-cycleinline=\"${c.id}\"]`);",
+        'cycle status element');
+
+    html = rep(html,
+        "    const plan = weekPlanFor(c);",
+        "    const plan = weekPlanFor(c);\n    if (cycleEl) {\n        cycleEl.textContent = cycleStatusText(plan.cycle);\n        cycleEl.className = 'cycle-inline-status ' + plan.cycle.state;\n    }",
+        'cycle status render');
+
+    html = rep(html,
+        "    let badges = `<span class=\"badge\">${r.perWeek % 1 === 0 ? r.perWeek : r.perWeek.toFixed(1)} ${c.type === 'oral' ? 'doses' : 'pins'} / week</span>`;",
+        "    let badges = '';\n    if (plan.cycle.enabled) {\n        const cycleCls = plan.cycle.state === 'on' ? 'ok' : plan.cycle.state === 'off' ? 'warn' : '';\n        badges += `<span class=\"badge ${cycleCls}\">${cycleStatusText(plan.cycle)}</span>`;\n    }\n    badges += `<span class=\"badge\">${r.perWeek % 1 === 0 ? r.perWeek : r.perWeek.toFixed(1)} ${c.type === 'oral' ? 'doses' : 'pins'} / active week</span>`;",
+        'cycle badge');
+
+    html = rep(html,
+        "function weekPlanFor(c) {\n    ensureWeek();",
+        "function weekPlanFor(c, targetWeek) {\n    ensureWeek();\n    const planWeek = normalizeWeekIso(targetWeek || currentWeekStart());\n    const isCurrentWeek = planWeek === currentWeekStart();\n    const cycle = cycleStateFor(c, planWeek);",
+        'cycle-aware plan signature');
+
+    html = rep(html,
+        "    const sched = (c.type === 'oral' ? num(c.oralDoseMg) > 0 : nominal.perInjectionMl > 0) ? activeDaysThisWeek(c) : [];",
+        "    const sched = cycle.state === 'on' && (c.type === 'oral' ? num(c.oralDoseMg) > 0 : nominal.perInjectionMl > 0) ? activeDaysThisWeek(c) : [];",
+        'cycle schedule gate');
+
+    html = rep(html,
+        "    const logs = weekLog.entries[c.id] || {};\n    const tIdx = todayIdx();",
+        "    const logs = isCurrentWeek ? (weekLog.entries[c.id] || {}) : {};\n    const tIdx = isCurrentWeek ? todayIdx() : -1;",
+        'preview log isolation');
+
+    html = rep(html,
+        "    for (const d of Object.keys(logs)) days[d] = Object.assign({ status: 'logged' }, logs[d]);\n\n    const dueDays = [], missedDays = [];",
+        "    for (const d of Object.keys(logs)) days[d] = Object.assign({ status: 'logged' }, logs[d]);\n\n    if (cycle.state !== 'on') {\n        note = cycleNoteText(cycle);\n        noteCls = cycle.state === 'off' ? 'warn' : cycle.state === 'complete' ? 'good' : '';\n        const loggedOnly = Object.keys(logs).length;\n        return { days:days, note:note, noteCls:noteCls, logged:loggedOnly, total:loggedOnly, cycle:cycle };\n    }\n\n    const dueDays = [], missedDays = [];",
+        'inactive cycle plan');
+
+    html = rep(html,
+        "    return { days, note, noteCls, logged: loggedCount, total: schedCount };",
+        "    return { days, note, noteCls, logged: loggedCount, total: schedCount, cycle: cycle };",
+        'cycle plan result');
+
+    html = rep(html,
+        "    const tIdx = todayIdx();\n    const monday = mondayOf(new Date());\n    document.getElementById('weekLabel').textContent =\n        'Week of ' + monday.toLocaleDateString(undefined, { day:'numeric', month:'short' }) + ' · resets Monday';",
+        "    const viewWeek = normalizeWeekIso(calendarViewWeek || currentWeekStart());\n    const isCurrentView = viewWeek === currentWeekStart();\n    const tIdx = isCurrentView ? todayIdx() : -1;\n    const monday = new Date(viewWeek + 'T12:00:00');\n    const sunday = new Date(monday); sunday.setDate(sunday.getDate() + 6);\n    const viewProgramWeek = programWeekFor(viewWeek);\n    const currentProgramWeek = programWeekFor(currentWeekStart());\n    const rangeText = monday.toLocaleDateString(undefined, { day:'numeric', month:'short' }) + '–' + sunday.toLocaleDateString(undefined, { day:'numeric', month:'short' });\n    document.getElementById('weekLabel').textContent = 'Week ' + viewProgramWeek + ' · ' + rangeText + (isCurrentView ? ' · CURRENT' : ' · PREVIEW');\n    document.getElementById('programStartInput').value = programStartDate;\n    document.getElementById('programNow').textContent = currentProgramWeek > 0 ? 'Current program week: ' + currentProgramWeek : 'Program has not started';\n    document.getElementById('weekJump').value = Math.max(1, viewProgramWeek);",
+        'calendar selected week');
+
+    html = rep(html,
+        "    DAYS.forEach(d => perDay[d] = []);\n\n    for (const c of stack) {",
+        "    DAYS.forEach(d => perDay[d] = []);\n\n    const cycleSummary = stack.filter(c => (c.cycleMode || 'none') !== 'none').map(c => escapeHTML(c.name) + ': ' + cycleStatusText(cycleStateFor(c, viewWeek)));\n    document.getElementById('cycleWeekSummary').innerHTML = cycleSummary.length ? cycleSummary.join(' &nbsp;·&nbsp; ') : 'No cycle schedules enabled yet.';\n\n    for (const c of stack) {",
+        'calendar cycle summary');
+
+    html = rep(html,
+        "        const plan = weekPlanFor(c);\n        for (const d of Object.keys(plan.days)) {",
+        "        const plan = weekPlanFor(c, viewWeek);\n        for (const d of Object.keys(plan.days)) {",
+        'calendar target week plan');
+
+    html = rep(html,
+        "        const isDone = items.length > 0 && items.every(x => x.info.status === 'logged');\n        const dayEl = document.createElement('div');\n        dayEl.className = 'cal-day' + (i === tIdx ? ' today' : '') + (isDone ? ' done' : '');",
+        "        const isDone = isCurrentView && items.length > 0 && items.every(x => x.info.status === 'logged');\n        const dayEl = document.createElement('div');\n        dayEl.className = 'cal-day' + (isCurrentView && i === tIdx ? ' today' : '') + (isDone ? ' done' : '');",
+        'calendar current highlight');
+
+    html = rep(html,
+        "                    const isLogged = info.status === 'logged';\n                    inner += `<div class=\"cal-entry ${c.type}${isLogged ? ' logged' : ''}\">\n                        <label class=\"cal-check\" title=\"${c.type === 'oral' ? (isLogged ? 'Un-tick this dose' : 'Tick when taken') : (isLogged ? 'Un-tick this shot' : 'Tick when injected')}\">\n                            <input type=\"checkbox\" class=\"cal-cb\" data-cid=\"${c.id}\" data-day=\"${d}\" ${isLogged ? 'checked' : ''}>\n                            <span class=\"box\">✓</span>\n                        </label>\n                        <div class=\"txt\">",
+        "                    const isLogged = info.status === 'logged';\n                    const checkControl = isCurrentView\n                        ? `<label class=\"cal-check\" title=\"${c.type === 'oral' ? (isLogged ? 'Un-tick this dose' : 'Tick when taken') : (isLogged ? 'Un-tick this shot' : 'Tick when injected')}\"><input type=\"checkbox\" class=\"cal-cb\" data-cid=\"${c.id}\" data-day=\"${d}\" ${isLogged ? 'checked' : ''}><span class=\"box\">✓</span></label>`\n                        : `<span class=\"cal-preview-tag\">PLANNED</span>`;\n                    inner += `<div class=\"cal-entry ${c.type}${isLogged ? ' logged' : ''}\">\n                        ${checkControl}\n                        <div class=\"txt\">",
+        'calendar preview controls');
+
+    html = rep(html,
+        "    for (const c of stack) {\n        const r = computeCompound(c);\n        if (r.perInjectionMl > 0 || (c.type === 'oral' && num(c.oralDoseMg) > 0)) pins += r.perWeek;\n        if (r.perInjectionMl > 0) vol += r.perInjectionMl * r.perWeek;\n        const plan = weekPlanFor(c);\n        done += plan.logged;\n        total += plan.total;\n    }",
+        "    for (const c of stack) {\n        const r = computeCompound(c);\n        const plan = weekPlanFor(c, currentWeekStart());\n        if (plan.cycle.state === 'on') {\n            if (r.perInjectionMl > 0 || (c.type === 'oral' && num(c.oralDoseMg) > 0)) pins += r.perWeek;\n            if (r.perInjectionMl > 0) vol += r.perInjectionMl * r.perWeek;\n        }\n        done += plan.logged;\n        total += plan.total;\n    }",
+        'cycle-aware stats');
+
+    html = rep(html,
+        "document.getElementById('addBtn').addEventListener('click', () => {",
+        "document.getElementById('programStartInput').addEventListener('change', e => {\n    programStartDate = normalizeWeekIso(e.target.value || currentWeekStart());\n    calendarViewWeek = null;\n    saveAll();\n    renderStack();\n    toast('Program timeline starts Monday ' + programStartDate);\n});\ndocument.getElementById('weekPrev').addEventListener('click', () => {\n    calendarViewWeek = addWeeksIso(calendarViewWeek || currentWeekStart(), -1);\n    renderCalendar();\n});\ndocument.getElementById('weekCurrent').addEventListener('click', () => {\n    calendarViewWeek = null;\n    renderCalendar();\n});\ndocument.getElementById('weekNext').addEventListener('click', () => {\n    calendarViewWeek = addWeeksIso(calendarViewWeek || currentWeekStart(), 1);\n    renderCalendar();\n});\nfunction jumpToProgramWeek() {\n    calendarViewWeek = weekForProgramWeek(document.getElementById('weekJump').value);\n    renderCalendar();\n}\ndocument.getElementById('weekGo').addEventListener('click', jumpToProgramWeek);\ndocument.getElementById('weekJump').addEventListener('keydown', e => { if (e.key === 'Enter') jumpToProgramWeek(); });\n\ndocument.getElementById('addBtn').addEventListener('click', () => {",
+        'timeline events');
+
+    return html;
+}
+function boot(html){ html = patchCycleHub(patchProtocolHub(html)); document.open(); document.write(html); document.close(); }
 
 async function unlock(){
     var code = document.getElementById('codeIn').value;
