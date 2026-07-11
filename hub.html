@@ -345,26 +345,31 @@ function patchCategoryHub(html){
         '<label for="addType">Dose Type</label>',
         'dose type label');
     html = rep(html,
-        '<option value="iu">IU / Reconstitution (HGH, HCG)</option>',
-        '<option value="iu">Peptides / IU Reconstitution (HGH, HCG)</option>',
-        'iu option');
+        "            <div class=\"field btn-field\">\n                <button class=\"btn\" id=\"addBtn\">+ Add Compound to Stack</button>\n            </div>",
+        "            <div class=\"field\">\n                <label for=\"addGroup\">Category</label>\n                <select id=\"addGroup\">\n                    <option value=\"\" disabled>Choose category…</option>\n                    <option value=\"gear\" selected>Oil / Gear</option>\n                    <option value=\"peptides\">Peptides</option>\n                    <option value=\"nootropics\">Nootropics</option>\n                    <option value=\"medication\">Medication / Health</option>\n                    <option value=\"other\">Other</option>\n                </select>\n            </div>\n            <div class=\"field btn-field\">\n                <button class=\"btn\" id=\"addBtn\">+ Add Compound to Stack</button>\n            </div>",
+        'creation category control');
     html = rep(html,
-        '<option value="pep">Microgram / Reconstitution (Peptides)</option>',
-        '<option value="pep">Peptides / Microgram Reconstitution</option>',
-        'peptide option');
+        ".add-panel .field.btn-field { flex: 0 0 auto; }",
+        ".add-panel .field.btn-field { flex: 0 0 auto; }\n    .category-help { margin-top:10px; color:var(--text-muted); font-size:11px; line-height:1.4; }",
+        'creation category hint style');
     html = rep(html,
-        '<option value="oral">Powder / Tablets / Orals (mg)</option>',
-        '<option value="oral">Nootropics / Oral (mg)</option>',
-        'nootropic option');
+        "        <div class=\"presets\" id=\"presetRow\">",
+        "        <div class=\"category-help\">Dose type controls calculations. Category controls organization — an oral/tablet can be Oil/Gear, Nootropic, Medication/Health, or Other.</div>\n        <div class=\"presets\" id=\"presetRow\">",
+        'creation category help');
 
     html = rep(html,
         "const TYPE_META = {\n    oil: { badge: 'Oil / Gear', cls: 'type-oil' },\n    iu:  { badge: 'IU / Recon', cls: 'type-iu'  },\n    pep: { badge: 'mcg / Recon', cls: 'type-pep' },\n    oral: { badge: 'Oral / mg', cls: 'type-oral' }\n};",
-        "const TYPE_META = {\n    oil: { badge: 'Oil / Gear', cls: 'type-oil' },\n    iu:  { badge: 'Peptides', cls: 'type-pep' },\n    pep: { badge: 'Peptides', cls: 'type-pep' },\n    oral: { badge: 'Nootropics', cls: 'type-oral' }\n};\nconst GROUP_META = {\n    gear:       { label:'Oil / Gear', badge:'Oil / Gear', cls:'type-oil', rank:0 },\n    peptides:   { label:'Peptides', badge:'Peptides', cls:'type-pep', rank:1 },\n    nootropics: { label:'Nootropics', badge:'Nootropics', cls:'type-oral', rank:2 },\n    other:      { label:'Other', badge:'Other', cls:'', rank:99 }\n};\nfunction defaultGroupFor(c) {\n    if (c.type === 'oil') return 'gear';\n    if (c.type === 'iu' || c.type === 'pep') return 'peptides';\n    if (c.type === 'oral') return 'nootropics';\n    return 'other';\n}\nfunction groupKeyFor(c) {\n    return c.displayGroup && GROUP_META[c.displayGroup] ? c.displayGroup : defaultGroupFor(c);\n}\nfunction groupMetaFor(c) { return GROUP_META[groupKeyFor(c)] || GROUP_META.other; }\nfunction compareCompoundsByGroup(a, b) {\n    const rank = groupMetaFor(a).rank - groupMetaFor(b).rank;\n    return rank || stack.indexOf(a) - stack.indexOf(b);\n}\nfunction sortedStackForDisplay() {\n    return stack.map((c, index) => ({ c:c, index:index }))\n        .sort((a, b) => groupMetaFor(a.c).rank - groupMetaFor(b.c).rank || a.index - b.index)\n        .map(item => item.c);\n}",
+        "const TYPE_META = {\n    oil: { badge: 'Oil / Gear', cls: 'type-oil' },\n    iu:  { badge: 'IU / Recon', cls: 'type-iu' },\n    pep: { badge: 'mcg / Recon', cls: 'type-pep' },\n    oral: { badge: 'Oral / mg', cls: 'type-oral' }\n};\nconst GROUP_META = {\n    gear:       { label:'Oil / Gear', badge:'Oil / Gear', cls:'type-oil', rank:0 },\n    peptides:   { label:'Peptides', badge:'Peptides', cls:'type-pep', rank:1 },\n    nootropics: { label:'Nootropics', badge:'Nootropics', cls:'type-oral', rank:2 },\n    medication: { label:'Medication / Health', badge:'Medication / Health', cls:'type-med', rank:3 },\n    other:      { label:'Other', badge:'Other', cls:'type-other', rank:99 }\n};\nfunction defaultGroupFor(c) {\n    if (c.type === 'oil') return 'gear';\n    if (c.type === 'iu' || c.type === 'pep') return 'peptides';\n    if (c.type === 'oral') return 'nootropics';\n    return 'other';\n}\nfunction groupKeyFor(c) {\n    return c.displayGroup && GROUP_META[c.displayGroup] ? c.displayGroup : defaultGroupFor(c);\n}\nfunction groupMetaFor(c) { return GROUP_META[groupKeyFor(c)] || GROUP_META.other; }\nfunction compareCompoundsByGroup(a, b) {\n    const rank = groupMetaFor(a).rank - groupMetaFor(b).rank;\n    return rank || stack.indexOf(a) - stack.indexOf(b);\n}\nfunction sortedStackForDisplay() {\n    return stack.map((c, index) => ({ c:c, index:index }))\n        .sort((a, b) => groupMetaFor(a.c).rank - groupMetaFor(b.c).rank || a.index - b.index)\n        .map(item => item.c);\n}",
         'group metadata');
 
     html = rep(html,
+        ".type-oral { color: #34d399; border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }",
+        ".type-oral { color: #34d399; border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }\n    .type-med { color:#60a5fa; border-color:rgba(96,165,250,.4); background:rgba(96,165,250,.08); }\n    .type-other { color:#94a3b8; border-color:rgba(148,163,184,.4); background:rgba(148,163,184,.08); }",
+        'additional category badge styles');
+
+    html = rep(html,
         ".cal-entry.pep { border-left-color: #a78bfa; }",
-        ".cal-entry.pep { border-left-color: #a78bfa; }\n    .cal-entry.gear { border-left-color: #fbbf24; }\n    .cal-entry.peptides { border-left-color: #a78bfa; }\n    .cal-entry.nootropics { border-left-color: #34d399; }\n    .c-category { display:inline-block; margin:0 0 3px; padding:2px 5px; border:1px solid currentColor; border-radius:999px; font-size:8px; line-height:1.1; font-weight:800; letter-spacing:.45px; text-transform:uppercase; opacity:.9; }\n    .c-category.type-oil { color:#fbbf24; }\n    .c-category.type-pep { color:#a78bfa; }\n    .c-category.type-oral { color:#34d399; }",
+        ".cal-entry.pep { border-left-color: #a78bfa; }\n    .cal-entry.gear { border-left-color: #fbbf24; }\n    .cal-entry.peptides { border-left-color: #a78bfa; }\n    .cal-entry.nootropics { border-left-color: #34d399; }\n    .cal-entry.medication { border-left-color: #60a5fa; }\n    .cal-entry.other { border-left-color: #94a3b8; }\n    .c-category { display:inline-block; margin:0 0 3px; padding:2px 5px; border:1px solid currentColor; border-radius:999px; font-size:8px; line-height:1.1; font-weight:800; letter-spacing:.45px; text-transform:uppercase; opacity:.9; }\n    .c-category.type-oil { color:#fbbf24; }\n    .c-category.type-pep { color:#a78bfa; }\n    .c-category.type-oral { color:#34d399; }\n    .c-category.type-med { color:#60a5fa; }\n    .c-category.type-other { color:#94a3b8; }",
         'group calendar styles');
 
     html = rep(html,
@@ -374,7 +379,7 @@ function patchCategoryHub(html){
 
     html = rep(html,
         "        const freqSel = `<div>\n            <label>Frequency</label>",
-        "        const selectedGroup = c.displayGroup || '';\n        const autoGroup = GROUP_META[defaultGroupFor(c)].label;\n        const groupHTML = `<div>\n            <label>Display Group</label>\n            <select data-id=\"${c.id}\" data-key=\"displayGroup\">\n                <option value=\"\" ${selectedGroup === '' ? 'selected' : ''}>Auto · ${autoGroup}</option>\n                <option value=\"gear\" ${selectedGroup === 'gear' ? 'selected' : ''}>Oil / Gear</option>\n                <option value=\"peptides\" ${selectedGroup === 'peptides' ? 'selected' : ''}>Peptides</option>\n                <option value=\"nootropics\" ${selectedGroup === 'nootropics' ? 'selected' : ''}>Nootropics</option>\n            </select>\n        </div>`;\n\n        const freqSel = `<div>\n            <label>Frequency</label>",
+        "        const selectedGroup = c.displayGroup || '';\n        const autoGroup = GROUP_META[defaultGroupFor(c)].label;\n        const groupHTML = `<div>\n            <label>Category</label>\n            <select data-id=\"${c.id}\" data-key=\"displayGroup\">\n                <option value=\"\" ${selectedGroup === '' ? 'selected' : ''}>Auto · ${autoGroup}</option>\n                <option value=\"gear\" ${selectedGroup === 'gear' ? 'selected' : ''}>Oil / Gear</option>\n                <option value=\"peptides\" ${selectedGroup === 'peptides' ? 'selected' : ''}>Peptides</option>\n                <option value=\"nootropics\" ${selectedGroup === 'nootropics' ? 'selected' : ''}>Nootropics</option>\n                <option value=\"medication\" ${selectedGroup === 'medication' ? 'selected' : ''}>Medication / Health</option>\n                <option value=\"other\" ${selectedGroup === 'other' ? 'selected' : ''}>Other</option>\n            </select>\n        </div>`;\n\n        const freqSel = `<div>\n            <label>Frequency</label>",
         'display group control');
 
     html = rep(html,
@@ -386,6 +391,15 @@ function patchCategoryHub(html){
         "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay' || e.target.dataset.key === 'cycleMode') renderStack();",
         "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay' || e.target.dataset.key === 'cycleMode' || e.target.dataset.key === 'displayGroup') renderStack();",
         'group rerender');
+
+    html = rep(html,
+        "document.getElementById('addBtn').addEventListener('click', () => {\n    const nameInput = document.getElementById('addName');\n    const type = document.getElementById('addType').value;\n    const name = nameInput.value.trim() || (type === 'iu' ? 'HGH' : type === 'pep' ? 'Peptide' : type === 'oral' ? 'Oral' : 'Test E');\n    stack.push(newCompound(name, type));\n    nameInput.value = '';\n    saveAll();\n    renderStack();\n});",
+        "const ADD_GROUP_DEFAULTS = { oil:'gear', iu:'peptides', pep:'peptides', oral:'' };\nfunction syncAddGroupToDoseType() {\n    const type = document.getElementById('addType').value;\n    document.getElementById('addGroup').value = ADD_GROUP_DEFAULTS[type] || '';\n}\ndocument.getElementById('addType').addEventListener('change', syncAddGroupToDoseType);\n\ndocument.getElementById('addBtn').addEventListener('click', () => {\n    const nameInput = document.getElementById('addName');\n    const type = document.getElementById('addType').value;\n    const displayGroup = document.getElementById('addGroup').value;\n    if (!displayGroup) {\n        toast('Choose a category for this compound');\n        document.getElementById('addGroup').focus();\n        return;\n    }\n    const name = nameInput.value.trim() || (type === 'iu' ? 'HGH' : type === 'pep' ? 'Peptide' : type === 'oral' ? 'Oral' : 'Test E');\n    const compound = newCompound(name, type);\n    compound.displayGroup = displayGroup;\n    stack.push(compound);\n    nameInput.value = '';\n    saveAll();\n    renderStack();\n});",
+        'creation category persistence');
+    html = rep(html,
+        "        const c = newCompound(p.name, p.type);\n        for (const k of ['conc','vialMl','weeklyMg','totalIu','bacWaterIu','doseIu','totalMg','bacWaterPep','doseMcg','freq']) {",
+        "        const c = newCompound(p.name, p.type);\n        c.displayGroup = ADD_GROUP_DEFAULTS[p.type] || defaultGroupFor(c);\n        for (const k of ['conc','vialMl','weeklyMg','totalIu','bacWaterIu','doseIu','totalMg','bacWaterPep','doseMcg','freq']) {",
+        'preset categories');
 
     html = rep(html,
         "    const cycleSummary = stack.filter(c => (c.cycleMode || 'none') !== 'none').map(c => escapeHTML(c.name) + ': ' + cycleStatusText(cycleStateFor(c, viewWeek)));",
