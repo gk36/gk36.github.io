@@ -141,6 +141,52 @@ function patchProtocolHub(html){
         "title=\"${isLogged ? 'Un-tick this shot' : 'Tick when injected'}\"",
         "title=\"${c.type === 'oral' ? (isLogged ? 'Un-tick this dose' : 'Tick when taken') : (isLogged ? 'Un-tick this shot' : 'Tick when injected')}\""
     );
+    html = html.replace('input, select {', 'input, select, textarea {');
+    html = html.replace(
+        'input:focus, select:focus { outline: none; border-color: var(--accent-color); }',
+        'input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent-color); }\n    textarea { min-height: 72px; resize: vertical; font-family: inherit; }'
+    );
+    html = html.replace(
+        '.type-oral { color: #34d399; border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }',
+        '.type-oral { color: #34d399; border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }\n    .c-note { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; font-style: italic; }'
+    );
+    html = html.replace(
+        "totalMg: 5, bacWaterPep: 2, doseMcg: 250, oralDoseMg: 10",
+        "totalMg: 5, bacWaterPep: 2, doseMcg: 250, oralDoseMg: 10, oralDosesPerDay: 1, notes: ''"
+    );
+    html = html.replace(
+        "    } else if (c.type === 'oral') {\n        const doseMg = num(c.oralDoseMg);\n        if (doseMg > 0) rows.push({ label: 'Dose per Intake', value: fmt(doseMg) + ' mg', hl: true });",
+        "    } else if (c.type === 'oral') {\n        const dailyMg = num(c.oralDoseMg);\n        const dosesPerDay = Math.max(1, Math.min(3, Math.round(num(c.oralDosesPerDay) || 1)));\n        if (dailyMg > 0) {\n            const doseMg = dailyMg / dosesPerDay;\n            const timing = dosesPerDay === 3 ? 'Morning · Afternoon · Evening' : dosesPerDay === 2 ? 'Morning · Evening' : 'Once daily';\n            rows.push({ label: 'Daily Dose', value: fmt(dailyMg) + ' mg' });\n            rows.push({ label: 'Dose per Intake', value: fmt(doseMg) + ' mg', hl: true });\n            rows.push({ label: 'Timing', value: timing });\n        }"
+    );
+    html = html.replace(
+        "        if (c.type === 'oral') {\n            const dose = num(c.oralDoseMg);\n            if (dose > 0) {\n                for (const d of dueDays) {\n                    days[d] = { status: 'due', amt: dose, unit: 'mg', ml: 0,\n                                draw: fmt(dose) + ' mg', sub: 'oral dose' };\n                }\n                if (missedDays.length > 0) {\n                    note = missedDays.length + ' missed day' + (missedDays.length > 1 ? 's' : '') + ' — dose stays at ' + fmt(dose) + ' mg';",
+        "        if (c.type === 'oral') {\n            const dailyMg = num(c.oralDoseMg);\n            const dosesPerDay = Math.max(1, Math.min(3, Math.round(num(c.oralDosesPerDay) || 1)));\n            if (dailyMg > 0) {\n                const doseMg = dailyMg / dosesPerDay;\n                const timing = dosesPerDay === 3 ? 'Morning · Afternoon · Evening' : dosesPerDay === 2 ? 'Morning · Evening' : 'Once daily';\n                for (const d of dueDays) {\n                    days[d] = { status: 'due', amt: dailyMg, unit: 'mg', ml: 0,\n                                draw: fmt(doseMg) + ' mg' + (dosesPerDay > 1 ? ' × ' + dosesPerDay : ''), sub: timing };\n                }\n                if (missedDays.length > 0) {\n                    note = missedDays.length + ' missed day' + (missedDays.length > 1 ? 's' : '') + ' — daily dose stays at ' + fmt(dailyMg) + ' mg';"
+    );
+    html = html.replace(
+        "inputs = fieldHTML(c, 'oralDoseMg', 'Dose per Intake (mg)', '0.1', true);",
+        "inputs = fieldHTML(c, 'oralDoseMg', 'Daily Dose (mg)', '0.1') +\n                     `<div><label>Times per Day</label><select data-id=\"${c.id}\" data-key=\"oralDosesPerDay\">\n                         <option value=\"1\" ${String(c.oralDosesPerDay || 1) === '1' ? 'selected' : ''}>Once daily</option>\n                         <option value=\"2\" ${String(c.oralDosesPerDay) === '2' ? 'selected' : ''}>2× — Morning / Evening</option>\n                         <option value=\"3\" ${String(c.oralDosesPerDay) === '3' ? 'selected' : ''}>3× — Morning / Afternoon / Evening</option>\n                     </select></div>`;"
+    );
+    html = html.replace(
+        "        card.innerHTML = `",
+        "        const notesHTML = `<div class=\"full\">\n            <label>Notes (optional)</label>\n            <textarea data-id=\"${c.id}\" data-key=\"notes\" placeholder=\"e.g. Take with food\">${escapeHTML(c.notes || '')}</textarea>\n        </div>`;\n\n        card.innerHTML = `"
+    );
+    html = html.replace(
+        "                ${reconHTML}\n            </div>",
+        "                ${reconHTML}\n                ${notesHTML}\n            </div>"
+    );
+    html = html.replace(
+        "if (e.target.dataset.key === 'freq') renderStack();",
+        "if (e.target.dataset.key === 'freq' || e.target.dataset.key === 'oralDosesPerDay') renderStack();"
+    );
+    html = html.replace(
+        '<span class="miss-tag">missed — rolled into remaining days</span>',
+        '<span class="miss-tag">missed — rolled into remaining days</span>\n                            ${c.notes ? `<span class="c-note">${escapeHTML(c.notes)}</span>` : \'\'}'
+    );
+    html = html.replace(
+        '<span class="c-sub"> · ${info.sub}</span>',
+        '<span class="c-sub"> · ${info.sub}</span>\n                            ${c.notes ? `<span class="c-note">${escapeHTML(c.notes)}</span>` : \'\'}'
+    );
+    html = html.replace('Tick each shot as you take it', 'Tick each dose as you take it');
     html = html.replace('Pins / Week', 'Doses / Week');
     return html;
 }
