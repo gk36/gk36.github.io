@@ -75,7 +75,76 @@ async function tryUnlock(kb){
         return new TextDecoder().decode(pt);
     } catch(e){ return null; }
 }
-function boot(html){ document.open(); document.write(html); document.close(); }
+function patchProtocolHub(html){
+    // The app itself remains encrypted. These narrowly-scoped replacements are
+    // applied only after a successful unlock, immediately before the app boots.
+    html = html.replace(
+        '<option value="pep">Microgram / Reconstitution (Peptides)</option>',
+        '<option value="pep">Microgram / Reconstitution (Peptides)</option>\n                    <option value="oral">Powder / Tablets / Orals (mg)</option>'
+    );
+    html = html.replace(
+        '.type-pep { color: #a78bfa; border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.08); }',
+        '.type-pep { color: #a78bfa; border-color: rgba(167,139,250,0.4); background: rgba(167,139,250,0.08); }\n    .type-oral { color: #34d399; border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); }'
+    );
+    html = html.replace(
+        "totalMg: 5, bacWaterPep: 2, doseMcg: 250",
+        "totalMg: 5, bacWaterPep: 2, doseMcg: 250, oralDoseMg: 10"
+    );
+    html = html.replace(
+        "pep: { badge: 'mcg / Recon', cls: 'type-pep' }",
+        "pep: { badge: 'mcg / Recon', cls: 'type-pep' },\n    oral: { badge: 'Oral / mg', cls: 'type-oral' }"
+    );
+    html = html.replace(
+        "if (c.type === 'oil' || !c.reconDate) return null;",
+        "if (c.type === 'oil' || c.type === 'oral' || !c.reconDate) return null;"
+    );
+    html = html.replace(
+        "    } else if (c.type === 'iu') {\n        const totalIu = num(c.totalIu), bac = num(c.bacWaterIu), dose = num(c.doseIu);",
+        "    } else if (c.type === 'oral') {\n        const doseMg = num(c.oralDoseMg);\n        if (doseMg > 0) rows.push({ label: 'Dose per Intake', value: fmt(doseMg) + ' mg', hl: true });\n    } else if (c.type === 'iu') {\n        const totalIu = num(c.totalIu), bac = num(c.bacWaterIu), dose = num(c.doseIu);"
+    );
+    html = html.replace(
+        "const sched = nominal.perInjectionMl > 0 ? activeDaysThisWeek(c) : [];",
+        "const sched = (c.type === 'oral' ? num(c.oralDoseMg) > 0 : nominal.perInjectionMl > 0) ? activeDaysThisWeek(c) : [];"
+    );
+    html = html.replace(
+        "        if (r.perInjectionMl > 0) {\n            const dose = c.type === 'iu' ? num(c.doseIu) : num(c.doseMcg);",
+        "        if (c.type === 'oral') {\n            const dose = num(c.oralDoseMg);\n            if (dose > 0) {\n                for (const d of dueDays) {\n                    days[d] = { status: 'due', amt: dose, unit: 'mg', ml: 0,\n                                draw: fmt(dose) + ' mg', sub: 'oral dose' };\n                }\n                if (missedDays.length > 0) {\n                    note = missedDays.length + ' missed day' + (missedDays.length > 1 ? 's' : '') + ' — dose stays at ' + fmt(dose) + ' mg';\n                    noteCls = 'warn';\n                }\n            }\n        } else if (r.perInjectionMl > 0) {\n            const dose = c.type === 'iu' ? num(c.doseIu) : num(c.doseMcg);"
+    );
+    html = html.replace(
+        "        } else if (c.type === 'iu') {\n            inputs = fieldHTML(c, 'totalIu'",
+        "        } else if (c.type === 'oral') {\n            inputs = fieldHTML(c, 'oralDoseMg', 'Dose per Intake (mg)', '0.1', true);\n        } else if (c.type === 'iu') {\n            inputs = fieldHTML(c, 'totalIu'"
+    );
+    html = html.replace("        const syrSel = `<div>", "        let syrSel = `<div>");
+    html = html.replace(
+        "            </select>\n        </div>`;\n\n        const freqSel = `<div>",
+        "            </select>\n        </div>`;\n        if (c.type === 'oral') syrSel = '';\n\n        const freqSel = `<div>"
+    );
+    html = html.split("if (c.type !== 'oil') {").join("if (c.type !== 'oil' && c.type !== 'oral') {");
+    html = html.split("else if (c.type !== 'oil') {").join("else if (c.type !== 'oil' && c.type !== 'oral') {");
+    html = html.replace(
+        "<label>Injection Days</label>",
+        "<label>${c.type === 'oral' ? 'Dose Days' : 'Injection Days'}</label>"
+    );
+    html = html.replace(
+        "${r.perWeek % 1 === 0 ? r.perWeek : r.perWeek.toFixed(1)} pins / week",
+        "${r.perWeek % 1 === 0 ? r.perWeek : r.perWeek.toFixed(1)} ${c.type === 'oral' ? 'doses' : 'pins'} / week"
+    );
+    html = html.replace(
+        "        if (r.perInjectionMl > 0) {\n            pins += r.perWeek;\n            vol += r.perInjectionMl * r.perWeek;\n        }",
+        "        if (r.perInjectionMl > 0 || (c.type === 'oral' && num(c.oralDoseMg) > 0)) pins += r.perWeek;\n        if (r.perInjectionMl > 0) vol += r.perInjectionMl * r.perWeek;"
+    );
+    html = html.replace(
+        "const name = nameInput.value.trim() || (type === 'iu' ? 'HGH' : type === 'pep' ? 'Peptide' : 'Test E');",
+        "const name = nameInput.value.trim() || (type === 'iu' ? 'HGH' : type === 'pep' ? 'Peptide' : type === 'oral' ? 'Oral' : 'Test E');"
+    );
+    html = html.replace(
+        "title=\"${isLogged ? 'Un-tick this shot' : 'Tick when injected'}\"",
+        "title=\"${c.type === 'oral' ? (isLogged ? 'Un-tick this dose' : 'Tick when taken') : (isLogged ? 'Un-tick this shot' : 'Tick when injected')}\""
+    );
+    html = html.replace('Pins / Week', 'Doses / Week');
+    return html;
+}
+function boot(html){ html = patchProtocolHub(html); document.open(); document.write(html); document.close(); }
 
 async function unlock(){
     var code = document.getElementById('codeIn').value;
