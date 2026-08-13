@@ -82,6 +82,47 @@
   .goal .sub{font-size:11px;color:var(--dim);margin-top:2px}
   .goal.on .sub{color:var(--accent2)}
   .goaldesc{margin-top:12px;font-size:13px;color:var(--muted);background:var(--bg);border:1px dashed var(--line2);border-radius:11px;padding:11px 13px}
+  .goaldesc b{color:var(--txt)}
+
+  /* ---- goal sub-styles (cut) ---- */
+  .substyle-wrap{overflow:hidden;max-height:0;opacity:0;margin-top:0;
+        transition:max-height .32s ease,opacity .25s ease,margin-top .32s ease}
+  .substyle-wrap.open{max-height:760px;opacity:1;margin-top:16px}
+  .substyles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(max-width:820px){.substyles{grid-template-columns:1fr}}
+  .substyle{background:var(--bg);border:1px solid var(--line2);border-radius:13px;padding:12px 13px;cursor:pointer;transition:.15s}
+  .substyle:hover{border-color:var(--dim)}
+  .substyle.on{border-color:var(--accent);background:linear-gradient(180deg,rgba(255,106,61,.16),rgba(255,106,61,.04));box-shadow:0 0 0 1px var(--accent) inset}
+  .substyle .sh{display:flex;align-items:center;gap:8px}
+  .substyle .sh .ico{font-size:18px}
+  .substyle .sh .nm{font-weight:800;font-size:14px}
+  .substyle .sh .sub{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.6px;font-weight:800;margin-left:auto;text-align:right}
+  .substyle.on .sh .sub{color:var(--accent2)}
+  /* narrow screens: drop the tag under the name instead of squeezing both onto one line */
+  @media(max-width:520px){
+    .substyle .sh{flex-wrap:wrap}
+    .substyle .sh .sub{width:100%;margin:2px 0 0 26px;text-align:left}
+  }
+  .substyle .macros{margin-top:8px;font-size:11.5px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
+  .warnbox{margin-top:12px;background:linear-gradient(180deg,rgba(246,196,83,.12),rgba(246,196,83,.03));
+        border:1px solid rgba(246,196,83,.38);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--muted);display:none}
+  .warnbox.show{display:block}
+  .warnbox b{color:var(--fat)}
+
+  /* ---- timing presets ---- */
+  .timing-wrap{overflow:hidden;max-height:0;opacity:0;transition:max-height .32s ease,opacity .25s ease}
+  .timing-wrap.open{max-height:760px;opacity:1}
+  .timings{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px}
+  @media(max-width:1000px){.timings{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.timings{grid-template-columns:1fr}}
+  .timing{background:var(--bg);border:1px solid var(--line2);border-radius:13px;padding:12px 13px;cursor:pointer;transition:.15s}
+  .timing:hover{border-color:var(--dim)}
+  .timing.on{border-color:var(--accent);background:linear-gradient(180deg,rgba(255,106,61,.16),rgba(255,106,61,.04));box-shadow:0 0 0 1px var(--accent) inset}
+  .timing .th{display:flex;align-items:center;gap:8px}
+  .timing .th .ico{font-size:17px}
+  .timing .th .nm{font-weight:800;font-size:13.5px}
+  .timing .flow{margin-top:7px;font-size:11px;color:var(--dim);font-weight:700;line-height:1.5}
+  .timing.on .flow{color:var(--accent2)}
 
   /* ---- dashboard ---- */
   .dash{display:grid;grid-template-columns:230px 1fr;gap:20px;align-items:center}
@@ -146,6 +187,8 @@
   .toggle.mini input:checked + .tk::after{transform:translateX(14px)}
   .toggle.mini .tgl{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;font-weight:800;color:var(--dim)}
   .toggle.mini input:checked ~ .tgl{color:var(--accent2)}
+  .toggle input:disabled ~ span{opacity:.4}
+  .toggle:has(input:disabled){cursor:not-allowed}
   .meal .mnote{font-size:12px;color:var(--muted);margin-top:auto;padding-top:6px}
   .swaptip{font-size:11px;color:var(--dim);margin-top:2px}
 
@@ -266,6 +309,11 @@
   <div class="card pad grid-gap">
     <p class="section-title">Your Goal — foods &amp; macros auto-adjust</p>
     <div class="goals" id="goals"></div>
+    <div class="substyle-wrap" id="styleWrap">
+      <p class="section-title" style="margin:0 0 10px">Cut style — how hard do you want to run it?</p>
+      <div class="substyles" id="cutStyles"></div>
+      <div class="warnbox" id="cutWarn"></div>
+    </div>
     <div class="goaldesc" id="goalDesc"></div>
   </div>
 
@@ -275,6 +323,9 @@
     <div class="seg" id="daySeg" style="max-width:440px">
       <button data-day="gym" class="on">💪 Gym day</button>
       <button data-day="rest">😴 Rest day</button>
+    </div>
+    <div class="timing-wrap" id="timingWrap">
+      <div class="timings" id="timings"></div>
     </div>
     <div class="goaldesc" id="dayDesc"></div>
   </div>
@@ -339,7 +390,7 @@ const ACTIVITY = [
 ];
 
 const GOALS = [
-  {key:'cut',        label:'Cut',        ico:'🔻', sub:'-20%', deltaPct:-20, pPerLb:1.1, fat:50, fastCarb:60,
+  {key:'cut',        label:'Cut',        ico:'🔻', sub:'pick style', hasStyles:true, deltaPct:-20, pPerLb:1.1, fat:50, fastCarb:60,
    desc:'Lose fat while keeping muscle. Calories ~20% below maintenance, protein pushed to the top of the range to protect lean mass, fat trimmed to the ~50 g hormonal floor, fast carbs eased to ~60 g. Carbs still fuel training.'},
   {key:'recomp',     label:'Recomp',     ico:'⚖️', sub:'maint', deltaPct:0,  pPerLb:1.0, fat:60, fastCarb:80,
    desc:'Eat at maintenance to slowly add muscle and drop fat at the same time. Protein 1.0 g/lb, fat at the 60 g natural minimum, ~80 g fast carbs around training, the rest of calories from carbs for performance and recovery.'},
@@ -348,6 +399,45 @@ const GOALS = [
   {key:'bulk',       label:'Bulk',       ico:'🚀', sub:'+20%', deltaPct:20, pPerLb:0.9, fat:60, fastCarb:80,
    desc:'Aggressive mass gain at +20% over maintenance. Protein eased to 0.9 g/lb since plenty of energy spares it, fat kept at the 60 g floor to leave max room for carbs, ~80 g fast carbs around training, big carb surplus driving growth.'},
 ];
+
+/* Two ways to run a cut. `pPerKg`/`fatPerKg` override the goal's g/lb + flat-gram defaults;
+   `carbCapPerKg` turns carbs from "whatever calories are left" into a hard ceiling — which is
+   what makes the aggressive style land where it lands (calories fall out of the minimums). */
+const CUT_STYLES = [
+  {key:'performance', label:'Performance Cut', ico:'⚡', sub:'balanced carbs',
+   deltaPct:-20, pPerKg:2.1, fatPerKg:0.7, fastCarb:70,
+   blurb:'P 2.1 g/kg · F 0.7 g/kg · carbs fill the rest',
+   desc:'<b>Performance Cut</b> — fat loss with enough fuel left to keep training hard. Calories sit ~20% under maintenance, protein at 2.1 g/kg holds lean mass, fat is trimmed moderately to 0.7 g/kg, and carbs take every calorie that\'s left — a real energy pool, timed around the session so the gym still feels good. This is the one you can run for months.'},
+
+  {key:'aggressive', label:'Aggressive Cut', ico:'🔥', sub:'protein-priority · PSMF',
+   deltaPct:-25, pPerKg:2.4, fatPerKg:0.5, carbCapPerKg:0.8, fastCarb:30, noBreakfastCarb:true,
+   blurb:'P 2.4 g/kg · F 0.5 g/kg · carbs capped 0.8 g/kg',
+   desc:'<b>Aggressive Cut</b> — protein-sparing modified fast. Protein goes to 2.4 g/kg to defend muscle, fat drops to the 0.5 g/kg essential floor, and carbs are hard-capped at 0.8 g/kg, clustered around training so nothing is spent away from the gym (the breakfast fruit is dropped automatically). Because carbs and fat are capped rather than topped up, <b>calories land wherever those minimums fall</b> instead of at a set deficit.',
+   warn:'This is PSMF territory and it lands a long way under maintenance. It\'s a short-block tool — a couple of weeks with refeeds, alongside enough protein and a multivitamin — not a setting to leave switched on. It also only fits if you pick the leanest proteins (cod, turkey, chicken breast); fatty cuts alone will blow past the 0.5 g/kg fat floor before you\'ve eaten a single carb.'},
+];
+
+/* Workout-day meal structures. `meals` lists which MEALS ids appear; `fastSplit` is the share of
+   peri-workout sugar that goes PRE (the rest goes post); `starchSplit` is the share of the starch
+   budget that goes to the pre meal. Drop a meal and its macros flow into the ones left standing. */
+const TIMINGS = [
+  {key:'standard', label:'Standard day', ico:'🍳', meals:[1,2,3,4,5], fastSplit:0.5, starchSplit:0.45,
+   flow:'Breakfast → digest → pre-meal → fast carb → GYM → fast carb → feast',
+   desc:'Full protocol — five feedings timed around your session, with fast sugars before and after the gym to fuel the workout and slam glycogen back in.'},
+
+  {key:'morning', label:'Breakfast → gym', ico:'🌅', meals:[1,3,4,2,5], fastSplit:0.5, starchSplit:0.5,
+   flow:'Breakfast → ~1 h digest → fast carb → GYM → fast carb → post meal → feast',
+   desc:'Train mid-morning straight off breakfast. Eggs + your breakfast carb on waking, <b>~1–1.5 h to digest</b>, then the fast-carb pump and into the session — the pre-workout starch meal moves to <b>after</b> the gym instead. Both big whole-food meals land in the recovery window with the whole day ahead to eat them, and the session runs on breakfast plus fast sugar — plenty for most training, since the starch you\'d have eaten before wouldn\'t have finished digesting anyway.'},
+
+  {key:'early', label:'Early workout', ico:'⚡', meals:[1,2,4,5], fastSplit:0, starchSplit:0.40,
+   flow:'Quick eggs → 30–45 min → pre-meal → GYM → fast carb → feast',
+   desc:'Training early. Breakfast shrinks to a fast-digesting egg or whey hit and you give it <b>30–45 minutes</b> instead of two hours, then eat the pre-workout meal and go. The separate pre-gym sugar shot is dropped — the pre-workout meal already sits close to the session — so <b>every fast carb lands after training instead</b>.'},
+
+  {key:'fasted', label:'Direct pre-workout', ico:'🌙', meals:[2,4,5], fastSplit:0, starchSplit:0.32,
+   flow:'Single pre-workout fuel meal → GYM → fast carb → massive re-feed',
+   desc:'No breakfast at all. One condensed pre-workout fuel meal carries the whole morning, then you train and re-feed hard. The eggs and breakfast fruit disappear and <b>their protein and carbs are pushed straight into the fuel meal and the post-workout re-feed</b> — your daily totals come out identical.'},
+];
+
+const REST_DESC = 'No training today — the peri-workout fast sugars are dropped entirely (they\'re the least useful calories without a session), while protein, fat and your whole-food meals stay identical. The day collapses to <b>Breakfast · Lunch · Dinner</b>, landing ~300 kcal lighter. Full fuel returns automatically on your next gym day.';
 
 /* disp: weight (g), volume (mL), count (pieces), tbsp.  state: raw/dry.
    cooked: raw/dry-weight -> cooked-weight multiplier (USDA cooking-yield tables;
@@ -423,7 +513,9 @@ const SAFETY = {
    ============================================================ */
 const state = {
   kg:65.65, cm:174, age:21, sex:'male', act:'moderate', goal:'slight_bulk',
+  cutStyle:'performance',   // only read when goal === 'cut'
   day:'gym',        // 'gym' | 'rest'
+  timing:'standard',        // only read on gym days
   eggs:4, liver:false, boneBroth:false,
   breakfastCarbOn:true, dairyOn:true,
   pick:{},          // key `${mealId}:${group}` -> food id
@@ -435,6 +527,11 @@ const DEFAULT_STATE=JSON.parse(JSON.stringify(state));
 const MEALS = [
   {id:1, name:'Breakfast Baseline', badge:'Morning', gym:false, time:'On waking / start of day',
    note:'Whole eggs + optional liver to prime muscle-protein synthesis and lower waking cortisol.',
+   timing:{
+     morning:{badge:'Morning · fuel', time:'On waking · ~1–1.5 h before the pump',
+       note:'Your entire pre-workout fuel today — eggs + breakfast carb on waking, then give it a good hour to settle before the fast-carb pump. Go easy on the liver if your stomach runs heavy in the gym.'},
+     early:{name:'Quick Breakfast', badge:'Morning · fast', time:'On waking · 30–45 min before your pre-workout meal',
+       note:'Fast-digesting version — eggs (or a whey shake) only, kept light so it clears before you train. Leave the liver off on early days; it sits heavy.'}},
    rows:[
      {kind:'eggs'},
      {kind:'food', label:'Breakfast carb', group:'breakfast_carb', target:'breakfastCarb', macro:'c'},
@@ -443,6 +540,13 @@ const MEALS = [
    note:'Slow starch + lean protein so glycogen and amino acids peak right at training.',
    rest:{name:'Lunch', badge:'Midday', time:'~4–5 hours after breakfast',
          note:'Same slow starch + lean protein — steady aminos and glycogen for recovery, no gym anchor needed.'},
+   timing:{
+     morning:{name:'Post-Gym Meal', badge:'Post · 1.5–2 h', time:'1.5–2 hours after the gym',
+       note:'Moved behind the session — slow starch + lean protein landing right in the glycogen window, the first of your two big recovery meals.'},
+     early:{badge:'Pre · 45–60 min', time:'45–60 min before the gym',
+       note:'Your main fuelling meal on an early day — slow starch and lean protein going in closer to the session, so keep the portion comfortable rather than maximal.'},
+     fasted:{name:'Pre-Workout Fuel Meal', badge:'Pre · 60–90 min', time:'60–90 min before the gym · your first food of the day',
+       note:'One condensed meal standing in for breakfast and the pre-workout meal — it carries the morning protein and the starch that fuels the session.'}},
    rows:[
      {kind:'food', label:'Starchy carb', group:'starchy_carb', target:'starchyPre', macro:'c'},
      {kind:'food', label:'Lean protein', group:'protein', target:'beefPre', macro:'p'},
@@ -452,11 +556,20 @@ const MEALS = [
    rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPre', macro:'c'} ]},
   {id:4, name:'Post-Gym Fast Carb', badge:'Fast · <30 min', gym:true, gymOnly:true, time:'within 30 min after the gym',
    note:'Immediate insulin spike to slam glycogen back into exhausted muscle and drop cortisol.',
+   timing:{
+     early:{note:'Your whole fast-carb allowance lands here now — the pre-gym shot was dropped, so this one hit does the full job of spiking insulin and refilling glycogen.'},
+     fasted:{note:'Your whole fast-carb allowance lands here now — after a fasted morning this is the single most valuable sugar hit of the day. Don\'t skip it.'}},
    rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPost', macro:'c'} ]},
   {id:5, name:'Post-Workout Feast', badge:'Post · 1.5–2 h', gym:false, time:'1.5–2 hours after the gym',
    note:'Big whole-food refeed to finish glycogen loading and drive overnight recovery.',
    rest:{name:'Dinner', badge:'Evening', time:'Evening · finish 2–3 h before bed',
          note:'Same big whole-food meal — overnight muscle repair runs on tonight’s protein and starch.'},
+   timing:{
+     morning:{name:'Afternoon Feast', badge:'Later · PM', time:'3–4 hours after the post-gym meal',
+       note:'Second big whole-food meal — the rest of the day\'s starch and protein going in while recovery is still running hot.'},
+     early:{note:'Big whole-food refeed carrying a larger share than usual, since the morning ran light. Finishes glycogen loading and drives overnight recovery.'},
+     fasted:{name:'Massive Post-Workout Re-feed', badge:'Post · 1.5–2 h',
+       note:'The biggest meal of the day by a distance — it absorbs the skipped breakfast on top of the normal post-workout load, so expect large grams here.'}},
    rows:[
      {kind:'food', label:'Starchy carb', group:'starchy_carb', target:'starchyPost', macro:'c'},
      {kind:'food', label:'Lean protein', group:'protein', target:'beefPost', macro:'p'},
@@ -464,8 +577,31 @@ const MEALS = [
    ]},
 ];
 function isRest(){ return state.day==='rest'; }
-function mealMeta(m){ return (isRest() && m.rest) ? Object.assign({}, m, m.rest, {gym:false}) : m; }
-function visibleMeals(){ return isRest() ? MEALS.filter(m=>!m.gymOnly) : MEALS; }
+/* rest days ignore the timing preset entirely and fall back to the standard shape */
+function timing(){ return isRest() ? TIMINGS[0] : (TIMINGS.find(t=>t.key===state.timing) || TIMINGS[0]); }
+function cutStyle(){ return CUT_STYLES.find(s=>s.key===state.cutStyle) || CUT_STYLES[0]; }
+/* the cut goal is really two goals — fold the chosen style over it, keeping key:'cut' */
+function goalParams(){
+  const g = GOALS.find(x=>x.key===state.goal) || GOALS[0];
+  if(!g.hasStyles) return g;
+  const s = cutStyle();
+  return Object.assign({}, g, s, {key:g.key, styleKey:s.key, label:s.label, ico:s.ico});
+}
+function mealMeta(m){
+  if(isRest()) return m.rest ? Object.assign({}, m, m.rest, {gym:false}) : m;
+  const t = m.timing && m.timing[timing().key];
+  return t ? Object.assign({}, m, t) : m;
+}
+function visibleMeals(){
+  if(isRest()) return MEALS.filter(m=>!m.gymOnly);
+  return timing().meals.map(id=>MEALS.find(m=>m.id===id));   // preset order = render order
+}
+/* a dropped breakfast must not silently drop its macros — these gate the math, not `state`,
+   so switching presets back and forth restores the user's egg count and toggle untouched */
+function breakfastLive(){ return visibleMeals().some(m=>m.id===1); }
+function eggsActive(){ return breakfastLive() ? state.eggs : 0; }
+function liverActive(){ return breakfastLive() && state.liver; }
+function bfCarbActive(){ return breakfastLive() && state.breakfastCarbOn && !goalParams().noBreakfastCarb; }
 
 /* ============================================================
    MATH
@@ -489,7 +625,8 @@ function truPro (food,grams,macro){ const per=food[macro]; return (per&&grams>0)
 function truCarb(food,grams,macro){ const per=food[macro]; return (per&&grams>0) ? grams/per*(food.c||0) : 0; }
 
 function compute(){
-  const g = GOALS.find(x=>x.key===state.goal);
+  const g = goalParams();
+  const T = timing();
   const a = ACTIVITY.find(x=>x.key===state.act);
   const {kg,cm,age,sex} = state;
   const rest = isRest();
@@ -498,26 +635,35 @@ function compute(){
   const tdee = bmr*a.mult;
   let cal = tdee*(1+g.deltaPct/100);
 
-  let protein = r0(lbs*g.pPerLb);
-  let fat = g.fat;
+  let protein = r0(g.pPerKg ? kg*g.pPerKg : lbs*g.pPerLb);
+  let fat = r0(g.fatPerKg ? kg*g.fatPerKg : g.fat);
   let carbs = Math.max(0, r0((cal - protein*4 - fat*9)/4));
+
+  // A capped style stops filling calories with carbs — so calories become an OUTPUT of the
+  // minimums rather than the deficit, which is the whole point of a PSMF.
+  let carbCapped = false;
+  if(g.carbCapPerKg){
+    const cap = Math.max(0, r0(kg*g.carbCapPerKg));
+    if(carbs > cap){ carbs = cap; carbCapped = true; cal = protein*4 + fat*9 + carbs*4; }
+  }
 
   // ---- carb buckets ----
   // breakfast floor scales down when total carbs are scarce so it can't starve the main meals
-  let breakfastCarb = state.breakfastCarbOn
+  let breakfastCarb = bfCarbActive()
     ? Math.min(carbs, Math.max(Math.min(15, r0(carbs*0.3)), Math.min(30, r0(carbs*0.06))))
     : 0;
   let fastCarbTotal = Math.min(g.fastCarb, Math.max(0, carbs-breakfastCarb));
   if(rest){ cal -= fastCarbTotal*4; carbs -= fastCarbTotal; fastCarbTotal = 0; }   // rest day: peri-workout sugars dropped, not converted
-  const fastPre  = r0(fastCarbTotal/2);
+  const fastPre  = r0(fastCarbTotal*T.fastSplit);   // presets without a pre-gym slot push it all post
   const fastPost = fastCarbTotal-fastPre;
 
   // ---- protein buckets ----
   const liverFood  = foodById('protein','liver');
   const dairyFood  = foodById('dairy_drink', state.pick['5:dairy_drink']);
-  const eggProtein   = state.eggs*EGG.p;
-  const liverProtein = state.liver ? (LIVER_G/100*liverFood.p) : 0;
-  const brothProtein = state.boneBroth ? BROTH.p : 0;
+  const eggs = eggsActive();                        // 0 when the preset drops breakfast
+  const eggProtein   = eggs*EGG.p;
+  const liverProtein = liverActive() ? (LIVER_G/100*liverFood.p) : 0;
+  const brothProtein = (breakfastLive() && state.boneBroth) ? BROTH.p : 0;
   const milkProtein  = state.dairyOn ? (state.milkMl/100*dairyFood.p) : 0;
   const beefTotal = Math.max(0, protein - eggProtein - liverProtein - brothProtein - milkProtein);
   const beefPre  = r0(beefTotal*0.5);
@@ -530,24 +676,26 @@ function compute(){
   const preS=pickFood(2,'starchy_carb'), postS=pickFood(5,'starchy_carb');
   const bfF=pickFood(1,'breakfast_carb'), fpF=pickFood(3,'fast_carb'), fqF=pickFood(4,'fast_carb');
 
-  let fixedK = state.eggs*EGG.k
-    + (state.liver? LIVER_G/100*liverFood.k : 0)
-    + (state.boneBroth? BROTH.k : 0)
+  let fixedK = eggs*EGG.k
+    + (liverActive()? LIVER_G/100*liverFood.k : 0)
+    + (brothProtein? BROTH.k : 0)
     + (state.dairyOn? state.milkMl/100*dairyFood.k : 0)
     + truKcal(bfF,breakfastCarb,'c')
     + truKcal(fpF,fastPre,'c') + truKcal(fqF,fastPost,'c')
     + truKcal(preP,beefPre,'p') + truKcal(postP,beefPost,'p');
-  let fixedF = state.eggs*EGG.f
-    + (state.liver? LIVER_G/100*liverFood.f : 0)
-    + (state.boneBroth? BROTH.f : 0)
+  let fixedF = eggs*EGG.f
+    + (liverActive()? LIVER_G/100*liverFood.f : 0)
+    + (brothProtein? BROTH.f : 0)
     + (state.dairyOn? state.milkMl/100*dairyFood.f : 0)
     + truFat(bfF,breakfastCarb,'c')
     + truFat(fpF,fastPre,'c') + truFat(fqF,fastPost,'c')
     + truFat(preP,beefPre,'p') + truFat(postP,beefPost,'p');
 
-  // carb grams a kcal budget buys from each chosen starch (its k covers its own protein+fat)
-  const starchFromBudget = b => ({ pre: Math.max(0, r0(b*0.45 * preS.c/preS.k)),
-                                   post: Math.max(0, r0(b*0.55 * postS.c/postS.k)) });
+  // carb grams a kcal budget buys from each chosen starch (its k covers its own protein+fat).
+  // The pre/post share follows the preset — dropping breakfast tips the balance to the re-feed.
+  const sPre = T.starchSplit;
+  const starchFromBudget = b => ({ pre: Math.max(0, r0(b*sPre * preS.c/preS.k)),
+                                   post: Math.max(0, r0(b*(1-sPre) * postS.c/postS.k)) });
   // pass 1: butter/oil headroom up to the fat floor, ignoring starch's own fat
   let butter = Math.max(0, fat - fixedF);
   let sp = starchFromBudget(Math.max(0, cal - fixedK - butter*9));
@@ -568,12 +716,13 @@ function compute(){
     + truPro(bfF,breakfastCarb,'c') + truPro(fpF,fastPre,'c') + truPro(fqF,fastPost,'c');
   const planC = breakfastCarb + fastCarbTotal + starchyTotal
     + truCarb(preP,beefPre,'p') + truCarb(postP,beefPost,'p')
-    + (state.liver? LIVER_G/100*liverFood.c : 0)
+    + (liverActive()? LIVER_G/100*liverFood.c : 0)
     + (state.dairyOn? state.milkMl/100*dairyFood.c : 0);
 
   carbs = breakfastCarb + fastCarbTotal + starchyTotal;   // the carbs the plan actually prescribes
 
-  return {g,a,lbs,bmr,tdee,cal,protein,fat,carbs,
+  return {g,a,T,lbs,bmr,tdee,cal,protein,fat,carbs,eggs,carbCapped,
+    deficitPct:(cal/tdee-1)*100,
     breakfastCarb,fastCarbTotal,starchyTotal,starchyPre,starchyPost,fastPre,fastPost,
     beefPre,beefPost,milkMl:state.dairyOn ? state.milkMl : 0,
     planK,planP,planC,planF,butter,infeasible,rest};
@@ -626,6 +775,32 @@ function buildGoals(){
     state.goal=el.dataset.goal;
     box.querySelectorAll('.goal').forEach(x=>x.classList.toggle('on',x.dataset.goal===state.goal));
     recompute();
+  });
+}
+function buildCutStyles(){
+  const box=document.getElementById('cutStyles');
+  box.innerHTML = CUT_STYLES.map(s=>`
+    <div class="substyle${s.key===state.cutStyle?' on':''}" data-style="${s.key}">
+      <div class="sh"><span class="ico">${s.ico}</span><span class="nm">${s.label}</span><span class="sub">${s.sub}</span></div>
+      <div class="macros">${s.blurb}</div>
+    </div>`).join('');
+  box.querySelectorAll('.substyle').forEach(el=>el.onclick=()=>{
+    state.cutStyle=el.dataset.style;
+    box.querySelectorAll('.substyle').forEach(x=>x.classList.toggle('on',x.dataset.style===state.cutStyle));
+    recompute();
+  });
+}
+function buildTimings(){
+  const box=document.getElementById('timings');
+  box.innerHTML = TIMINGS.map(t=>`
+    <div class="timing${t.key===state.timing?' on':''}" data-timing="${t.key}">
+      <div class="th"><span class="ico">${t.ico}</span><span class="nm">${t.label}</span></div>
+      <div class="flow">${t.flow}</div>
+    </div>`).join('');
+  box.querySelectorAll('.timing').forEach(el=>el.onclick=()=>{
+    if(state.timing===el.dataset.timing) return;
+    state.timing=el.dataset.timing;
+    syncDayUI(); buildMeals(); recompute();       // the visible meal set changes, so rebuild
   });
 }
 
@@ -729,6 +904,17 @@ function buildSafety(){
 function recompute(){
   const d=compute();
 
+  // goal blurb + cut-style panel
+  document.getElementById('styleWrap').classList.toggle('open', !!d.g.hasStyles);
+  document.getElementById('goalDesc').innerHTML = d.g.desc;
+  const cw=document.getElementById('cutWarn');
+  if(d.g.hasStyles && d.g.warn){
+    cw.classList.add('show');
+    cw.innerHTML = `<b>⚠️ Heads up —</b> ${d.g.warn}`
+      + `<br><br>As set up right now that's <b>${r0(d.cal).toLocaleString()} kcal</b>, roughly `
+      + `<b>${Math.abs(r0(d.deficitPct))}% below</b> your ${r0(d.tdee).toLocaleString()} kcal maintenance.`;
+  } else cw.classList.remove('show');
+
   // dashboard
   document.getElementById('calVal').textContent=r0(d.cal).toLocaleString();
   document.getElementById('bmrVal').textContent=r0(d.bmr).toLocaleString();
@@ -741,14 +927,19 @@ function recompute(){
   document.getElementById('pBar').style.width=(pK/tot*100)+'%';
   document.getElementById('cBar').style.width=(cK/tot*100)+'%';
   document.getElementById('fBar').style.width=(fK/tot*100)+'%';
-  document.getElementById('pPerLb').textContent=`· ${d.lbs?r1(d.protein/d.lbs):0} g/lb`;
+  document.getElementById('pPerLb').textContent=
+    `· ${d.lbs?r1(d.protein/d.lbs):0} g/lb · ${state.kg?r1(d.protein/state.kg):0} g/kg`;
   document.getElementById('cSplit').innerHTML=
-    `🍚 starchy <b>${d.starchyTotal} g</b> &nbsp;·&nbsp; 🍯 fast <b>${d.fastCarbTotal} g</b> &nbsp;·&nbsp; 🍊 fruit <b>${d.breakfastCarb} g</b>`;
+    `🍚 starchy <b>${d.starchyTotal} g</b> &nbsp;·&nbsp; 🍯 fast <b>${d.fastCarbTotal} g</b> &nbsp;·&nbsp; 🍊 fruit <b>${d.breakfastCarb} g</b>`
+    + (d.carbCapped?` &nbsp;·&nbsp; <b style="color:var(--fat)">capped at ${r1(d.g.carbCapPerKg)} g/kg</b>`:'');
 
   // plan-totals reconciliation line
   const pl=document.getElementById('planLine');
   if(d.infeasible){
-    pl.innerHTML=`⚠️ <b style="color:var(--fat)">Heads up:</b> protein + fat minimums alone exceed this calorie target — the plan below can't fit. Raise calories (goal/activity) or accept running over.`;
+    pl.innerHTML=`⚠️ <b style="color:var(--fat)">Doesn't fit:</b> the protein and fat you've picked already cost more than this calorie target — there's nothing left for starch. `
+      + (d.g.carbCapPerKg
+          ? `On an aggressive cut you have to switch both protein slots to a very lean pick — cod, turkey or chicken breast — and turn dairy off.`
+          : `Raise calories (goal/activity) or accept running over.`);
   } else {
     const fWarn = d.planF > d.fat+8;
     pl.innerHTML=`🧮 Plan as shown ≈ <b>${r0(d.planK).toLocaleString()} kcal</b> · P <b>${r0(d.planP)} g</b> · C <b>${r0(d.planC)} g</b> · F <b${fWarn?' style="color:var(--fat)" title="Fatty picks push fat above the target — starch shrank to keep calories on point"':''}>${r0(d.planF)} g</b>`
@@ -761,14 +952,37 @@ function recompute(){
     {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
     {t:'Lunch',m:'Starch + protein',c:d.starchyPre,gym:false},
     {t:'Dinner',m:'Starch + protein',c:d.starchyPost,gym:false},
-  ] : [
-    {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
-    {t:'Pre 1.5–2h',m:'Starch + protein',c:d.starchyPre,gym:false},
-    {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
-    {t:'💪 GYM',m:'Train',c:null,gym:true},
-    {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
-    {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPost,gym:false},
-  ];
+  ] : ({
+    standard:[
+      {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
+      {t:'Pre 1.5–2h',m:'Starch + protein',c:d.starchyPre,gym:false},
+      {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
+      {t:'💪 GYM',m:'Train',c:null,gym:true},
+      {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
+      {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPost,gym:false},
+    ],
+    morning:[
+      {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
+      {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
+      {t:'💪 GYM',m:'Train',c:null,gym:true},
+      {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
+      {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPre,gym:false},
+      {t:'Afternoon',m:'Starch + protein',c:d.starchyPost,gym:false},
+    ],
+    early:[
+      {t:'Quick breakfast',m:'Eggs / whey',c:d.breakfastCarb,gym:false},
+      {t:'Pre 45–60m',m:'Starch + protein',c:d.starchyPre,gym:false},
+      {t:'💪 GYM',m:'Train',c:null,gym:true},
+      {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
+      {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPost,gym:false},
+    ],
+    fasted:[
+      {t:'Pre 60–90m',m:'Fuel meal',c:d.starchyPre,gym:false},
+      {t:'💪 GYM',m:'Train',c:null,gym:true},
+      {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
+      {t:'Post 1.5–2h',m:'Big re-feed',c:d.starchyPost,gym:false},
+    ],
+  })[d.T.key];
   document.getElementById('timeline').innerHTML=nodes
     .map(n=>`<div class="tnode${n.gym?' gym':''}"><div class="t">${n.t}</div><div class="m">${n.m}</div>${n.c?`<div class="c">${n.c} g C</div>`:''}</div>`).join('');
 
@@ -777,7 +991,7 @@ function recompute(){
   const ek=document.getElementById('eggKc');
   if(ek){
     const liverK=r0(LIVER_G/100*foodById('protein','liver').k);
-    ek.textContent=`≈ ${state.eggs} × egg = ${r0(state.eggs*EGG.p)} g protein · ${r0(state.eggs*EGG.k + (state.liver?liverK:0) + (state.boneBroth?BROTH.k:0))} kcal${state.liver?` · +${LIVER_G} g liver`:''}${state.boneBroth?' · +250 mL broth':''}`;
+    ek.textContent=`≈ ${d.eggs} × egg = ${r0(d.eggs*EGG.p)} g protein · ${r0(d.eggs*EGG.k + (state.liver?liverK:0) + (state.boneBroth?BROTH.k:0))} kcal${state.liver?` · +${LIVER_G} g liver`:''}${state.boneBroth?' · +250 mL broth':''}`;
   }
 
   // meal rows
@@ -803,13 +1017,21 @@ function recompute(){
       ref.note.textContent=f.note;
       return;
     }
-    if(row.target==='breakfastCarb' && !state.breakfastCarbOn){
-      ref.amt.innerHTML=`<span style="color:var(--dim)">skipped</span>`;
-      ref.kc.textContent=`carbs forwarded to your training meals →`;
-      ref.note.textContent='';
-      if(ref.selWrap) ref.selWrap.style.display='none';
-      ref.rowEl.classList.remove('shownote');
-      return;
+    if(row.target==='breakfastCarb'){
+      // an aggressive cut owns this toggle — carbs are too scarce to spend away from the gym
+      const forced=!!d.g.noBreakfastCarb;
+      const chk=document.getElementById('bfCarbChk');
+      if(chk){ chk.disabled=forced; chk.checked=bfCarbActive(); }
+      if(!bfCarbActive()){
+        ref.amt.innerHTML=`<span style="color:var(--dim)">skipped</span>`;
+        ref.kc.textContent = forced
+          ? 'aggressive cut — every carb is clustered around training →'
+          : 'carbs forwarded to your training meals →';
+        ref.note.textContent='';
+        if(ref.selWrap) ref.selWrap.style.display='none';
+        ref.rowEl.classList.remove('shownote');
+        return;
+      }
     }
     if(ref.selWrap) ref.selWrap.style.display='';
     const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
@@ -849,14 +1071,13 @@ function initDay(){
   });
 }
 function syncDayUI(){
-  const rest=isRest();
+  const rest=isRest(), T=timing();
   document.querySelectorAll('#daySeg button').forEach(x=>x.classList.toggle('on',x.dataset.day===(rest?'rest':'gym')));
-  document.getElementById('dayDesc').innerHTML = rest
-    ? 'No training today — the peri-workout fast sugars are dropped entirely (they\'re the least useful calories without a session), while protein, fat and your whole-food meals stay identical. The day collapses to <b>Breakfast · Lunch · Dinner</b>, landing ~300 kcal lighter. Full fuel returns automatically on your next gym day.'
-    : 'Full protocol — five feedings timed around your session, with fast sugars before and after the gym to fuel the workout and slam glycogen back in.';
-  document.getElementById('mealsTitle').textContent = rest
-    ? 'Your 3 Meals — rest day · pick any option, grams update'
-    : 'Your 5 Meals — pick any option, grams update';
+  document.getElementById('timingWrap').classList.toggle('open',!rest);   // presets are gym-day only
+  document.querySelectorAll('#timings .timing').forEach(el=>el.classList.toggle('on',el.dataset.timing===state.timing));
+  document.getElementById('dayDesc').innerHTML = rest ? REST_DESC : T.desc;
+  document.getElementById('mealsTitle').textContent =
+    `Your ${visibleMeals().length} Meals — ${rest?'rest day':T.label.toLowerCase()} · pick any option, grams update`;
 }
 function initSex(){
   document.querySelectorAll('#sexSeg button').forEach(b=>b.onclick=()=>{
@@ -868,10 +1089,11 @@ function initSex(){
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
 
 function copyPlan(){
-  const d=compute(); const G=GOALS.find(x=>x.key===state.goal);
-  let s=`CARBMAXX — ${G.label} plan · ${d.rest?'😴 REST day':'💪 GYM day'}\n`;
+  const d=compute();
+  let s=`CARBMAXX — ${d.g.label} plan · ${d.rest?'😴 REST day':'💪 GYM day · '+d.T.label}\n`;
   s+=`${state.kg} kg · ${state.cm} cm · ${state.age} yrs · ${state.sex}\n`;
-  s+=`Target ~${r0(d.cal)} kcal | P ${d.protein}g  C ${d.carbs}g  F ${d.fat}g  (${d.lbs?r1(d.protein/d.lbs):0} g/lb)\n`;
+  s+=`Target ~${r0(d.cal)} kcal | P ${d.protein}g  C ${d.carbs}g  F ${d.fat}g  (${d.lbs?r1(d.protein/d.lbs):0} g/lb · ${state.kg?r1(d.protein/state.kg):0} g/kg)\n`;
+  if(d.carbCapped) s+=`Carbs capped at ${r1(d.g.carbCapPerKg)} g/kg — calories fall out of the minimums (${Math.abs(r0(d.deficitPct))}% below maintenance).\n`;
   s+=`Plan as shown ≈ ${r0(d.planK)} kcal | P ${r0(d.planP)}g  C ${r0(d.planC)}g  F ${r0(d.planF)}g\n`;
   if(d.butter>=2) s+=`(includes ~${r0(d.butter)} g cooking butter/oil across meals)\n`;
   if(d.infeasible) s+=`!! Heads up: protein + fat minimums alone exceed this calorie target — the plan runs over.\n`;
@@ -879,11 +1101,11 @@ function copyPlan(){
   visibleMeals().forEach(mm=>{
     const m=mealMeta(mm);
     s+=`— ${m.name} (${m.time}) —\n`;
-    if(m.id===1) s+=`  ${state.eggs} whole eggs${state.liver?` + ${LIVER_G}g liver`:''}${state.boneBroth?' + 250mL bone broth':''}\n`;
+    if(m.id===1) s+=`  ${d.eggs} whole eggs${state.liver?` + ${LIVER_G}g liver`:''}${state.boneBroth?' + 250mL bone broth':''}\n`;
     m.rows.forEach(row=>{
       if(row.kind==='eggs') return;
       if(row.kind==='dairy'){ if(state.dairyOn){ const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]); s+=`  ${row.label}: ${d.milkMl} ${f.disp==='weight'?'g':'mL'} ${f.name}\n`; } return; }
-      if(row.target==='breakfastCarb' && !state.breakfastCarbOn) return;
+      if(row.target==='breakfastCarb' && !bfCarbActive()) return;
       const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]);
       const tgt={breakfastCarb:d.breakfastCarb,starchyPre:d.starchyPre,starchyPost:d.starchyPost,fastPre:d.fastPre,fastPost:d.fastPost,beefPre:d.beefPre,beefPost:d.beefPost}[row.target];
       const t=amountText(f,tgt,row.macro);
@@ -905,7 +1127,7 @@ let FIREBASE_DB = "https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.a
 /* ▲▲▲ that's the only line you edit ▲▲▲ */
 
 const PKEY='carbmaxx_profiles_v1';
-const PFIELDS=['kg','cm','age','sex','act','goal','day','eggs','liver','boneBroth','breakfastCarbOn','dairyOn','milkMl','pick'];
+const PFIELDS=['kg','cm','age','sex','act','goal','cutStyle','day','timing','eggs','liver','boneBroth','breakfastCarbOn','dairyOn','milkMl','pick'];
 function cloudOn(){ return /^https:\/\/[^\s"']+\.(firebaseio\.com|firebasedatabase\.app)/i.test(FIREBASE_DB); }
 function cloudUrl(name){ return FIREBASE_DB.replace(/\/+$/,'') + '/carbmaxx/profiles' + (name?('/'+encodeURIComponent(name)):'') + '.json'; }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -968,6 +1190,7 @@ function syncControls(){
   document.querySelectorAll('#sexSeg button').forEach(b=>b.classList.toggle('on',b.dataset.sex===state.sex));
   document.getElementById('actSel').value=state.act;
   document.querySelectorAll('#goals .goal').forEach(el=>el.classList.toggle('on',el.dataset.goal===state.goal));
+  document.querySelectorAll('#cutStyles .substyle').forEach(el=>el.classList.toggle('on',el.dataset.style===state.cutStyle));
   syncDayUI();
 }
 function applySnapshot(snap){
@@ -981,6 +1204,8 @@ function applySnapshot(snap){
   state.sex = state.sex==='female' ? 'female' : 'male';
   if(!GOALS.some(x=>x.key===state.goal)) state.goal=DEFAULT_STATE.goal;
   if(!ACTIVITY.some(x=>x.key===state.act)) state.act=DEFAULT_STATE.act;
+  if(!CUT_STYLES.some(x=>x.key===state.cutStyle)) state.cutStyle=DEFAULT_STATE.cutStyle;
+  if(!TIMINGS.some(x=>x.key===state.timing)) state.timing=DEFAULT_STATE.timing;
   const num=(v,lo,hi,dflt)=>{ v=parseFloat(v); return isNaN(v)?dflt:Math.min(hi,Math.max(lo,v)); };
   state.kg=num(state.kg,40,160,DEFAULT_STATE.kg);
   state.cm=r0(num(state.cm,140,210,DEFAULT_STATE.cm));
@@ -1059,6 +1284,8 @@ function deleteProfile(name){
    ============================================================ */
 buildActivity();
 buildGoals();
+buildCutStyles();
+buildTimings();
 buildMeals();
 buildSafety();
 initSex();
