@@ -900,7 +900,7 @@ function recompute(){
     pl.innerHTML=`⚠️ <b style="color:var(--fat)">Doesn't fit:</b> the protein and fat you've picked already cost more than this calorie target — there's nothing left for starch. `
       + (d.g.carbCapPerKg
           ? `On an aggressive cut you have to switch both protein slots to a very lean pick — cod, turkey or chicken breast — and turn dairy off.`
-          : `Choose leaner proteins or reduce optional eggs/dairy. Keep activity set to your actual activity.`);
+          : `Choose leaner proteins or reduce optional eggs/dairy. Keep activity set to your actual activity. Actual plan: ${r0(d.planK)} kcal · P ${r0(d.planP)} g · C ${r0(d.planC)} g · F ${r0(d.planF)} g, including ${r1(d.butter)} g olive oil.`);
   } else {
     const fWarn = d.planF > d.fat+8;
     pl.innerHTML=`Targets: P ${d.protein} g · F ${d.fat} g. 🧮 Plan as shown ≈ <b>${r0(d.planK).toLocaleString()} kcal</b> · P <b>${r0(d.planP)} g</b> · C <b>${r0(d.planC)} g</b> · F <b${fWarn?' style="color:var(--fat)" title="Fatty picks push fat above the target — starch shrank to keep calories on point"':''}>${r0(d.planF)} g</b>`
@@ -999,7 +999,7 @@ function recompute(){
     const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
     const t=amountText(f, targets[row.target], row.macro);
     ref.amt.innerHTML=`${t.main}`;
-    ref.kc.textContent=`${targets[row.target]} g ${row.macro==='p'?'protein':'carbs'}`+(t.sub?` · ${t.sub}`:'');
+    ref.kc.textContent=`${r1(targets[row.target])} g ${row.macro==='p'?'protein':'carbs'}`+(t.sub?` · ${t.sub}`:'');
     ref.note.textContent=t.note;
   });
 
