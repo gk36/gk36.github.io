@@ -45,6 +45,7 @@ import base64
 import concurrent.futures
 import contextlib
 import hashlib
+import io
 import json
 import math
 import os
@@ -64,6 +65,7 @@ from pathlib import Path
 try:
     import requests
     from requests.adapters import HTTPAdapter
+    from urllib3.filepost import encode_multipart_formdata
 except ImportError:
     print("Missing dependency. Run:  pip install requests")
     sys.exit(1)
@@ -88,7 +90,7 @@ V5_MANIFEST_NAME = "manifest.v5.json"
 LOCK_NAME = ".generator-v6.lock"
 MAX_REFERENCES = 16
 PARTIAL_IMAGES = 2            # streamed previews per image in keep-alive mode
-CONNECT_TIMEOUT = 30          # seconds to open the connection
+STALL_TIMEOUT = 60            # seconds with zero progress while connecting/uploading
 DEFAULT_READ_TIMEOUT = 900    # seconds to wait for a reply (xhigh/max can be slow)
 QUOTA_CODES = {"insufficient_quota", "billing_hard_limit_reached", "billing_not_active"}
 # Optional request fields V6 may add; if a model refuses one it is dropped and
@@ -639,6 +641,34 @@ class UnsupportedParam(Exception):
         self.param = param
 
 
+class UploadBody(io.BytesIO):
+    """Request body handed to requests as a stream so it goes out in small blocks.
+
+    requests applies its *connect* timeout to sending the request body. Passed as
+    one bytes object, the whole upload (prompt + every reference image) had to
+    finish inside that limit — 15s in V5, 30s in the first V6 — which a normal
+    home upload with several workers can't do for multi-MB screenshots. That is
+    the "ConnectionError -> ProtocolError -> TimeoutError" after exactly 30s.
+    Streamed, the limit applies per block, so only a genuinely stalled upload
+    fails, and it fails without being billed (OpenAI never got the full request).
+    """
+
+    def __init__(self, data: bytes, on_done=None):
+        super().__init__(data)
+        self.total = len(data)
+        self.started = time.monotonic()
+        self.finished_at = None
+        self._on_done = on_done
+
+    def read(self, size=-1):
+        chunk = super().read(size)
+        if not chunk and self.finished_at is None:
+            self.finished_at = time.monotonic()
+            if self._on_done:
+                self._on_done(self.finished_at - self.started, self.total)
+        return chunk
+
+
 def safe_identifier(value) -> str:
     return re.sub(r"[^A-Za-z0-9_.:-]", "", str(value or ""))[:100]
 
@@ -816,7 +846,7 @@ class ImageClient:
             try:
                 with new_session() as s:
                     r = s.get(self.api_root + "/models", headers=self._headers,
-                              timeout=(CONNECT_TIMEOUT, 60), allow_redirects=False)
+                              timeout=(STALL_TIMEOUT, 60), allow_redirects=False)
             except requests.RequestException as exc:
                 last = transport_error(exc)
                 time.sleep(2 * (attempt + 1))
@@ -844,7 +874,7 @@ class ImageClient:
                     raw = base64.b64decode(item["b64_json"], validate=True)
                 elif item.get("url"):
                     with new_session() as s:
-                        raw = s.get(item["url"], timeout=(CONNECT_TIMEOUT, 120)).content
+                        raw = s.get(item["url"], timeout=(STALL_TIMEOUT, 120)).content
                 else:
                     continue
                 images.append((raw, verify_image(raw)))
@@ -882,15 +912,30 @@ class ImageClient:
             raise RetryableError("stream ended before the image was finished", "drop")
         return images, usage
 
-    def request(self, fields: dict, refs, stream: bool, on_partial=lambda _i: None):
+    @staticmethod
+    def _transport(exc, upload):
+        err = transport_error(exc)
+        if upload is not None and upload.finished_at is None and err.kind != "connect":
+            detail = str(err).split("(", 1)[-1].rstrip(")")
+            return RetryableError(f"upload interrupted at {upload.tell() / 1e6:.1f} of "
+                                  f"{upload.total / 1e6:.1f} MB ({detail})", "upload")
+        return err
+
+    def request(self, fields: dict, refs, stream: bool, on_partial=lambda _i: None,
+                on_upload=None):
         """One HTTP attempt. Returns ([(bytes, ext)], usage, request_id)."""
         kwargs = {"headers": self._headers, "allow_redirects": False, "stream": stream,
-                  "timeout": (CONNECT_TIMEOUT, self.read_timeout)}
+                  "timeout": (STALL_TIMEOUT, self.read_timeout)}
+        upload = None
         if refs:
             url = self.api_root + "/images/edits"
-            kwargs["data"] = {k: ("true" if v is True else "false" if v is False else str(v))
-                              for k, v in fields.items()}
-            kwargs["files"] = [("image[]", (ref.name, ref.data, ref.mime)) for ref in refs]
+            form = [(k, "true" if v is True else "false" if v is False else str(v))
+                    for k, v in fields.items()]
+            form += [("image[]", (ref.name, ref.data, ref.mime)) for ref in refs]
+            body, content_type = encode_multipart_formdata(form)
+            upload = UploadBody(body, on_upload)
+            kwargs["data"] = upload
+            kwargs["headers"] = {**self._headers, "Content-Type": content_type}
         else:
             url = self.api_root + "/images/generations"
             kwargs["json"] = fields
@@ -898,7 +943,7 @@ class ImageClient:
             try:
                 response = s.post(url, **kwargs)
             except requests.RequestException as exc:
-                raise transport_error(exc) from None
+                raise self._transport(exc, upload) from None
             with response:
                 rid = safe_identifier(response.headers.get("x-request-id"))
                 try:
@@ -1246,7 +1291,9 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
         log(f"Starting batch: {len(jobs)} to make, {skipped} already done | model={settings.model} | "
             f"quality={settings.quality} | size={settings.size} | {settings.n} image(s)/prompt")
         if refs:
-            log(f"Using {len(refs)} reference image(s) via the edits endpoint"
+            ref_mb = sum(len(r.data) for r in refs) / 1e6
+            log(f"Using {len(refs)} reference image(s) via the edits endpoint — {ref_mb:.1f} MB "
+                f"uploaded with every prompt (~{ref_mb * len(jobs):.0f} MB for this batch)"
                 + (f", fidelity={settings.input_fidelity}" if settings.input_fidelity != "default" else ""))
         log(f"{workers} parallel worker(s) | launch gap {pace:g}s | {retries} retries per image | "
             f"timeout {read_timeout:g}s")
@@ -1316,8 +1363,13 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                 def on_partial(i, _tag=tag):
                     log(f"{_tag} — preview {int(i or 0) + 1} received, still rendering...")
 
+                def on_upload(seconds, size, _tag=tag):
+                    if seconds >= 5:
+                        log(f"{_tag} — references uploaded ({size / 1e6:.1f} MB in "
+                            f"{seconds:.0f}s), rendering...")
+
                 try:
-                    images, usage, rid = client.request(fields, refs, stream, on_partial)
+                    images, usage, rid = client.request(fields, refs, stream, on_partial, on_upload)
                 except UnsupportedParam as exc:
                     # Rejected requests aren't billed; resend without that field
                     # (a no-op drop means another worker already removed it).
