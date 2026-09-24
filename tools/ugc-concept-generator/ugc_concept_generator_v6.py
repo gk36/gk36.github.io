@@ -66,6 +66,7 @@ import threading
 import time
 import zlib
 from dataclasses import dataclass, field
+from functools import cached_property
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -233,12 +234,12 @@ class Settings:
                                  "1024x1536 or auto.")
         return self
 
-    def job_dict(self) -> dict:
+    def job_dict(self, include_ignored=False) -> dict:
         # Same shape as V5's settings so a V5 output folder's finished images
         # are recognised on resume when the extra V6 options are left at default.
         data = {"model": self.model, "quality": self.quality, "size": self.size,
                 "n": self.n, "background": self.background}
-        if self.input_fidelity != "default":
+        if self.input_fidelity != "default" and (include_ignored or not ignores_fidelity(self.model)):
             data["input_fidelity"] = self.input_fidelity
         if self.moderation != "auto":
             data["moderation"] = self.moderation
@@ -410,14 +411,15 @@ class CostBook:
             c, t = c / 2, t / 2
         table[key] = [c, t]
 
-    def record(self, model, quality, size, refs, usage, images, fidelity="default", streamed=False):
+    def record(self, model, quality, size, refs, usage, images, fidelity="default", previews=0):
         if not isinstance(usage, dict) or images <= 0:
             return
         m, fid = base_model(model), effective_fidelity(model, fidelity)
         with self.lock:
             out = usage.get("output_tokens")
-            # Streamed replies include preview tokens; keep them out of the per-image average.
-            if isinstance(out, (int, float)) and out > 0 and not streamed:
+            if isinstance(out, (int, float)):
+                out -= PARTIAL_IMAGE_TOKENS * previews      # streamed previews aren't the image
+            if isinstance(out, (int, float)) and out > 0:
                 self._add(self.data["output"], f"{m}|{quality}|{size}", images, out)
             det = usage.get("input_tokens_details") if isinstance(usage.get("input_tokens_details"), dict) else {}
             img = det.get("image_tokens")
@@ -453,11 +455,11 @@ class CostBook:
             ci, ti = self._get(self.data["refimage"], f"{m}|{fid}")
         if c >= 1:
             return t / c, "measured for these exact references", False
-        if ci >= 1:
-            return ti / ci * len(refs), "measured average per reference image", False
         if is_gpt_image_2_family(model):
             tokens = sum(rough_ref_tokens(r.width, r.height) for r in refs)
             return tokens, "rough estimate — OpenAI doesn't publish this; exact after the first image", True
+        if ci >= 1:
+            return ti / ci * len(refs), "measured average per reference image", False
         return None, "measured after the first image", False
 
 
@@ -618,7 +620,7 @@ class Reference:
     width: int = 0
     height: int = 0
 
-    @property
+    @cached_property
     def digest(self):
         return hashlib.sha256(self.data).hexdigest()
 
@@ -871,7 +873,7 @@ def error_from_payload(status, err: dict, body, headers, sent: dict):
         return FatalError(f"OpenAI couldn't read one of the input images{shown}{suffix}. "
                           "Check your reference images (every prompt uses them).")
     if status == 401:
-        return FatalError(f"API key rejected (401). Check the key.{suffix}")
+        return FatalError(f"API key rejected (401){shown}. Check the key.{suffix}")
     if status == 403:
         return FatalError(f"Permission denied for this model/project (403){shown}{suffix}")
     if status == 404:
@@ -1059,10 +1061,15 @@ class ImageClient:
             raise RetryableError("the file upload reply had no file id", "bad_reply")
         return file_id
 
-    def delete_file(self, file_id):
-        with contextlib.suppress(Exception), new_session() as s:
-            s.delete(f"{self.api_root}/files/{file_id}", headers=self._headers,
-                     timeout=(STALL_TIMEOUT, 30), allow_redirects=False).close()
+    def delete_file(self, file_id) -> bool:
+        try:
+            with new_session() as s:
+                r = s.delete(f"{self.api_root}/files/{file_id}", headers=self._headers,
+                             timeout=(STALL_TIMEOUT, 30), allow_redirects=False)
+                r.close()
+                return r.status_code in (200, 404)
+        except Exception:
+            return False
 
     def request(self, fields: dict, refs, stream: bool, on_partial=lambda _i: None,
                 on_upload=None, file_ids=None):
@@ -1157,7 +1164,6 @@ class BatchState:
         self.quota_since = None      # start of the current run of quota/billing errors
         self.fatal = None
         self.file_ids = None         # reference file ids when uploaded once
-        self.file_proven = False     # a request using them has succeeded
 
     def set_fatal(self, message) -> bool:
         """Record the first fatal error; True only for the first caller."""
@@ -1227,11 +1233,12 @@ def backoff(tries):
 # ----------------------------------------------------------------------------
 # FILES / MANIFEST
 # ----------------------------------------------------------------------------
-def job_key(prompt: str, settings: Settings, references=(), occurrence=0, ordered=False) -> str:
+def job_key(prompt: str, settings: Settings, references=(), occurrence=0, ordered=False,
+            legacy_fidelity=False) -> str:
     # References are keyed as a set (re-adding them in another order is the same
-    # job); ordered=True gives the older V5/early-V6 key so their work is found.
+    # job); ordered/legacy_fidelity rebuild older keys so earlier work is found.
     digests = [ref.digest for ref in references]
-    data = {"prompt": prompt, "settings": settings.job_dict(),
+    data = {"prompt": prompt, "settings": settings.job_dict(include_ignored=legacy_fidelity),
             "references": digests if ordered else sorted(digests), "output_format": "png"}
     if occurrence:
         data["occurrence"] = occurrence    # the same prompt twice = two images
@@ -1339,9 +1346,21 @@ def plan_jobs(folder: Path, manifest: dict, settings: Settings, prompts, refs):
         occurrence = seen.get(base, 0)
         seen[base] = occurrence + 1
         key = base if not occurrence else job_key(prompt, settings, refs, occurrence)
-        old = (manifest["jobs"].get(key)
-               or manifest["jobs"].get(job_key(prompt, settings, refs, occurrence, ordered=True)) or {})
-        good = verified_files(folder, old)
+        candidates = [key]
+        if [r.digest for r in refs] != sorted(r.digest for r in refs):
+            candidates.append(job_key(prompt, settings, refs, occurrence, ordered=True))
+        if settings.input_fidelity != "default" and ignores_fidelity(settings.model):
+            candidates += [job_key(prompt, settings, refs, occurrence, ordered=o, legacy_fidelity=True)
+                           for o in (False, True)]
+        old, good = {}, []
+        for candidate in candidates:
+            entry = manifest["jobs"].get(candidate)
+            if entry:
+                files = verified_files(folder, entry)
+                if not old or len(files) > len(good):
+                    old, good = entry, files
+                if len(good) >= settings.n:
+                    break
         (done if len(good) >= settings.n else todo).append((index, prompt, key, old, good))
     return todo, done
 
@@ -1436,9 +1455,9 @@ def keep_awake(log):
 
 
 def upload_references_once(client, refs, log, stop):
-    """Upload each reference to the Files API once. Returns file ids, or None to
-    fall back to sending the images with every prompt."""
-    ids, size = [], sum(len(r.data) for r in refs) / 1e6
+    """Upload each reference to the Files API once. Returns (file ids, all expire
+    on their own), or None to fall back to sending the images with every prompt."""
+    ids, size, all_expire = [], sum(len(r.data) for r in refs) / 1e6, True
     log(f"Uploading {len(refs)} reference image(s) ({size:.1f} MB) to OpenAI once...")
     started = time.monotonic()
     try:
@@ -1459,18 +1478,21 @@ def upload_references_once(client, refs, log, stop):
                 except JobError:
                     if not expire:                        # a 400 even without the expiry option
                         raise
-                    expire = False                        # try once without the auto-expiry
+                    expire = all_expire = False           # try once without the auto-expiry
             else:
                 raise JobError("upload kept failing")
     except Exception as exc:
         for file_id in ids:
             client.delete_file(file_id)
-        if not isinstance(exc, Cancelled):
+        if isinstance(exc, FatalError):
+            log(f"This key/project can't use OpenAI's Files API ({exc}); sending the references "
+                "with every prompt instead.")
+        elif not isinstance(exc, Cancelled):
             log(f"Couldn't upload the references once ({exc}); sending them with every prompt instead.")
         return None
     log(f"References uploaded once in {time.monotonic() - started:.0f}s — each prompt now sends "
         f"a few KB instead of {size:.1f} MB.")
-    return ids
+    return ids, all_expire
 
 
 def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), workers=4,
@@ -1567,37 +1589,37 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
 
         gate = Gate(pace)
 
-        def save_images(job, images, usage, rid, took, streamed):
+        def save_images(job, images, usage, rid, took, previews):
             cost = usage_cost(settings.model, usage)
             fidelity = "default" if "input_fidelity" in state.dropped else settings.input_fidelity
             book.record(settings.model, settings.quality, settings.size, refs, usage, len(images),
-                        fidelity, streamed)
+                        fidelity, previews)
             each = f", ${cost['usd'] / max(1, len(images)):.3f}" if cost else ""
             with lock:
-                saved = 0
-                for raw, ext in images:
-                    if job.have >= settings.n:
-                        break
-                    variant = job.have + 1
-                    stem = job.stem if settings.n == 1 else f"{job.stem}_v{variant}"
-                    path = unique_path(folder, stem, ext)
-                    atomic_write(path, raw)
-                    job.entry["files"].append({"name": path.name,
-                                               "sha256": hashlib.sha256(raw).hexdigest()})
-                    job.have += 1
-                    saved += 1
-                    log(f"[{job.index}/{total}] saved  {path.name}  "
-                        f"({len(raw) // 1024} KB, {took:.0f}s{each})")
-                spent["requests"] += 1
-                spent["images"] += saved
+                spent["requests"] += 1          # billed even if saving below fails
                 if cost:
                     for part in ("usd", "text", "refs", "output"):
                         spent[part] += cost[part]
-                    spent["priced_images"] += saved
                     spent["priced_requests"] += 1
                     job.entry["cost_usd"] = round(float(job.entry.get("cost_usd") or 0) + cost["usd"], 5)
-                else:
-                    spent["unpriced"] += saved
+                saved = 0
+                try:
+                    for raw, ext in images:
+                        if job.have >= settings.n:
+                            break
+                        variant = job.have + 1
+                        stem = job.stem if settings.n == 1 else f"{job.stem}_v{variant}"
+                        path = unique_path(folder, stem, ext)
+                        atomic_write(path, raw)
+                        job.entry["files"].append({"name": path.name,
+                                                   "sha256": hashlib.sha256(raw).hexdigest()})
+                        job.have += 1
+                        saved += 1
+                        log(f"[{job.index}/{total}] saved  {path.name}  "
+                            f"({len(raw) // 1024} KB, {took:.0f}s{each})")
+                finally:
+                    spent["images"] += saved
+                    spent["priced_images" if cost else "unpriced"] += saved
                 if rid:
                     job.entry["request_ids"] = (job.entry.get("request_ids") or [])[-9:] + [rid]
                 if usage:
@@ -1621,18 +1643,21 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
             tag = f"[{job.index}/{total}] {job.stem}"
             tries = rate_hits = 0
             second_chance = False
+            attached_reason = None    # set while this prompt is retried with the images attached
             while job.have < settings.n:
                 if stop.is_set():
                     raise Cancelled()
                 gate.wait_turn(stop)
                 stream = state.use_stream()
-                file_ids = state.refs_as_files() if refs else None
+                file_ids = state.refs_as_files() if refs and attached_reason is None else None
                 fields = build_fields(settings, job.prompt, settings.n - job.have,
                                       with_refs=bool(refs), stream=stream,
                                       dropped=frozenset(state.dropped))
                 started = time.monotonic()
+                previews = [0]
 
-                def on_partial(i, _tag=tag):
+                def on_partial(i, _tag=tag, _seen=previews):
+                    _seen[0] += 1
                     log(f"{_tag} — preview {int(i or 0) + 1} received, still rendering...")
 
                 def on_upload(seconds, size, _tag=tag):
@@ -1655,10 +1680,11 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                         continue
                     raise
                 except (JobError, FatalError) as exc:
-                    # Upload-once is newer API surface: if it is refused, fall back to
-                    # sending the images with the request (4xx replies aren't billed).
-                    if file_ids and (not state.file_proven or re.search(r"file|image", str(exc), re.I)):
-                        state.stop_file_refs(str(exc))
+                    # Upload-once is newer API surface. Before blaming it, retry this prompt
+                    # with the images attached (4xx replies aren't billed); upload-once is
+                    # switched off for the batch only if that retry works where it failed.
+                    if file_ids and attached_reason is None:
+                        attached_reason = str(exc)
                         continue
                     raise
                 except RetryableError as exc:
@@ -1696,11 +1722,10 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                     if stop.wait(wait):
                         raise Cancelled() from None
                     continue
-                if file_ids:
-                    with state.lock:
-                        state.file_proven = True
+                if attached_reason and not file_ids:
+                    state.stop_file_refs(attached_reason)
                 state.success()
-                save_images(job, images, usage, rid, time.monotonic() - started, stream)
+                save_images(job, images, usage, rid, time.monotonic() - started, previews[0])
 
         def worker(job, first_pass):
             try:
@@ -1742,12 +1767,14 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                         save_manifest(folder, manifest)
                 tick()
 
-        uploaded = None
+        uploaded, uploads_expire = None, True
         with keep_awake(log):
             try:
                 if refs and ref_upload == "once":
-                    uploaded = upload_references_once(client, refs, log, stop)
-                    state.file_ids = uploaded
+                    once = upload_references_once(client, refs, log, stop)
+                    if once:
+                        uploaded, uploads_expire = once
+                        state.file_ids = list(uploaded)
                 if refs and not state.file_ids:
                     ref_mb = sum(len(r.data) for r in refs) / 1e6
                     log(f"Sending {len(refs)} reference image(s) with every prompt — {ref_mb:.1f} MB "
@@ -1769,14 +1796,32 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                         break
             finally:
                 if uploaded:
-                    for file_id in uploaded:
-                        client.delete_file(file_id)
-                    log("Removed the one-time reference uploads from OpenAI.")
+                    failed = sum(1 for file_id in uploaded if not client.delete_file(file_id))
+                    if not failed:
+                        log("Removed the one-time reference uploads from OpenAI.")
+                    else:
+                        log(f"Couldn't remove {failed} one-time reference upload(s) from OpenAI; "
+                            + ("they expire on their own within 24 hours." if uploads_expire else
+                               "you can delete them under Storage > Files on platform.openai.com."))
 
         generated = sum(1 for j in jobs if j.status == "completed")
         cancelled = sum(1 for j in jobs if j.status in ("cancelled", "pending"))
         missing = [j for j in jobs if j.status == "failed"]
-        tick()
+        if progress:
+            progress(min(total, skipped + generated + len(missing)), total)
+
+        for attempt in range(6):        # make sure this run's work is recorded for Resume
+            try:
+                with lock:
+                    save_manifest(folder, manifest)
+                break
+            except OSError as exc:
+                if attempt == 5:
+                    log(f"WARNING: couldn't save {MANIFEST_NAME} ({exc}). Images made in this run "
+                        "aren't recorded, so Resume would make (and bill) them again. Close any "
+                        "program using the output folder before resuming.")
+                else:
+                    time.sleep(5)
 
         if missing:
             lines = [f"AI PROMPT: {j.prompt}\n" for j in missing]
@@ -2067,9 +2112,13 @@ def launch_gui():
     def add_refs():
         for path in filedialog.askopenfilenames(title="Select reference images", filetypes=[
                 ("Images", "*.png *.jpg *.jpeg *.webp"), ("All files", "*.*")]):
-            if path not in references:
+            if path in references:            # e.g. a [MISSING] file that is back
+                i = references.index(path)
+                refs_list.delete(i)
+                refs_list.insert(i, ref_label(path))
+            else:
                 references.append(path)
-                refs_list.insert("end", Path(path).name)
+                refs_list.insert("end", ref_label(path))
 
     def remove_refs():
         for index in reversed(refs_list.curselection()):
@@ -2148,7 +2197,15 @@ def launch_gui():
             cost_var.set(f"Estimate: {prefix}${est['total_usd']:.2f} for {est['images']} image(s)"
                          + (f"  ({done_n} already done)" if done_n else ""))
 
+    def refresh_ref_labels():
+        for i, ref_path in enumerate(references):
+            label = ref_label(ref_path)
+            if refs_list.get(i) != label:
+                refs_list.delete(i)
+                refs_list.insert(i, label)
+
     def preview(estimate=True):
+        refresh_ref_labels()
         path = v["prompts"].get().strip()
         if not path or not Path(path).is_file():
             messagebox.showerror("No file", "Pick your prompts file first.")
@@ -2377,8 +2434,9 @@ def selftest():
                 {"output_tokens": 9000, "input_tokens": 60}, 1)
     assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[0] == 9000
     book.record("gpt-image-2.5-flare", "xhigh", "2048x1152", (),
-                {"output_tokens": 99999, "input_tokens": 60}, 1, streamed=True)       # previews excluded
+                {"output_tokens": 9200, "input_tokens": 60}, 1, previews=2)       # previews excluded
     assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[0] == 9000
+    assert "input_fidelity" not in Settings("gpt-image-2", input_fidelity="high").job_dict()
     for payload, kind in (({"type": "image_generation_user_error", "code": "invalid_image_file"}, FatalError),
                           ({"type": "image_generation_user_error", "code": "moderation_blocked"}, Blocked),
                           ({"type": "image_generation_user_error"}, Blocked)):
