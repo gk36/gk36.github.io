@@ -17,6 +17,13 @@ missing image. V4 simply retried, which is why it looked more consistent.
 
 What V6 does so it never misses one
 -----------------------------------
+* The real cause of V5's (and the first V6's) misses: requests applies its
+  *connect* timeout (15s in V5, 30s in V6) to uploading the request body, so
+  every prompt's multi-MB reference images had to finish uploading inside it.
+  V6 now streams request bodies in small blocks (only a real stall fails) and,
+  by default, uploads the references ONCE to OpenAI's Files API and sends each
+  prompt as a few KB of JSON — falling back to per-prompt uploads by itself if
+  OpenAI refuses that.
 * TCP keep-alive on every request (probe after 30s idle, then every 10s) so
   routers, mobile hotspots, VPNs and antivirus/firewalls don't silently kill a
   connection that sits quiet for minutes while an xhigh/max image renders.
@@ -85,6 +92,7 @@ BACKGROUND_CHOICES = ["auto", "opaque", "transparent"]
 STREAM_CHOICES = ["auto", "on", "off"]
 FIDELITY_CHOICES = ["default", "high", "low"]
 MODERATION_CHOICES = ["auto", "low"]
+REF_UPLOAD_CHOICES = ["once", "every prompt"]
 MANIFEST_NAME = "manifest.v6.json"
 V5_MANIFEST_NAME = "manifest.v5.json"
 LOCK_NAME = ".generator-v6.lock"
@@ -92,6 +100,8 @@ MAX_REFERENCES = 16
 PARTIAL_IMAGES = 2            # streamed previews per image in keep-alive mode
 STALL_TIMEOUT = 60            # seconds with zero progress while connecting/uploading
 DEFAULT_READ_TIMEOUT = 900    # seconds to wait for a reply (xhigh/max can be slow)
+QUOTA_WAIT = 60               # seconds all workers pause after a quota/billing reply
+QUOTA_GIVE_UP = 600            # seconds of nonstop quota/billing errors before stopping
 QUOTA_CODES = {"insufficient_quota", "billing_hard_limit_reached", "billing_not_active"}
 # Optional request fields V6 may add; if a model refuses one it is dropped and
 # the request is re-sent (a rejected request is not billed).
@@ -177,6 +187,11 @@ def is_gpt_image_2_family(model: str) -> bool:
     return model.startswith("gpt-image-2") or model == "chatgpt-image-latest"
 
 
+def ignores_fidelity(model: str) -> bool:
+    # gpt-image-2 always reads references at high fidelity; OpenAI says to omit the field.
+    return model.startswith("gpt-image-2") and not is_gpt_image_25(model)
+
+
 @dataclass(frozen=True)
 class Settings:
     model: str = DEFAULT_MODEL
@@ -240,7 +255,8 @@ def build_fields(settings: Settings, prompt: str, n: int, *, with_refs: bool,
         fields["size"] = settings.size
     if settings.background != "auto":
         fields["background"] = settings.background
-    if with_refs and settings.input_fidelity != "default" and "input_fidelity" not in dropped:
+    if (with_refs and settings.input_fidelity != "default" and "input_fidelity" not in dropped
+            and not ignores_fidelity(settings.model)):
         fields["input_fidelity"] = settings.input_fidelity
     if settings.moderation != "auto" and "moderation" not in dropped:
         fields["moderation"] = settings.moderation
@@ -256,18 +272,25 @@ def build_fields(settings: Settings, prompt: str, n: int, *, with_refs: bool,
 # if OpenAI changes them)
 # ----------------------------------------------------------------------------
 PRICES = {
-    # model prefix:      text in, cached text, image in, cached image, output
-    "gpt-image-2.5":    (5.00, 1.25, 8.00, 2.00, 30.00),
-    "gpt-image-2":      (5.00, 1.25, 8.00, 2.00, 30.00),
-    "gpt-image-1.5":    (5.00, 1.25, 8.00, 2.00, 32.00),
-    "gpt-image-1-mini": (2.00, 0.20, 2.50, 0.25, 8.00),
-    "gpt-image-1":      (5.00, 1.25, 10.00, 2.50, 40.00),
+    # model prefix:          text in, cached text, image in, cached image, output
+    "gpt-image-2.5":        (5.00, 1.25, 8.00, 2.00, 30.00),
+    "gpt-image-2":          (5.00, 1.25, 8.00, 2.00, 30.00),
+    "gpt-image-1.5":        (5.00, 1.25, 8.00, 2.00, 32.00),
+    "gpt-image-1-mini":     (2.00, 0.20, 2.50, 0.25, 8.00),
+    "gpt-image-1":          (5.00, 1.25, 10.00, 2.50, 40.00),
+    "chatgpt-image-latest": (5.00, 1.25, 8.00, 2.00, 32.00),
 }
-# gpt-image-2 output tokens per image = ceil(q * round(q * short/long) * (2M + w*h) / 4M)
-GPT_IMAGE_2_AXIS = {"low": 16, "medium": 48, "high": 96}
+# Output tokens per image, as computed by OpenAI's own cost calculator (image
+# generation guide): ceil(q * round(q / (long/short)) * (2M + w*h) / 4M), where
+# round() is half-to-even and q depends on the model family and quality.
+QUALITY_AXIS = {
+    "gpt-image-2":   {"low": 16, "medium": 48, "high": 96},
+    "gpt-image-2.5": {"low": 16, "medium": 24, "high": 48, "xhigh": 64, "max": 96},
+}
 # gpt-image-1 family, tokens for 1024x1024 / 1024x1536 / 1536x1024
 GPT_IMAGE_1_TOKENS = {"low": (272, 408, 400), "medium": (1056, 1584, 1568),
                       "high": (4160, 6240, 6208)}
+PARTIAL_IMAGE_TOKENS = 100    # each streamed preview is billed as 100 extra output tokens
 
 
 def prices_for(model: str):
@@ -280,20 +303,51 @@ def base_model(model: str) -> str:
 
 
 def formula_output_tokens(model: str, quality: str, size: str):
-    """Output tokens per image from OpenAI's published numbers (None = not published)."""
+    """Output tokens per image from OpenAI's cost calculator (None = not published)."""
     q = "high" if quality == "auto" else quality
     w, h = (1024, 1024) if size == "auto" else map(int, size.split("x"))
     if model.startswith("gpt-image-2"):
-        axis = GPT_IMAGE_2_AXIS.get(q)
+        axis = QUALITY_AXIS["gpt-image-2.5" if is_gpt_image_25(model) else "gpt-image-2"].get(q)
         if axis is None:
             return None
-        short_axis = (2 * axis * min(w, h) + max(w, h)) // (2 * max(w, h))   # round half up
+        short_axis = round(axis / (max(w, h) / min(w, h)))                  # half-to-even
         return -(-axis * short_axis * (2_000_000 + w * h) // 4_000_000)       # ceil
     if model.startswith("gpt-image-1"):
         idx = {(1024, 1024): 0, (1024, 1536): 1, (1536, 1024): 2}.get((w, h))
         table = GPT_IMAGE_1_TOKENS.get(q)
         return table[idx] if table and idx is not None else None
     return None
+
+
+def rough_ref_tokens(width: int, height: int) -> int:
+    """Rough input tokens for one reference image on gpt-image-2.
+
+    OpenAI doesn't publish this. Community measurements (community.openai.com
+    t/1382940) fit 32px patches with a 1,536-patch budget, small images upscaled
+    toward 1024px, and the canvas padded to a 1:3..3:1 aspect. A 16:9 screenshot
+    of ~1650px or more lands around 1,450-1,510 tokens. Estimates only.
+    """
+    if width <= 0 or height <= 0:
+        return 1500
+    mag = min(2.0, max(1.0, 1024 / max(width, height)))
+    ew, eh = math.floor(width * mag), math.floor(height * mag)
+    pw, ph = math.ceil(ew / 32), math.ceil(eh / 32)
+    cw, ch = ew, eh
+    if pw > 3 * ph:
+        ph = math.ceil(pw / 3)
+        cw, ch = pw * 32, ph * 32
+    elif ph > 3 * pw:
+        pw = math.ceil(ph / 3)
+        cw, ch = pw * 32, ph * 32
+    if pw * ph <= 1536:
+        return pw * ph
+    scale = math.sqrt(32 * 32 * 1536 / (cw * ch))
+    for _ in range(2000):
+        pw, ph = math.ceil(math.floor(cw * scale) / 32), math.ceil(math.floor(ch * scale) / 32)
+        if pw * ph <= 1536:
+            return pw * ph
+        scale *= 0.999
+    return 1536
 
 
 def usage_cost(model: str, usage):
@@ -310,13 +364,9 @@ def usage_cost(model: str, usage):
     if text is None and image is None:
         text, image = 0, inp
     text, image = text or 0, image or 0
-    cdet = det.get("cached_tokens_details") if isinstance(det.get("cached_tokens_details"), dict) else {}
-    c_text = min(text, num(cdet.get("text_tokens")) or 0)
-    c_image = min(image, num(cdet.get("image_tokens")) or 0)
-    t_in, t_cached, i_in, i_cached, o_out = price
-    parts = {"text": ((text - c_text) * t_in + c_text * t_cached) / 1e6,
-             "refs": ((image - c_image) * i_in + c_image * i_cached) / 1e6,
-             "output": out * o_out / 1e6}
+    t_in, _t_cached, i_in, _i_cached, o_out = price
+    # The images endpoints report no cached tokens (and don't apply cached pricing).
+    parts = {"text": text * t_in / 1e6, "refs": image * i_in / 1e6, "output": out * o_out / 1e6}
     return {"usd": sum(parts.values()), **parts,
             "output_tokens": out, "image_input_tokens": image}
 
@@ -325,10 +375,14 @@ def ref_signature(refs) -> str:
     return hashlib.sha256("".join(sorted(r.digest for r in refs)).encode()).hexdigest()[:16] if refs else ""
 
 
+def effective_fidelity(model: str, fidelity: str) -> str:
+    return "high" if ignores_fidelity(model) else fidelity
+
+
 class CostBook:
-    """Remembers real token usage per setting, so estimates for settings OpenAI
-    has no published numbers for (xhigh, max, 2.5 models, reference images)
-    become exact after the first few images."""
+    """Remembers real token usage per setting, so estimates for things OpenAI has
+    no published numbers for (reference images, older models, auto sizes) become
+    exact after the first few images."""
 
     def __init__(self, path=None):
         self.path = Path(path) if path else None
@@ -356,77 +410,79 @@ class CostBook:
             c, t = c / 2, t / 2
         table[key] = [c, t]
 
-    def record(self, model, quality, size, refs, usage, images):
+    def record(self, model, quality, size, refs, usage, images, fidelity="default", streamed=False):
         if not isinstance(usage, dict) or images <= 0:
             return
-        m = base_model(model)
+        m, fid = base_model(model), effective_fidelity(model, fidelity)
         with self.lock:
             out = usage.get("output_tokens")
-            if isinstance(out, (int, float)) and out > 0:
+            # Streamed replies include preview tokens; keep them out of the per-image average.
+            if isinstance(out, (int, float)) and out > 0 and not streamed:
                 self._add(self.data["output"], f"{m}|{quality}|{size}", images, out)
             det = usage.get("input_tokens_details") if isinstance(usage.get("input_tokens_details"), dict) else {}
             img = det.get("image_tokens")
             if refs and isinstance(img, (int, float)) and img > 0:
-                self._add(self.data["refset"], f"{m}|{ref_signature(refs)}", 1, img)
-                self._add(self.data["refimage"], m, len(refs), img)
+                self._add(self.data["refset"], f"{m}|{fid}|{ref_signature(refs)}", 1, img)
+                self._add(self.data["refimage"], f"{m}|{fid}", len(refs), img)
             if self.path:
                 with contextlib.suppress(OSError):
                     self.path.parent.mkdir(parents=True, exist_ok=True)
                     atomic_write(self.path, json.dumps(self.data, indent=1).encode("utf-8"))
 
     def output_tokens(self, model, quality, size):
-        """(tokens per image, note, is_lower_bound)."""
+        """(tokens per image or None, note)."""
         m = base_model(model)
         with self.lock:
             c, t = self._get(self.data["output"], f"{m}|{quality}|{size}")
         if c >= 1:
-            return t / c, f"measured from your last {c:.0f} image(s)", False
+            return t / c, f"measured from your last {c:.0f} image(s)"
         tokens = formula_output_tokens(model, quality, size)
-        if tokens is None and quality in ("xhigh", "max"):
-            floor = formula_output_tokens(model, "high", size)
-            if floor is not None:
-                return floor, (f"{quality} costs more than 'high'; OpenAI hasn't published "
-                               f"{quality} numbers, so the exact price is measured after the "
-                               "first image"), True
         if tokens is None:
-            return None, "no published numbers; measured after the first image", False
-        if is_gpt_image_25(model):
-            return tokens, "gpt-image-2 formula (2.5 may differ; measured after the first image)", False
-        note = "OpenAI formula" + (" (assumes high/1024x1024 for auto)"
-                                   if "auto" in (quality, size) else "")
-        return tokens, note, False
+            return None, "no published numbers; measured after the first image"
+        note = "OpenAI's cost formula" + (" (assumes high / 1024x1024 for auto)"
+                                          if "auto" in (quality, size) else "")
+        return tokens, note
 
-    def ref_tokens(self, model, refs):
+    def ref_tokens(self, model, refs, fidelity="default"):
+        """(tokens per prompt or None, note, is_rough)."""
         if not refs:
-            return 0, ""
-        m = base_model(model)
+            return 0, "", False
+        m, fid = base_model(model), effective_fidelity(model, fidelity)
         with self.lock:
-            c, t = self._get(self.data["refset"], f"{m}|{ref_signature(refs)}")
-            ci, ti = self._get(self.data["refimage"], m)
+            c, t = self._get(self.data["refset"], f"{m}|{fid}|{ref_signature(refs)}")
+            ci, ti = self._get(self.data["refimage"], f"{m}|{fid}")
         if c >= 1:
-            return t / c, "measured for these exact references"
+            return t / c, "measured for these exact references", False
         if ci >= 1:
-            return ti / ci * len(refs), "measured average per reference image"
-        return None, "measured after the first image"
+            return ti / ci * len(refs), "measured average per reference image", False
+        if is_gpt_image_2_family(model):
+            tokens = sum(rough_ref_tokens(r.width, r.height) for r in refs)
+            return tokens, "rough estimate — OpenAI doesn't publish this; exact after the first image", True
+        return None, "measured after the first image", False
 
 
-def estimate_cost(settings: Settings, prompts, refs, book: CostBook) -> dict:
+def estimate_cost(settings: Settings, prompts, refs, book: CostBook, stream_mode="auto") -> dict:
     """Estimate for making `prompts` (one request each, `settings.n` images per request)."""
     price = prices_for(settings.model)
-    est = {"requests": len(prompts), "images": len(prompts) * settings.n, "priced": bool(price)}
+    est = {"requests": len(prompts), "images": len(prompts) * settings.n, "priced": bool(price),
+           "stream_mode": stream_mode}
     if not price or not prompts:
         return est
-    out_tok, est["output_note"], est["output_floor"] = book.output_tokens(
-        settings.model, settings.quality, settings.size)
-    ref_tok, est["refs_note"] = book.ref_tokens(settings.model, refs)
+    out_tok, est["output_note"] = book.output_tokens(settings.model, settings.quality, settings.size)
+    if out_tok is not None and stream_mode == "on":
+        out_tok += PARTIAL_IMAGE_TOKENS * PARTIAL_IMAGES
+        est["output_note"] += f", + {PARTIAL_IMAGES} streamed previews"
+    ref_tok, est["refs_note"], est["refs_rough"] = book.ref_tokens(settings.model, refs,
+                                                                    settings.input_fidelity)
     text_tok = sum(len(p) / 4 + 8 for p in prompts)            # ~4 characters per token
     est["text_usd"] = text_tok * price[0] / 1e6
     est["output_usd"] = None if out_tok is None else out_tok * est["images"] * price[4] / 1e6
     est["refs_usd"] = None if ref_tok is None else ref_tok * len(prompts) * price[2] / 1e6
     est["per_image_output"] = None if out_tok is None else out_tok * price[4] / 1e6
+    est["preview_usd"] = PARTIAL_IMAGE_TOKENS * PARTIAL_IMAGES * price[4] / 1e6
     known = [v for v in (est["text_usd"], est["output_usd"], est["refs_usd"]) if v is not None]
     est["total_usd"] = sum(known)
-    est["complete"] = len(known) == 3 and not est["output_floor"]
+    est["complete"] = len(known) == 3
     return est
 
 
@@ -440,24 +496,29 @@ def format_estimate(est: dict, settings: Settings, n_refs: int, already_done=0) 
             + (f", {n_refs} reference(s)" if n_refs else "") + "]"
             + (f" — {already_done} already done here, not counted" if already_done else "") + ":")
     lines = [head]
-    if est["output_usd"] is not None and est["output_floor"]:
-        lines.append(f"  images:     more than ${est['output_usd']:.2f}  (over "
-                     f"${est['per_image_output']:.3f} each; {est['output_note']})")
-    elif est["output_usd"] is not None:
+    if est["output_usd"] is not None:
         lines.append(f"  images:     ~${est['output_usd']:.2f}  (~${est['per_image_output']:.3f} each; "
                      f"{est['output_note']})")
     else:
         lines.append(f"  images:     unknown yet — {est['output_note']}")
     if n_refs:
         if est["refs_usd"] is not None:
-            lines.append(f"  references: ~${est['refs_usd']:.2f}  (sent with every prompt; {est['refs_note']})")
+            lines.append(f"  references: ~${est['refs_usd']:.2f}  (billed with every prompt; "
+                         f"{est['refs_note']})")
         else:
             lines.append(f"  references: unknown yet — {est['refs_note']} "
-                         "(they are billed on every prompt)")
+                         "(they are billed with every prompt)")
     lines.append(f"  prompt text: ~${est['text_usd']:.2f}")
     total = f"~${est['total_usd']:.2f}"
-    lines.append(f"  TOTAL: {total}" if est["complete"] else
-                 f"  TOTAL: at least {total} — the exact projection is logged after the first image")
+    if not est["complete"]:
+        lines.append(f"  TOTAL: at least {total} — the exact projection is logged after the first image")
+    elif est.get("refs_rough"):
+        lines.append(f"  TOTAL: {total} (the reference part is rough; exact projection after the first image)")
+    else:
+        lines.append(f"  TOTAL: {total}")
+    if est.get("stream_mode") == "auto":
+        lines.append(f"  (if keep-alive streaming switches on after a dropped connection, each image "
+                     f"costs ~${est['preview_usd']:.3f} more for its {PARTIAL_IMAGES} previews)")
     return lines
 
 
@@ -474,6 +535,42 @@ def sniff_image(raw: bytes):
         return "jpeg"
     if raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
         return "webp"
+    return None
+
+
+def image_dimensions(raw: bytes):
+    """(width, height) from a PNG/JPEG/WEBP header, or None."""
+    try:
+        kind = sniff_image(raw)
+        if kind == "png":
+            return struct.unpack(">II", raw[16:24])
+        if kind == "webp":
+            tag = raw[12:16]
+            if tag == b"VP8X":
+                return (1 + int.from_bytes(raw[24:27], "little"), 1 + int.from_bytes(raw[27:30], "little"))
+            if tag == b"VP8 ":
+                w, h = struct.unpack("<HH", raw[26:30])
+                return (w & 0x3FFF, h & 0x3FFF)
+            if tag == b"VP8L":
+                b = raw[21:25]
+                return (1 + (((b[1] & 0x3F) << 8) | b[0]),
+                        1 + (((b[3] & 0x0F) << 10) | (b[2] << 2) | ((b[1] & 0xC0) >> 6)))
+        if kind == "jpeg":
+            i = 2
+            while i + 9 < len(raw):
+                if raw[i] != 0xFF:
+                    i += 1
+                    continue
+                marker = raw[i + 1]
+                if marker in (0xD8, 0x01, 0xFF) or 0xD0 <= marker <= 0xD7:
+                    i += 1 if marker == 0xFF else 2
+                    continue
+                if 0xC0 <= marker <= 0xCF and marker not in (0xC4, 0xC8, 0xCC):
+                    h, w = struct.unpack(">HH", raw[i + 5:i + 9])
+                    return (w, h)
+                i += 2 + int.from_bytes(raw[i + 2:i + 4], "big")
+    except (struct.error, IndexError):
+        pass
     return None
 
 
@@ -518,6 +615,8 @@ class Reference:
     name: str
     mime: str
     data: bytes
+    width: int = 0
+    height: int = 0
 
     @property
     def digest(self):
@@ -543,7 +642,8 @@ def load_reference_images(paths) -> list[Reference]:
         # Name/mime follow the real content, not the extension (a .png that is
         # really a JPEG would otherwise be sent with the wrong type).
         ext = "jpg" if kind == "jpeg" else kind
-        refs.append(Reference(f"{p.stem}.{ext}", "image/" + kind, raw))
+        width, height = image_dimensions(raw) or (0, 0)
+        refs.append(Reference(f"{p.stem}.{ext}", "image/" + kind, raw, width, height))
     return refs
 
 
@@ -694,7 +794,7 @@ def exception_chain(exc, limit=6) -> list[str]:
         nxt = getattr(cur, "reason", None)
         if not isinstance(nxt, BaseException):
             nxt = next((a for a in getattr(cur, "args", ()) if isinstance(a, BaseException)), None)
-        cur = nxt or cur.__cause__ or cur.__context__
+        cur = nxt or cur.__cause__ or (None if cur.__suppress_context__ else cur.__context__)
     return names
 
 
@@ -759,18 +859,23 @@ def error_from_payload(status, err: dict, body, headers, sent: dict):
             return UnsupportedParam(param)
     if code in QUOTA_CODES or etype == "insufficient_quota":
         return RetryableError(f"OpenAI quota/billing message ({status}){shown}", "quota",
-                              wait=max(wait or 0, 60))
-    if code == "moderation_blocked" or etype == "image_generation_user_error":
-        stage = _moderation_stage(body, err)
+                              wait=max(wait or 0, QUOTA_WAIT))
+    stage = _moderation_stage(body, err)
+    # image_generation_user_error also covers non-safety problems (e.g. invalid_image_file);
+    # only moderation codes/details, or the old code-less form, are safety blocks.
+    if code == "moderation_blocked" or stage or (etype == "image_generation_user_error" and not code):
         where = f" ({stage} check)" if stage else ""
         return Blocked(f"blocked by OpenAI's safety system{where}{shown}{suffix}",
                        output_stage=stage != "input")
+    if code in ("invalid_image_file", "invalid_image", "invalid_image_format"):
+        return FatalError(f"OpenAI couldn't read one of the input images{shown}{suffix}. "
+                          "Check your reference images (every prompt uses them).")
     if status == 401:
         return FatalError(f"API key rejected (401). Check the key.{suffix}")
     if status == 403:
         return FatalError(f"Permission denied for this model/project (403){shown}{suffix}")
     if status == 404:
-        return FatalError(f"Model not available to this key (404){shown}{suffix}")
+        return FatalError(f"Not found (404){shown or ' — usually the model is not available to this key'}{suffix}")
     if status == 429:
         return RetryableError("rate limit (429)", "rate", wait=wait)
     if status is None or status in (408, 409) or status >= 500:
@@ -914,31 +1019,75 @@ class ImageClient:
 
     @staticmethod
     def _transport(exc, upload):
+        """Classify by how far the request body got, not just by exception name:
+        nothing sent = never reached OpenAI; part sent = OpenAI never got the full
+        request (neither is billed); all sent = the render may be running."""
         err = transport_error(exc)
-        if upload is not None and upload.finished_at is None and err.kind != "connect":
+        if upload is not None and upload.finished_at is None:
             detail = str(err).split("(", 1)[-1].rstrip(")")
-            return RetryableError(f"upload interrupted at {upload.tell() / 1e6:.1f} of "
-                                  f"{upload.total / 1e6:.1f} MB ({detail})", "upload")
+            if upload.tell() == 0:
+                return RetryableError(f"could not connect ({detail})", "connect")
+            if upload.total >= 1_000_000:
+                return RetryableError(f"upload interrupted at {upload.tell() / 1e6:.1f} of "
+                                      f"{upload.total / 1e6:.1f} MB ({detail})", "upload")
+            return RetryableError(f"connection dropped while sending ({detail})", "upload")
         return err
 
+    def upload_file(self, ref, expire=True) -> str:
+        """Upload one reference image to the Files API once; returns its file id."""
+        form = [("purpose", "vision")]
+        if expire:
+            form += [("expires_after[anchor]", "created_at"), ("expires_after[seconds]", "86400")]
+        form.append(("file", (ref.name, ref.data, ref.mime)))
+        body, content_type = encode_multipart_formdata(form)
+        upload = UploadBody(body)
+        with new_session() as s:
+            try:
+                r = s.post(self.api_root + "/files", data=upload, allow_redirects=False,
+                           headers={**self._headers, "Content-Type": content_type},
+                           timeout=(STALL_TIMEOUT, 300))
+            except requests.RequestException as exc:
+                raise self._transport(exc, upload) from None
+            with r:
+                if r.status_code != 200:
+                    raise http_error(r, {})
+                try:
+                    file_id = r.json()["id"]
+                except (ValueError, KeyError, TypeError):
+                    raise RetryableError("the file upload reply was invalid", "bad_reply") from None
+        if not isinstance(file_id, str) or not file_id:
+            raise RetryableError("the file upload reply had no file id", "bad_reply")
+        return file_id
+
+    def delete_file(self, file_id):
+        with contextlib.suppress(Exception), new_session() as s:
+            s.delete(f"{self.api_root}/files/{file_id}", headers=self._headers,
+                     timeout=(STALL_TIMEOUT, 30), allow_redirects=False).close()
+
     def request(self, fields: dict, refs, stream: bool, on_partial=lambda _i: None,
-                on_upload=None):
-        """One HTTP attempt. Returns ([(bytes, ext)], usage, request_id)."""
-        kwargs = {"headers": self._headers, "allow_redirects": False, "stream": stream,
-                  "timeout": (STALL_TIMEOUT, self.read_timeout)}
-        upload = None
-        if refs:
+                on_upload=None, file_ids=None):
+        """One HTTP attempt. Returns ([(bytes, ext)], usage, request_id).
+
+        With `file_ids` the references were uploaded once to the Files API and
+        the edit request is a few KB of JSON; otherwise the images ride along as
+        multipart parts. Every body is streamed (see UploadBody)."""
+        if refs and file_ids:
+            url = self.api_root + "/images/edits"
+            body = json.dumps({**fields, "images": [{"file_id": f} for f in file_ids]}).encode("utf-8")
+            content_type = "application/json"
+        elif refs:
             url = self.api_root + "/images/edits"
             form = [(k, "true" if v is True else "false" if v is False else str(v))
                     for k, v in fields.items()]
             form += [("image[]", (ref.name, ref.data, ref.mime)) for ref in refs]
             body, content_type = encode_multipart_formdata(form)
-            upload = UploadBody(body, on_upload)
-            kwargs["data"] = upload
-            kwargs["headers"] = {**self._headers, "Content-Type": content_type}
         else:
             url = self.api_root + "/images/generations"
-            kwargs["json"] = fields
+            body, content_type = json.dumps(fields).encode("utf-8"), "application/json"
+        upload = UploadBody(body, on_upload if refs and not file_ids else None)
+        kwargs = {"headers": {**self._headers, "Content-Type": content_type}, "data": upload,
+                  "allow_redirects": False, "stream": stream,
+                  "timeout": (STALL_TIMEOUT, self.read_timeout)}
         with new_session() as s:
             try:
                 response = s.post(url, **kwargs)
@@ -954,10 +1103,10 @@ class ImageClient:
                         images, usage = self._read_stream(response, on_partial)
                         return images, usage, rid
                     body = response.json()
+                except ValueError:      # includes requests' JSONDecodeError (also a RequestException)
+                    raise RetryableError("reply was cut off or unreadable", "drop") from None
                 except requests.RequestException as exc:
                     raise transport_error(exc) from None
-                except ValueError:
-                    raise RetryableError("reply was cut off", "drop") from None
                 return self._decode(body), body.get("usage"), rid
 
 
@@ -1005,8 +1154,42 @@ class BatchState:
         self.stream_ok = True
         self.dropped = set()
         self.drops = 0
-        self.quota_strikes = 0
+        self.quota_since = None      # start of the current run of quota/billing errors
         self.fatal = None
+        self.file_ids = None         # reference file ids when uploaded once
+        self.file_proven = False     # a request using them has succeeded
+
+    def set_fatal(self, message) -> bool:
+        """Record the first fatal error; True only for the first caller."""
+        with self.lock:
+            first = self.fatal is None
+            if first:
+                self.fatal = message
+            return first
+
+    def quota_seconds(self) -> float:
+        with self.lock:
+            now = time.monotonic()
+            if self.quota_since is None:
+                self.quota_since = now
+            return now - self.quota_since
+
+    def success(self):
+        with self.lock:
+            self.quota_since = None
+
+    def refs_as_files(self):
+        with self.lock:
+            return self.file_ids
+
+    def stop_file_refs(self, reason) -> bool:
+        with self.lock:
+            if self.file_ids is None:
+                return False
+            self.file_ids = None
+        self.log(f"Upload-once references didn't work here ({reason}). Sending the references "
+                 "with every prompt instead.")
+        return True
 
     def use_stream(self):
         with self.lock:
@@ -1018,7 +1201,8 @@ class BatchState:
             if self.stream_mode == "auto" and not self.stream_on and self.stream_ok:
                 self.stream_on = True
                 self.log("Auto keep-alive: a connection dropped, so the rest of this batch "
-                         "uses streamed replies to keep the line busy.")
+                         f"uses streamed replies to keep the line busy (adds {PARTIAL_IMAGES} "
+                         f"previews = {PARTIAL_IMAGES * PARTIAL_IMAGE_TOKENS} output tokens per image).")
 
     def drop_param(self, name) -> bool:
         with self.lock:
@@ -1043,9 +1227,12 @@ def backoff(tries):
 # ----------------------------------------------------------------------------
 # FILES / MANIFEST
 # ----------------------------------------------------------------------------
-def job_key(prompt: str, settings: Settings, references=(), occurrence=0) -> str:
+def job_key(prompt: str, settings: Settings, references=(), occurrence=0, ordered=False) -> str:
+    # References are keyed as a set (re-adding them in another order is the same
+    # job); ordered=True gives the older V5/early-V6 key so their work is found.
+    digests = [ref.digest for ref in references]
     data = {"prompt": prompt, "settings": settings.job_dict(),
-            "references": [ref.digest for ref in references], "output_format": "png"}
+            "references": digests if ordered else sorted(digests), "output_format": "png"}
     if occurrence:
         data["occurrence"] = occurrence    # the same prompt twice = two images
     raw = json.dumps(data, sort_keys=True, ensure_ascii=False).encode("utf-8")
@@ -1058,7 +1245,16 @@ def atomic_write(path: Path, data: bytes):
         f.write(data)
         f.flush()
         os.fsync(f.fileno())
-    os.replace(temp, path)
+    # On Windows, antivirus / OneDrive / the search indexer can hold a file open for a
+    # moment and make the rename fail; retry briefly instead of failing the batch.
+    for attempt in range(10):
+        try:
+            os.replace(temp, path)
+            return
+        except PermissionError:
+            if os.name != "nt" or attempt == 9:
+                raise
+            time.sleep(0.1 * (attempt + 1))
 
 
 def unique_path(folder: Path, stem: str, ext: str) -> Path:
@@ -1105,13 +1301,22 @@ def read_manifest(folder: Path):
     path = folder / MANIFEST_NAME
     if not path.exists():
         return {"version": 6, "jobs": {}}
+    for attempt in range(3):            # OSError (locked by sync/backup) is not corruption
+        try:
+            text = path.read_text(encoding="utf-8")
+            break
+        except OSError:
+            if attempt == 2:
+                raise ValueError(f"Couldn't read {MANIFEST_NAME} in the output folder (is another "
+                                 "program using it?). Close it and try again.") from None
+            time.sleep(0.5)
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(text)
         if data.get("version") != 6 or not isinstance(data.get("jobs"), dict):
             raise ValueError()
         data["jobs"] = {k: v for k, v in data["jobs"].items() if isinstance(v, dict)}
         return data
-    except (ValueError, OSError, AttributeError):
+    except (ValueError, AttributeError):
         return None
 
 
@@ -1134,7 +1339,8 @@ def plan_jobs(folder: Path, manifest: dict, settings: Settings, prompts, refs):
         occurrence = seen.get(base, 0)
         seen[base] = occurrence + 1
         key = base if not occurrence else job_key(prompt, settings, refs, occurrence)
-        old = manifest["jobs"].get(key) or {}
+        old = (manifest["jobs"].get(key)
+               or manifest["jobs"].get(job_key(prompt, settings, refs, occurrence, ordered=True)) or {})
         good = verified_files(folder, old)
         (done if len(good) >= settings.n else todo).append((index, prompt, key, old, good))
     return todo, done
@@ -1208,11 +1414,70 @@ class Job:
     extra: dict = field(default_factory=dict)
 
 
+@contextlib.contextmanager
+def keep_awake(log):
+    """Keep Windows from sleeping mid-batch: renders in flight would be billed but lost."""
+    set_state = None
+    if os.name == "nt":
+        with contextlib.suppress(Exception):
+            import ctypes
+            set_state = ctypes.windll.kernel32.SetThreadExecutionState
+            set_state.argtypes, set_state.restype = [ctypes.c_uint], ctypes.c_uint
+            if set_state(0x80000000 | 0x00000001):        # ES_CONTINUOUS | ES_SYSTEM_REQUIRED
+                log("Keeping the PC awake until the batch finishes.")
+            else:
+                set_state = None
+    try:
+        yield
+    finally:
+        if set_state:
+            with contextlib.suppress(Exception):
+                set_state(0x80000000)                     # back to normal
+
+
+def upload_references_once(client, refs, log, stop):
+    """Upload each reference to the Files API once. Returns file ids, or None to
+    fall back to sending the images with every prompt."""
+    ids, size = [], sum(len(r.data) for r in refs) / 1e6
+    log(f"Uploading {len(refs)} reference image(s) ({size:.1f} MB) to OpenAI once...")
+    started = time.monotonic()
+    try:
+        for ref in refs:
+            expire = True
+            for attempt in range(4):
+                if stop.is_set():
+                    raise Cancelled()
+                try:
+                    ids.append(client.upload_file(ref, expire=expire))
+                    break
+                except RetryableError as exc:
+                    if attempt == 3:
+                        raise
+                    log(f"  {ref.name}: {exc}; retrying...")
+                    if stop.wait(3 * (attempt + 1)):
+                        raise Cancelled() from None
+                except JobError:
+                    if not expire:                        # a 400 even without the expiry option
+                        raise
+                    expire = False                        # try once without the auto-expiry
+            else:
+                raise JobError("upload kept failing")
+    except Exception as exc:
+        for file_id in ids:
+            client.delete_file(file_id)
+        if not isinstance(exc, Cancelled):
+            log(f"Couldn't upload the references once ({exc}); sending them with every prompt instead.")
+        return None
+    log(f"References uploaded once in {time.monotonic() - started:.0f}s — each prompt now sends "
+        f"a few KB instead of {size:.1f} MB.")
+    return ids
+
+
 def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), workers=4,
               pace=1.3, delay=0.0, retries=6, read_timeout=DEFAULT_READ_TIMEOUT,
-              stream_mode="auto", repair_passes=2, repair_wait=20.0, stop_event=None,
-              progress=None, log=print, client=None, preflight=True, cost_book=None,
-              on_cost=None):
+              stream_mode="auto", ref_upload="once", repair_passes=2, repair_wait=20.0,
+              stop_event=None, progress=None, log=print, client=None, preflight=True,
+              cost_book=None, on_cost=None):
     settings.validate()
     prompts = list(prompts)
     if not prompts:
@@ -1230,6 +1495,8 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
         raise ValueError("Request timeout must be 60-3600 seconds.")
     if stream_mode not in STREAM_CHOICES:
         raise ValueError("Keep-alive streaming must be auto, on or off.")
+    if ref_upload not in REF_UPLOAD_CHOICES:
+        raise ValueError("Reference upload must be 'once' or 'every prompt'.")
     workers, retries = int(workers), int(retries)
 
     refs = load_reference_images(image_paths)
@@ -1240,8 +1507,9 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
     lock = threading.Lock()
 
     book = cost_book or CostBook()
-    spent = {"usd": 0.0, "text": 0.0, "refs": 0.0, "output": 0.0, "images": 0,
-             "requests": 0, "unpriced": 0, "projected": False}
+    spent = {"usd": 0.0, "text": 0.0, "refs": 0.0, "output": 0.0, "images": 0, "requests": 0,
+             "priced_images": 0, "priced_requests": 0, "unpriced": 0, "projected": False}
+    state = BatchState(stream_mode, log)
 
     with output_lock(folder):
         manifest = load_manifest(folder, log)
@@ -1275,49 +1543,38 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                     "cancelled": 0, "cost_usd": 0.0}
 
         client = client or ImageClient(api_key, read_timeout=read_timeout)
-        if preflight:
+        if preflight:            # advisory only: the first image request is the real check
             try:
                 available = client.models()
                 if available and settings.model not in available:
                     log(f"Warning: {settings.model} isn't in this key's model list "
                         f"({', '.join(available)}). Trying anyway.")
-            except FatalError:
-                raise
             except Exception as exc:
-                log(f"Model check skipped ({exc}); continuing.")
+                log(f"Model check skipped ({exc}); continuing — the first image request will "
+                    "confirm the key.")
 
         keepalive = ("on (probe after 30s idle, every 10s)" if KEEPALIVE_TIMED
                      else "on (OS default timing)" if SOCKET_OPTIONS else "unavailable")
         log(f"Starting batch: {len(jobs)} to make, {skipped} already done | model={settings.model} | "
             f"quality={settings.quality} | size={settings.size} | {settings.n} image(s)/prompt")
-        if refs:
-            ref_mb = sum(len(r.data) for r in refs) / 1e6
-            log(f"Using {len(refs)} reference image(s) via the edits endpoint — {ref_mb:.1f} MB "
-                f"uploaded with every prompt (~{ref_mb * len(jobs):.0f} MB for this batch)"
-                + (f", fidelity={settings.input_fidelity}" if settings.input_fidelity != "default" else ""))
         log(f"{workers} parallel worker(s) | launch gap {pace:g}s | {retries} retries per image | "
             f"timeout {read_timeout:g}s")
         log(f"TCP keep-alive: {keepalive} | keep-alive streaming: {stream_mode}")
-        for line in format_estimate(estimate_cost(settings, [j.prompt for j in jobs], refs, book),
-                                    settings, len(refs), skipped):
+        for line in format_estimate(estimate_cost(settings, [j.prompt for j in jobs], refs, book,
+                                                  stream_mode), settings, len(refs), skipped):
             log(line)
-        log(f"Saving to: {folder}\n")
+        log(f"Saving to: {folder}")
 
-        state = BatchState(stream_mode, log)
         gate = Gate(pace)
 
-        def save_images(job, images, usage, rid, took):
+        def save_images(job, images, usage, rid, took, streamed):
             cost = usage_cost(settings.model, usage)
-            book.record(settings.model, settings.quality, settings.size, refs, usage, len(images))
+            fidelity = "default" if "input_fidelity" in state.dropped else settings.input_fidelity
+            book.record(settings.model, settings.quality, settings.size, refs, usage, len(images),
+                        fidelity, streamed)
+            each = f", ${cost['usd'] / max(1, len(images)):.3f}" if cost else ""
             with lock:
-                spent["requests"] += 1
-                if cost:
-                    for part in ("usd", "text", "refs", "output"):
-                        spent[part] += cost[part]
-                    job.entry["cost_usd"] = round(float(job.entry.get("cost_usd") or 0) + cost["usd"], 5)
-                else:
-                    spent["unpriced"] += len(images)
-                each = f", ${cost['usd'] / max(1, len(images)):.3f}" if cost else ""
+                saved = 0
                 for raw, ext in images:
                     if job.have >= settings.n:
                         break
@@ -1328,14 +1585,28 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                     job.entry["files"].append({"name": path.name,
                                                "sha256": hashlib.sha256(raw).hexdigest()})
                     job.have += 1
-                    spent["images"] += 1
+                    saved += 1
                     log(f"[{job.index}/{total}] saved  {path.name}  "
                         f"({len(raw) // 1024} KB, {took:.0f}s{each})")
+                spent["requests"] += 1
+                spent["images"] += saved
+                if cost:
+                    for part in ("usd", "text", "refs", "output"):
+                        spent[part] += cost[part]
+                    spent["priced_images"] += saved
+                    spent["priced_requests"] += 1
+                    job.entry["cost_usd"] = round(float(job.entry.get("cost_usd") or 0) + cost["usd"], 5)
+                else:
+                    spent["unpriced"] += saved
                 if rid:
                     job.entry["request_ids"] = (job.entry.get("request_ids") or [])[-9:] + [rid]
                 if usage:
                     job.entry["usage"] = usage
-                save_manifest(folder, manifest)
+                try:                    # the image is safe on disk; the manifest is rewritten again later
+                    save_manifest(folder, manifest)
+                except OSError as exc:
+                    log(f"[{job.index}/{total}] note: couldn't update {MANIFEST_NAME} ({exc}); "
+                        "will retry on the next save.")
                 if cost and not spent["projected"]:
                     spent["projected"] = True
                     per_prompt = cost["usd"] / max(1, len(images)) * settings.n
@@ -1344,17 +1615,18 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                         f"text ${cost['text']:.4f}) -> the {len(jobs)} prompt(s) in this run "
                         f"should cost about ${per_prompt * len(jobs):.2f} in total.")
                 if on_cost:
-                    on_cost(spent["usd"], spent["images"])
+                    on_cost(spent["usd"], spent["priced_images"])
 
         def make_images(job):
             tag = f"[{job.index}/{total}] {job.stem}"
-            tries = rate_hits = quota_hits = 0
+            tries = rate_hits = 0
             second_chance = False
             while job.have < settings.n:
                 if stop.is_set():
                     raise Cancelled()
                 gate.wait_turn(stop)
                 stream = state.use_stream()
+                file_ids = state.refs_as_files() if refs else None
                 fields = build_fields(settings, job.prompt, settings.n - job.have,
                                       with_refs=bool(refs), stream=stream,
                                       dropped=frozenset(state.dropped))
@@ -1369,7 +1641,8 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                             f"{seconds:.0f}s), rendering...")
 
                 try:
-                    images, usage, rid = client.request(fields, refs, stream, on_partial, on_upload)
+                    images, usage, rid = client.request(fields, refs, stream, on_partial, on_upload,
+                                                        file_ids)
                 except UnsupportedParam as exc:
                     # Rejected requests aren't billed; resend without that field
                     # (a no-op drop means another worker already removed it).
@@ -1379,6 +1652,13 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                     if exc.output_stage and not second_chance:
                         second_chance = True
                         log(f"{tag} — {exc}. One more try (every render is different)...")
+                        continue
+                    raise
+                except (JobError, FatalError) as exc:
+                    # Upload-once is newer API surface: if it is refused, fall back to
+                    # sending the images with the request (4xx replies aren't billed).
+                    if file_ids and (not state.file_proven or re.search(r"file|image", str(exc), re.I)):
+                        state.stop_file_refs(str(exc))
                         continue
                     raise
                 except RetryableError as exc:
@@ -1393,13 +1673,15 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                         log(f"{tag} — rate limited (429). All workers pause {wait:.0f}s...")
                         continue
                     if exc.kind == "quota":
-                        quota_hits += 1
-                        if quota_hits > 3:
-                            raise JobError(f"{exc} — still failing after 3 waits",
-                                           repairable=True, kind="quota") from None
-                        gate.cooldown(exc.wait or 60)
-                        log(f"{tag} — {exc}. This often clears on its own; all workers "
-                            f"pause {exc.wait or 60:.0f}s (check Billing if it never clears)...")
+                        waited = state.quota_seconds()
+                        if waited > QUOTA_GIVE_UP:
+                            raise FatalError(f"OpenAI kept returning a quota/billing error for "
+                                             f"{waited / 60:.0f} minutes. Check Billing on "
+                                             "platform.openai.com, then press Generate / Resume.") from None
+                        wait = exc.wait or QUOTA_WAIT
+                        gate.cooldown(wait)
+                        log(f"{tag} — {exc}. This often clears on its own; all workers pause "
+                            f"{wait:.0f}s (check Billing if it never clears)...")
                         continue
                     tries += 1
                     if exc.kind == "drop":
@@ -1414,9 +1696,11 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                     if stop.wait(wait):
                         raise Cancelled() from None
                     continue
-                save_images(job, images, usage, rid, time.monotonic() - started)
-                with state.lock:
-                    state.quota_strikes = 0
+                if file_ids:
+                    with state.lock:
+                        state.file_proven = True
+                state.success()
+                save_images(job, images, usage, rid, time.monotonic() - started, stream)
 
         def worker(job, first_pass):
             try:
@@ -1431,35 +1715,24 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                 if delay:
                     stop.wait(delay)
             except Cancelled:
-                job.status = "cancelled"
+                if job.status != "failed":      # keep an earlier pass's failure on record
+                    job.status = "cancelled"
             except FatalError as exc:
                 job.status, job.error, job.repairable = "failed", str(exc), False
-                with state.lock:
-                    state.fatal = state.fatal or str(exc)
                 stop.set()
-                log(f"[{job.index}/{total}] STOPPING BATCH — {exc}")
+                if state.set_fatal(str(exc)):
+                    log(f"[{job.index}/{total}] STOPPING BATCH — {exc}")
             except JobError as exc:
                 job.status, job.error, job.repairable = "failed", str(exc), exc.repairable
                 log(f"[{job.index}/{total}] MISSED {job.stem} — {exc}")
-                if exc.kind == "quota":
-                    with state.lock:
-                        state.quota_strikes += 1
-                        strikes = state.quota_strikes
-                    if strikes >= 3:
-                        with state.lock:
-                            state.fatal = state.fatal or ("OpenAI keeps returning a quota/billing "
-                                                          "error. Check Billing on platform.openai.com.")
-                        stop.set()
-                        log("STOPPING BATCH — quota/billing errors on 3 prompts in a row.")
                 with lock:
                     counts["failed_now"] += 1
             except Exception as exc:     # disk full, permissions, bugs: stop safely
                 job.status, job.error, job.repairable = "failed", f"local error: {exc}", False
-                with state.lock:
-                    state.fatal = state.fatal or f"Local error while saving ({type(exc).__name__}: {exc})"
                 stop.set()
-                log(f"[{job.index}/{total}] STOPPING BATCH — local error "
-                    f"({type(exc).__name__}: {exc}). Check disk space / folder permissions.")
+                if state.set_fatal(f"Local error while saving ({type(exc).__name__}: {exc})"):
+                    log(f"[{job.index}/{total}] STOPPING BATCH — local error "
+                        f"({type(exc).__name__}: {exc}). Check disk space / folder permissions.")
             finally:
                 with lock:
                     job.entry["status"] = job.status
@@ -1469,20 +1742,36 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
                         save_manifest(folder, manifest)
                 tick()
 
-        pending = jobs
-        for pass_no in range(int(repair_passes) + 1):
-            if pass_no:
-                log(f"\nRepair pass {pass_no}/{repair_passes}: {len(pending)} image(s) still "
-                    f"missing, trying again in {repair_wait:g}s...")
-                if stop.wait(repair_wait):
-                    break
-                counts["failed_now"] = 0
-                tick()
-            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-                list(pool.map(lambda j: worker(j, pass_no == 0), pending))
-            pending = [j for j in pending if j.status == "failed" and j.repairable]
-            if not pending or stop.is_set():
-                break
+        uploaded = None
+        with keep_awake(log):
+            try:
+                if refs and ref_upload == "once":
+                    uploaded = upload_references_once(client, refs, log, stop)
+                    state.file_ids = uploaded
+                if refs and not state.file_ids:
+                    ref_mb = sum(len(r.data) for r in refs) / 1e6
+                    log(f"Sending {len(refs)} reference image(s) with every prompt — {ref_mb:.1f} MB "
+                        f"each time (~{ref_mb * len(jobs):.0f} MB for this batch).")
+                log("")
+                pending = jobs
+                for pass_no in range(int(repair_passes) + 1):
+                    if pass_no:
+                        log(f"\nRepair pass {pass_no}/{repair_passes}: {len(pending)} image(s) still "
+                            f"missing, trying again in {repair_wait:g}s...")
+                        if stop.wait(repair_wait):
+                            break
+                        counts["failed_now"] -= len(pending)   # they are being retried
+                        tick()
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
+                        list(pool.map(lambda j: worker(j, pass_no == 0), pending))
+                    pending = [j for j in pending if j.status == "failed" and j.repairable]
+                    if not pending or stop.is_set():
+                        break
+            finally:
+                if uploaded:
+                    for file_id in uploaded:
+                        client.delete_file(file_id)
+                    log("Removed the one-time reference uploads from OpenAI.")
 
         generated = sum(1 for j in jobs if j.status == "completed")
         cancelled = sum(1 for j in jobs if j.status in ("cancelled", "pending"))
@@ -1493,7 +1782,7 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
             lines = [f"AI PROMPT: {j.prompt}\n" for j in missing]
             with contextlib.suppress(OSError):
                 atomic_write(folder / "missing_prompts.txt", "\n".join(lines).encode("utf-8"))
-        else:
+        elif not cancelled:
             with contextlib.suppress(OSError):
                 (folder / "missing_prompts.txt").unlink(missing_ok=True)
 
@@ -1503,22 +1792,25 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
         log(f"\nBatch stopped: {state.fatal}")
     log(f"\nDone. {generated} generated, {skipped} already done, {len(missing)} missed, "
         f"{cancelled} not started.")
-    if spent["images"]:
-        avg = spent["usd"] / spent["images"]
+    cost_usd = round(spent["usd"], 4)
+    if spent["priced_images"]:
+        avg = spent["usd"] / spent["priced_images"]
         log(f"Cost this run (from OpenAI's own usage numbers): ${spent['usd']:.2f} for "
-            f"{spent['images']} image(s), avg ${avg:.3f} each "
+            f"{spent['priced_images']} image(s), avg ${avg:.3f} each "
             f"[images ${spent['output']:.2f} · references ${spent['refs']:.2f} · "
             f"text ${spent['text']:.2f}]")
         if spent["unpriced"]:
             log(f"  + {spent['unpriced']} image(s) came back without usage numbers "
                 f"(about ${avg * spent['unpriced']:.2f} more).")
     elif spent["unpriced"]:
-        log(f"Cost: {spent['unpriced']} image(s) came back without usage numbers, "
-            "so no cost total is available.")
+        why = (f"no price list for {settings.model} (edit PRICES at the top of the file)"
+               if prices_for(settings.model) is None else "the replies had no usage numbers")
+        log(f"Cost: no total for {spent['unpriced']} image(s) — {why}.")
+        cost_usd = None
     if state.drops:
+        per_request = spent["usd"] / max(1, spent["priced_requests"])
         worst = (f" OpenAI may still bill some of those even though nothing arrived "
-                 f"(worst case about ${state.drops * spent['usd'] / max(1, spent['requests']):.2f})."
-                 if spent["requests"] else "")
+                 f"(worst case about ${state.drops * per_request:.2f})." if spent["priced_requests"] else "")
         log(f"({state.drops} dropped connection(s) were caught and retried.{worst})")
     if missing:
         log("Missed prompts:")
@@ -1527,7 +1819,7 @@ def run_batch(api_key, settings: Settings, prompts, out_dir, *, image_paths=(), 
         log("Press Generate / Resume again to retry only these (they are also listed in "
             "missing_prompts.txt).")
     return {"total": total, "generated": generated, "skipped": skipped,
-            "failed": len(missing), "cancelled": cancelled, "cost_usd": round(spent["usd"], 4)}
+            "failed": len(missing), "cancelled": cancelled, "cost_usd": cost_usd}
 
 
 # ----------------------------------------------------------------------------
@@ -1665,12 +1957,15 @@ def launch_gui():
         "stream": tk.StringVar(value=pref("stream", "auto")),
         "fidelity": tk.StringVar(value=pref("fidelity", "default")),
         "moderation": tk.StringVar(value=pref("moderation", "auto")),
+        "refupload": tk.StringVar(value=pref("refupload", "once")),
         "prompts": tk.StringVar(value=pref("prompts", "")),
         "out": tk.StringVar(value=pref("out", str(script_dir / "concepts"))),
     }
     key_status = tk.StringVar()
     remember_key(v["key"], data_dir, key_status)
-    references = [p for p in prefs.get("references", []) if isinstance(p, str) and Path(p).is_file()]
+    # Keep remembered references even if one went missing, so the batch refuses to run
+    # with fewer references instead of silently producing off-model images.
+    references = [p for p in prefs.get("references", []) if isinstance(p, str)]
     events = queue.Queue()
     state = {"busy": False, "closing": False, "stop": threading.Event()}
     controls = []
@@ -1732,6 +2027,8 @@ def launch_gui():
     pair(row, 0, "Reference fidelity", "fidelity", FIDELITY_CHOICES, readonly=True)
     pair(row, 2, "Moderation", "moderation", MODERATION_CHOICES, readonly=True)
     row += 1
+    pair(row, 0, "Reference upload", "refupload", REF_UPLOAD_CHOICES, readonly=True)
+    row += 1
 
     def browse(target):
         if target == "prompts":
@@ -1759,8 +2056,11 @@ def launch_gui():
     ref_scroll = ttk.Scrollbar(ref_frame, orient="vertical", command=refs_list.yview)
     ref_scroll.grid(row=0, column=1, sticky="ns")
     refs_list.configure(yscrollcommand=ref_scroll.set)
+    def ref_label(path):
+        return Path(path).name if os.path.isfile(path) else f"[MISSING] {Path(path).name}"
+
     for path in references:
-        refs_list.insert("end", Path(path).name)
+        refs_list.insert("end", ref_label(path))
     ref_buttons = ttk.Frame(frm)
     ref_buttons.grid(row=row, column=4, sticky="new", pady=(8, 0))
 
@@ -1835,7 +2135,7 @@ def launch_gui():
             log(f"Cost estimate unavailable: {exc}")
             cost_var.set("Cost: estimate unavailable (see log).")
             return
-        est = estimate_cost(settings, todo, refs, book)
+        est = estimate_cost(settings, todo, refs, book, v["stream"].get())
         for line in format_estimate(est, settings, len(refs), done_n):
             log(line)
         log("")
@@ -1906,13 +2206,14 @@ def launch_gui():
                 pace=read_number("pace", float, "Launch gap"),
                 retries=read_number("retries", int, "Retries per image"),
                 read_timeout=read_number("timeout", float, "Request timeout"),
-                stream_mode=v["stream"].get())
+                stream_mode=v["stream"].get(),
+                ref_upload=v["refupload"].get())
             client = ImageClient(v["key"].get(), read_timeout=options["read_timeout"])
             out = v["out"].get().strip()
             if not out:
                 raise ValueError("Choose an output folder.")
             load_reference_images(references)
-        except ValueError as exc:
+        except (ValueError, OSError) as exc:
             messagebox.showerror("Settings", str(exc))
             return
         save_prefs(data_dir, {"model": settings.model, "quality": settings.quality,
@@ -1922,6 +2223,7 @@ def launch_gui():
                               "timeout": options["read_timeout"], "stream": options["stream_mode"],
                               "fidelity": settings.input_fidelity,
                               "moderation": settings.moderation,
+                              "refupload": options["ref_upload"],
                               "prompts": v["prompts"].get().strip(), "out": out,
                               "references": list(references)})
         state["stop"].clear()
@@ -1998,7 +2300,9 @@ def launch_gui():
             elif kind == "cost":
                 cost_var.set(f"Spent this run: ${value[0]:.2f} for {value[1]} image(s)")
             elif kind == "cost_final":
-                cost_var.set(f"Spent this run: ${value:.2f} (from OpenAI's usage numbers; "
+                cost_var.set("Spent this run: unknown (no usage numbers or price list; see the log)"
+                             if value is None else
+                             f"Spent this run: ${value:.2f} (from OpenAI's usage numbers; "
                              "details in the log)")
             elif kind == "models":
                 combos["model"].configure(values=sorted(set(MODEL_CHOICES) | set(value)))
@@ -2016,6 +2320,10 @@ def launch_gui():
         "hit Generate / Resume.")
     log(f"Network: TCP keep-alive {'on' if SOCKET_OPTIONS else 'unavailable'}; dropped "
         "connections are retried automatically.")
+    for path in references:
+        if not os.path.isfile(path):
+            log(f"Reference image not found (moved or deleted?): {path} — re-add it or remove it "
+                "before generating.")
     pump()
     root.mainloop()
 
@@ -2044,21 +2352,37 @@ def selftest():
     assert "partial_images" not in build_fields(s, "x", 1, with_refs=False, stream=True,
                                                 dropped={"partial_images"})
     assert job_key("a", Settings()) != job_key("a", Settings(), occurrence=1)
+    ra, rb = Reference("a.png", "image/png", b"A"), Reference("b.png", "image/png", b"B")
+    assert job_key("a", Settings(), [ra, rb]) == job_key("a", Settings(), [rb, ra])   # order-free
+    assert "input_fidelity" not in build_fields(Settings("gpt-image-2", input_fidelity="high"), "x", 1,
+                                                with_refs=True, stream=False)
     # Output-token formula must reproduce OpenAI's published gpt-image-2 prices.
     assert formula_output_tokens("gpt-image-2", "high", "1024x1024") == 7024      # $0.211
     assert formula_output_tokens("gpt-image-2", "high", "1536x1024") == 5488      # $0.165
     assert formula_output_tokens("gpt-image-2", "medium", "1024x1024") == 1756    # $0.053
     assert formula_output_tokens("gpt-image-2", "low", "1024x1536") == 158        # $0.005
     assert formula_output_tokens("gpt-image-2", "medium", "1472x1200") == 1763
-    assert formula_output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152") is None
+    # gpt-image-2.5 uses its own quality table (from OpenAI's cost calculator).
+    assert [formula_output_tokens("gpt-image-2.5-flare", q, "2048x1152")
+            for q in ("medium", "high", "xhigh", "max")] == [367, 1413, 2511, 5650]
+    assert formula_output_tokens("gpt-image-2", "low", "2560x1040") == 112       # half-to-even
+    assert image_dimensions(_tiny_png(5, 3)) == (5, 3)
+    assert 1400 < rough_ref_tokens(2000, 1125) <= 1536
     cost = usage_cost("gpt-image-2", {"input_tokens": 1050, "output_tokens": 5488,
                                       "input_tokens_details": {"text_tokens": 50, "image_tokens": 1000}})
     assert abs(cost["usd"] - (50 * 5 + 1000 * 8 + 5488 * 30) / 1e6) < 1e-9
     book = CostBook()
-    assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[::2] == (5650, True)
+    assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[0] == 2511
     book.record("gpt-image-2.5-flare-2026-09-08", "xhigh", "2048x1152", (),
                 {"output_tokens": 9000, "input_tokens": 60}, 1)
-    assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[::2] == (9000, False)
+    assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[0] == 9000
+    book.record("gpt-image-2.5-flare", "xhigh", "2048x1152", (),
+                {"output_tokens": 99999, "input_tokens": 60}, 1, streamed=True)       # previews excluded
+    assert book.output_tokens("gpt-image-2.5-flare", "xhigh", "2048x1152")[0] == 9000
+    for payload, kind in (({"type": "image_generation_user_error", "code": "invalid_image_file"}, FatalError),
+                          ({"type": "image_generation_user_error", "code": "moderation_blocked"}, Blocked),
+                          ({"type": "image_generation_user_error"}, Blocked)):
+        assert type(error_from_payload(400, payload, {}, {}, {})) is kind, payload
     png = _tiny_png()
     assert verify_image(png) == "png"
     for broken in (png[:-5], png[:40] + b"\x00" + png[41:]):
@@ -2097,6 +2421,8 @@ def main(argv=None):
     ap.add_argument("--retries", type=int, default=6, help="retries per image")
     ap.add_argument("--timeout", type=float, default=DEFAULT_READ_TIMEOUT, help="request timeout (s)")
     ap.add_argument("--stream", default="auto", choices=STREAM_CHOICES, help="keep-alive streaming")
+    ap.add_argument("--ref-upload", default="once", choices=REF_UPLOAD_CHOICES,
+                    help="upload references once (file IDs) or with every prompt")
     ap.add_argument("--repair-passes", type=int, default=2)
     ap.add_argument("--reference", action="append", default=[], help="reference image (repeatable)")
     ap.add_argument("--key", default=None, help="API key (default: OPENAI_API_KEY)")
@@ -2129,7 +2455,7 @@ def main(argv=None):
             for i, p in enumerate(prompts, 1):
                 print(f"  {filename_for(p, i)}.png  |  {len(p)} chars  |  {p[:70]}...")
             todo, done_n = preview_plan(args.out, settings, prompts, refs)
-            print("\n".join(format_estimate(estimate_cost(settings, todo, refs, book),
+            print("\n".join(format_estimate(estimate_cost(settings, todo, refs, book, args.stream),
                                             settings, len(refs), done_n)))
             print("(dry run: no API calls made)")
             return 0
@@ -2140,7 +2466,7 @@ def main(argv=None):
                            workers=args.workers, pace=args.pace, delay=args.delay,
                            retries=args.retries, read_timeout=args.timeout,
                            stream_mode=args.stream, repair_passes=args.repair_passes,
-                           stop_event=stop, cost_book=book)
+                           ref_upload=args.ref_upload, stop_event=stop, cost_book=book)
         return 0 if not (result["failed"] or result["cancelled"]) else 2
     except (ValueError, FatalError, JobError, RetryableError, OSError) as exc:
         print(str(exc))
