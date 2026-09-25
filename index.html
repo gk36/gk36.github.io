@@ -170,6 +170,9 @@
   .row .note{font-size:11.5px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--line2);display:none}
   .row.shownote .note{display:block}
   .row .sel-wrap{position:relative}
+  .row .cream-tip{font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:9px;padding:9px 10px;border:1px solid var(--line2);border-radius:9px;background:var(--card2)}
+  .row .cream-tip b{color:var(--txt)}
+  .row .cream-honey{margin-top:10px}
   .eggs{display:flex;align-items:center;gap:10px}
   .stepper{display:flex;align-items:center;gap:0;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
   .stepper button{background:var(--card2);border:0;color:var(--txt);width:32px;height:32px;font-size:18px;cursor:pointer;font-weight:700}
@@ -427,7 +430,7 @@ const CUT_STYLES = [
 ];
 
 /* Workout-day meal structures. `meals` lists which MEALS ids appear; `fastSplit` is the share of
-   peri-workout sugar that goes PRE (the rest goes post); `starchSplit` is the share of the starch
+   the pre/post carb slot that goes PRE (the rest goes post); `starchSplit` is the share of the starch
    budget that goes to the pre meal. Drop a meal and its macros flow into the ones left standing. */
 const TIMINGS = [
   {key:'standard', label:'Standard day', ico:'🍳', meals:[1,2,3,4,5], fastSplit:0.5, starchSplit:0.45,
@@ -487,6 +490,10 @@ const FOODS = {
     {id:'melon',  name:'Watermelon',                p:0.6,c:7.6, f:0.2,k:30, disp:'weight',state:'', note:'Very fast watery sugar + hydration — great in heat or right after the gym.'},
     {id:'sugar',  name:'White sugar (in water)',    p:0,  c:12.5,f:0,  k:48, disp:'tbsp', note:'Dissolve in a shaker of water; dextrose swaps 1:1.'},
     {id:'ricecake',name:'Rice cakes, plain',        p:0.7,c:7.3, f:0.3,k:35, disp:'count',piece:'cake', note:'Near-pure fast starch — top with honey for an even faster hit.'},
+    {id:'riceflour',name:'Homemade cream of rice (rice flour)', p:6,c:80.1,f:1.4,k:366,disp:'weight',state:'dry',preOnly:true,
+     note:'Generic white rice flour estimate (USDA FoodData Central 169714); check your own bag if its label differs.'},
+    {id:'tbjp',name:'tbJP Cream of Rice · Sticky Toffee Pudding', p:6.7,c:76.9,f:0.6,k:340,disp:'weight',state:'dry',preOnly:true,
+     note:'From your Sticky Toffee Pudding label per 100 g. Other flavors may have different macros; weigh the dry powder.'},
   ],
   breakfast_carb: [
     {id:'orange', name:'Whole orange',   p:1.2,c:15.4,f:0.2,k:62, disp:'count',piece:'orange', note:'Segments give fibre + vitamin C.'},
@@ -528,7 +535,7 @@ const state = {
   day:'gym',        // 'gym' | 'rest'
   timing:'standard',        // only read on gym days
   eggs:4, liver:false, boneBroth:false,
-  breakfastCarbOn:true, dairyOn:true, combineBreakfast:false,
+  breakfastCarbOn:true, dairyOn:true, combineBreakfast:false, preHoney:false,
   pick:{},          // key `${mealId}:${group}` -> food id
   milkMl:250,
 };
@@ -563,8 +570,8 @@ const MEALS = [
      {kind:'food', label:'Lean protein', group:'protein', target:'beefPre', macro:'p'},
    ]},
   {id:3, name:'Pre-Gym Fast Pump', badge:'Fast · 30–45 min', gym:true, gymOnly:true, time:'30–45 min before the gym',
-   note:'Liquid / fast sugar for an intra-workout pump and drive.',
-   rows:[ {kind:'food', label:'Fast carb', group:'fast_carb', target:'fastPre', macro:'c'} ]},
+   note:'Choose the carb you prefer. Cream of rice is a more substantial option; allow more digestion time if needed.',
+   rows:[ {kind:'food', label:'Pre-gym carb', group:'fast_carb', target:'fastPre', macro:'c'} ]},
   {id:4, name:'Post-Gym Fast Carb', badge:'Fast · <30 min', gym:true, gymOnly:true, time:'within 30 min after the gym',
    note:'Carbohydrate helps replenish glycogen. An immediate sugar serving is not required for ordinary once-daily strength training.',
    timing:{
@@ -618,7 +625,11 @@ function bfCarbActive(){ return breakfastLive() && state.breakfastCarbOn && !goa
    MATH
    ============================================================ */
 function foodById(group,id){ return FOODS[group].find(f=>f.id===id) || FOODS[group][0]; }
-function pickFood(mealId,group){ return foodById(group, state.pick[`${mealId}:${group}`]); }
+function availableFoods(mealId,group){ return FOODS[group].filter(f=>!f.preOnly || mealId===3); }
+function pickFood(mealId,group){
+  return availableFoods(mealId,group).find(f=>f.id===state.pick[`${mealId}:${group}`]) || availableFoods(mealId,group)[0];
+}
+function isCream(f){ return f.id==='riceflour' || f.id==='tbjp'; }
 function r0(n){return Math.round(n);}
 function r1(n){return Math.round(n*10)/10;}
 function r5(n){return Math.round(n/5)*5;}
@@ -627,6 +638,7 @@ function r10(n){return Math.round(n/10)*10;}
 /* single source of truth for the fixed breakfast items (also used by the label) */
 const EGG   = {p:6.3, c:0.36, f:4.8, k:72};        // per large egg, USDA
 const BROTH = {p:9, c:0, f:0.5, k:40};        // per 250 mL beef bone broth
+const HONEY = foodById('fast_carb','honeyF');  // per tablespoon
 const LIVER_G = 40;                        // breakfast liver portion, g
 
 /* true kcal / fat / protein of the amount of `food` that supplies `grams` of `macro` */
@@ -652,11 +664,15 @@ function compute(){
   let breakfastCarb=bfCarbActive()?Math.min(30,carbBudget*0.06):0;
   let fastCarbTotal=rest?0:Math.min(g.fastCarb,Math.max(0,carbBudget-breakfastCarb));
   let fastPre=fastCarbTotal*T.fastSplit,fastPost=fastCarbTotal-fastPre;
+  const preCream=!rest && T.fastSplit>0 && isCream(fp);
+  // Honey is part of the pre-gym carb slot, not an extra topping on top of the target.
+  const preHoneyTbsp=preCream && state.preHoney && fastPre>HONEY.c ? 1 : 0;
+  const preRiceUnits=foodUnits(fp,Math.max(0,fastPre-preHoneyTbsp*HONEY.c),'c');
   const total=items=>items.reduce((out,[f,q])=>{for(const k of ['p','c','f','k'])out[k]+=(f[k]||0)*q;return out;},{p:0,c:0,f:0,k:0});
   const fixed=[[EGG,eggs],[foodById('protein','liver'),liverActive()?LIVER_G/100:0],[BROTH,breakfastLive()&&state.boneBroth?1:0],[pickFood(5,'dairy_drink'),milkMl/100],
-    [bf,foodUnits(bf,breakfastCarb,'c')],[fp,foodUnits(fp,fastPre,'c')],[fq,foodUnits(fq,fastPost,'c')]];
+    [bf,foodUnits(bf,breakfastCarb,'c')],[fp,preRiceUnits],[fq,foodUnits(fq,fastPost,'c')],[HONEY,preHoneyTbsp]];
   const base=total(fixed);
-  breakfastCarb=fixed[4][1]*bf.c;fastPre=fixed[5][1]*fp.c;fastPost=fixed[6][1]*fq.c;fastCarbTotal=fastPre+fastPost;
+  breakfastCarb=fixed[4][1]*bf.c;fastPre=fixed[5][1]*fp.c+preHoneyTbsp*HONEY.c;fastPost=fixed[6][1]*fq.c;fastCarbTotal=fastPre+fastPost;
   // Solve the protein allocation and remaining starch energy together, counting all foods.
   let meat=Math.max(0,protein-base.p), starch=0, oil=0;
   const meatK=(preP.k/preP.p+postP.k/postP.p)/2, meatF=(preP.f/preP.p+postP.f/postP.p)/2;
@@ -676,6 +692,7 @@ function compute(){
   const starchyPre=sPre*preS.c,starchyPost=sPost*postS.c,starchyTotal=starchyPre+starchyPost;
   return {g,a,T,lbs,bmr,tdee,cal,protein,fat,carbs:r0(plan.c),eggs,carbCapped:false,deficitPct:g.deltaPct,
     breakfastCarb,fastCarbTotal,starchyTotal,starchyPre,starchyPost,fastPre,fastPost,
+    preRiceUnits,preRiceCarbs:fixed[5][1]*fp.c,preHoneyTbsp,preCream,
     beefPre:qPre*preP.p,beefPost:qPost*postP.p,milkMl,planK:plan.k,planP:plan.p,planC:plan.c,planF:plan.f,butter,
     infeasible:plan.k>cal+15||base.p>protein+2,rest};
 }
@@ -790,10 +807,11 @@ function buildMeals(){
         </div>`;
       } else {
         const grp=row.group;
-        let cur=state.pick[`${m.id}:${grp}`] || FOODS[grp][0].id;
-        if(!FOODS[grp].some(f=>f.id===cur)) cur=FOODS[grp][0].id;   // self-heal stale picks
+        const foods=availableFoods(m.id,grp);
+        let cur=state.pick[`${m.id}:${grp}`] || foods[0].id;
+        if(!foods.some(f=>f.id===cur)) cur=foods[0].id;   // self-heal stale picks
         state.pick[`${m.id}:${grp}`]=cur;
-        const opts=FOODS[grp].map(f=>`<option value="${f.id}"${f.id===cur?' selected':''}>${f.name}</option>`).join('');
+        const opts=foods.map(f=>`<option value="${f.id}"${f.id===cur?' selected':''}>${f.name}</option>`).join('');
         let head='<span class="swaptip">eat this or this ▾</span>';
         if(row.target==='breakfastCarb') head=`<label class="toggle mini" title="Include a breakfast carb"><input type="checkbox" id="bfCarbChk" ${state.breakfastCarbOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
         else if(row.target==='milk') head=`<label class="toggle mini" title="Include dairy"><input type="checkbox" id="dairyChk" ${state.dairyOn?'checked':''}><span class="tk"></span><span class="tgl">include</span></label>`;
@@ -808,6 +826,10 @@ function buildMeals(){
           <div class="sel-wrap" style="margin-top:9px">
             <select class="sel" data-group="${grp}" data-meal="${m.id}">${opts}</select>
           </div>
+          ${row.target==='fastPre'?`<label class="toggle cream-honey" data-cream-honey style="display:none">
+            <input type="checkbox" data-pre-honey ${state.preHoney?'checked':''}><span class="tk"></span>
+            <span>Add 1 tbsp honey for taste (counted in carbs)</span>
+          </label><div class="cream-tip" data-cream-tip style="display:none"></div>`:''}
           <div class="note" data-note></div>
         </div>`;
       }
@@ -830,6 +852,7 @@ function buildMeals(){
     // wire include toggles
     const bf=card.querySelector('#bfCarbChk'); if(bf) bf.onchange=e=>{state.breakfastCarbOn=e.target.checked;recompute();};
     const dy=card.querySelector('#dairyChk'); if(dy) dy.onchange=e=>{state.dairyOn=e.target.checked;recompute();};
+    const ph=card.querySelector('[data-pre-honey]'); if(ph) ph.onchange=e=>{state.preHoney=e.target.checked;recompute();};
     // wire food selects + collect refs
     m.rows.forEach((row,ri)=>{
       if(row.kind==='eggs') return;
@@ -864,6 +887,16 @@ function buildSafety(){
 /* ---- patch dynamic numbers ---- */
 function recompute(){
   const d=compute();
+  const preCard=document.querySelector('[data-meal-card="3"]');
+  if(preCard){
+    const earlierCarbs=state.combineBreakfast?d.breakfastCarb+d.starchyPre:d.T.key==='morning'?d.breakfastCarb:d.starchyPre;
+    preCard.querySelector('.badge').textContent=d.preCream?'Cream · 60–90 min':'Fast · 30–45 min';
+    preCard.querySelector('h3').textContent=d.preCream?'Pre-Gym Cream of Rice':'Pre-Gym Fast Pump';
+    preCard.querySelector('.time').textContent=d.preCream?'🕒 About 60–90 min before the gym · adjust for comfort':'🕒 30–45 min before the gym';
+    preCard.querySelector('.mnote').textContent=d.preCream
+      ? `This bowl fills your planned ${r0(d.fastPre)} g pre-gym carb slot. Your earlier meal supplies about ${r0(earlierCarbs)} g carbs too; allow enough time to digest comfortably.`
+      : 'Choose the carb you prefer. Cream of rice is a more substantial option; allow more digestion time if needed.';
+  }
 
   // goal blurb + cut-style panel
   document.getElementById('styleWrap').classList.toggle('open', !!d.g.hasStyles);
@@ -891,7 +924,7 @@ function recompute(){
   document.getElementById('pPerLb').textContent=
     `· ${d.lbs?r1(d.protein/d.lbs):0} g/lb · ${state.kg?r1(d.protein/state.kg):0} g/kg`;
   document.getElementById('cSplit').innerHTML=
-    `🍚 starchy <b>${r0(d.starchyTotal)} g</b> &nbsp;·&nbsp; 🍯 fast <b>${r0(d.fastCarbTotal)} g</b> &nbsp;·&nbsp; 🍊 fruit <b>${r0(d.breakfastCarb)} g</b>`
+    `🍚 starchy <b>${r0(d.starchyTotal)} g</b> &nbsp;·&nbsp; 🍯 ${d.preCream?'pre/post':'fast'} <b>${r0(d.fastCarbTotal)} g</b> &nbsp;·&nbsp; 🍊 fruit <b>${r0(d.breakfastCarb)} g</b>`
     + (d.carbCapped?` &nbsp;·&nbsp; <b style="color:var(--fat)">capped at ${r1(d.g.carbCapPerKg)} g/kg</b>`:'');
 
   // plan-totals reconciliation line
@@ -917,14 +950,14 @@ function recompute(){
     standard:[
       {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
       {t:'Pre 1.5–2h',m:'Starch + protein',c:d.starchyPre,gym:false},
-      {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
+      {t:d.preCream?'Pre 60–90m':'Pre 30–45m',m:d.preCream?'Cream of rice':'Fast carb',c:d.fastPre,gym:true},
       {t:'💪 GYM',m:'Train',c:null,gym:true},
       {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
       {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPost,gym:false},
     ],
     morning:[
       {t:'Breakfast',m:'Eggs +',c:d.breakfastCarb,gym:false},
-      {t:'Pre 30–45m',m:'Fast carb',c:d.fastPre,gym:true},
+      {t:d.preCream?'Pre 60–90m':'Pre 30–45m',m:d.preCream?'Cream of rice':'Fast carb',c:d.fastPre,gym:true},
       {t:'💪 GYM',m:'Train',c:null,gym:true},
       {t:'Post <30m',m:'Fast carb',c:d.fastPost,gym:true},
       {t:'Post 1.5–2h',m:'Starch + protein',c:d.starchyPre,gym:false},
@@ -996,7 +1029,30 @@ function recompute(){
       }
     }
     if(ref.selWrap) ref.selWrap.style.display='';
-    const f=foodById(row.group, state.pick[`${ref.mealId}:${row.group}`]);
+    const f=pickFood(ref.mealId,row.group);
+    if(row.target==='fastPre'){
+      const honeyLabel=ref.rowEl.querySelector('[data-cream-honey]');
+      const honeyChk=ref.rowEl.querySelector('[data-pre-honey]');
+      const tip=ref.rowEl.querySelector('[data-cream-tip]');
+      honeyLabel.style.display=isCream(f)?'inline-flex':'none';
+      tip.style.display=isCream(f)?'block':'none';
+      if(isCream(f)){
+        const fits=d.preHoneyTbsp>0 || d.fastPre>HONEY.c;
+        honeyChk.disabled=!fits;
+        honeyChk.checked=!!d.preHoneyTbsp;
+        const grams=r0(d.preRiceUnits*100), water=r5(grams*4);
+        ref.amt.textContent=`${grams} g dry ${f.id==='tbjp'?'tbJP mix':'rice flour'}${d.preHoneyTbsp?' + 1 tbsp honey':''}`;
+        ref.kc.textContent=`${r1(d.fastPre)} g carbs · ≈ ${r0(d.preRiceUnits*f.k+d.preHoneyTbsp*HONEY.k)} kcal`;
+        tip.innerHTML=f.id==='tbjp'
+          ? `<b>Water:</b> Start with ~${water} mL hot water (about 4 mL per g dry mix). Stir until smooth; heat/cook to the thickness you like. The 25 g scoop is only a serving guide — weigh the calculated amount.`
+          : `<b>Water:</b> Start with ~${water} mL cold water (about 4 mL per g dry flour). Whisk in the flour, then heat and stir until fully cooked and thickened.`;
+        if(d.preHoneyTbsp) tip.innerHTML+=' Stir the honey in after cooking for taste.';
+        else if(!fits) tip.innerHTML+=' A full tablespoon of honey is larger than this pre-gym carb slot.';
+        tip.innerHTML+=' Add a little more water if you prefer it thinner; water adds no calories.';
+        ref.note.textContent=f.note;
+        return;
+      }
+    }
     const t=amountText(f, targets[row.target], row.macro);
     ref.amt.innerHTML=`${t.main}`;
     ref.kc.textContent=`${r1(targets[row.target])} g ${row.macro==='p'?'protein':'carbs'}`+(t.sub?` · ${t.sub}`:'');
@@ -1060,17 +1116,23 @@ function copyPlan(){
   s+=`Plan as shown ≈ ${r0(d.planK)} kcal | P ${r0(d.planP)}g  C ${r0(d.planC)}g  F ${r0(d.planF)}g\n`;
   if(d.butter>0) s+=`(includes ~${r1(d.butter)} g olive oil across all meals)\n`;
   if(d.infeasible) s+=`!! Heads up: protein + fat minimums alone exceed this calorie target — the plan runs over.\n`;
-  s+=`Carbs: starchy ${r0(d.starchyTotal)}g · fast ${r0(d.fastCarbTotal)}g · fruit ${r0(d.breakfastCarb)}g\n\n`;
+  s+=`Carbs: starchy ${r0(d.starchyTotal)}g · ${d.preCream?'pre/post':'fast'} ${r0(d.fastCarbTotal)}g · fruit ${r0(d.breakfastCarb)}g\n\n`;
   visibleMeals().forEach(mm=>{
     const m=mealMeta(mm);
-    if(!(state.combineBreakfast && m.id===2)) s+=`— ${state.combineBreakfast && m.id===1?'First Meal · Eggs, Meat & Carbs':m.name} (${m.time}) —\n`;
+    if(!(state.combineBreakfast && m.id===2)) s+=`— ${state.combineBreakfast && m.id===1?'First Meal · Eggs, Meat & Carbs':m.id===3 && d.preCream?'Pre-Gym Cream of Rice':m.name} (${m.id===3 && d.preCream?'about 60–90 min before the gym':m.time}) —\n`;
     if(m.id===1) s+=`  ${d.eggs} whole eggs${state.liver?` + ${LIVER_G}g liver`:''}${state.boneBroth?' + 250mL bone broth':''}\n`;
     m.rows.forEach(row=>{
       if(row.kind==='eggs') return;
       if(row.kind==='dairy'){ if(state.dairyOn){ const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]); s+=`  ${row.label}: ${d.milkMl} ${f.disp==='weight'?'g':'mL'} ${f.name}\n`; } return; }
       if(row.target==='breakfastCarb' && !bfCarbActive()) return;
-      const f=foodById(row.group,state.pick[`${m.id}:${row.group}`]);
+      const f=pickFood(m.id,row.group);
       const tgt={breakfastCarb:d.breakfastCarb,starchyPre:d.starchyPre,starchyPost:d.starchyPost,fastPre:d.fastPre,fastPost:d.fastPost,beefPre:d.beefPre,beefPost:d.beefPost}[row.target];
+      if(row.target==='fastPre' && isCream(f)){
+        const grams=r0(d.preRiceUnits*100);
+        s+=`  Pre-gym carb: ${grams}g dry ${f.name}${d.preHoneyTbsp?' + 1 tbsp honey':''} (~${r1(d.fastPre)}g carbs)\n`;
+        s+=`  ${f.id==='riceflour'?'Whisk into cold':'Mix with hot'} water: start with ~${r5(grams*4)}mL, cook until thickened; adjust for texture.${d.preHoneyTbsp?' Stir in honey after cooking.':''}\n`;
+        return;
+      }
       const t=amountText(f,tgt,row.macro);
       s+=`  ${row.label}: ${t.main}  (${f.name})\n`;
     });
@@ -1090,7 +1152,7 @@ let FIREBASE_DB = "https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.a
 /* ▲▲▲ that's the only line you edit ▲▲▲ */
 
 const PKEY='carbmaxx_profiles_v1';
-const PFIELDS=['kg','cm','age','sex','act','goal','cutStyle','day','timing','eggs','liver','boneBroth','breakfastCarbOn','combineBreakfast','dairyOn','milkMl','pick'];
+const PFIELDS=['kg','cm','age','sex','act','goal','cutStyle','day','timing','eggs','liver','boneBroth','breakfastCarbOn','combineBreakfast','dairyOn','preHoney','milkMl','pick'];
 function cloudOn(){ return /^https:\/\/[^\s"']+\.(firebaseio\.com|firebasedatabase\.app)/i.test(FIREBASE_DB); }
 function cloudUrl(name){ return FIREBASE_DB.replace(/\/+$/,'') + '/carbmaxx/profiles' + (name?('/'+encodeURIComponent(name)):'') + '.json'; }
 function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
@@ -1176,7 +1238,7 @@ function applySnapshot(snap){
   state.eggs=r0(num(state.eggs,2,8,DEFAULT_STATE.eggs));
   state.milkMl=r0(num(state.milkMl,50,1000,DEFAULT_STATE.milkMl));
   state.liver=!!state.liver; state.boneBroth=!!state.boneBroth;
-  state.combineBreakfast=!!state.combineBreakfast; state.breakfastCarbOn=!!state.breakfastCarbOn; state.dairyOn=!!state.dairyOn;
+  state.combineBreakfast=!!state.combineBreakfast; state.breakfastCarbOn=!!state.breakfastCarbOn; state.dairyOn=!!state.dairyOn; state.preHoney=!!state.preHoney;
   if(!state.pick || typeof state.pick!=='object' || Array.isArray(state.pick)) state.pick={};
   hydrating=true;
   try{ syncControls(); buildMeals(); recompute(); }
