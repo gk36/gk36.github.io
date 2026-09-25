@@ -665,12 +665,15 @@ function compute(){
   let fastCarbTotal=rest?0:Math.min(g.fastCarb,Math.max(0,carbBudget-breakfastCarb));
   let fastPre=fastCarbTotal*T.fastSplit,fastPost=fastCarbTotal-fastPre;
   const preCream=!rest && T.fastSplit>0 && isCream(fp);
-  // Honey is part of the pre-gym carb slot, not an extra topping on top of the target.
-  const preHoneyTbsp=preCream && state.preHoney && fastPre>HONEY.c ? 1 : 0;
-  const preRiceUnits=foodUnits(fp,Math.max(0,fastPre-preHoneyTbsp*HONEY.c),'c');
+  // Keep the full rice portion when honey is added. Move its carbs from the later
+  // post-gym slot first; the calorie solver adjusts starch if that slot is too small.
+  const preHoneyTbsp=preCream && state.preHoney && fastPre>0 ? 1 : 0;
+  const honeyCarbs=preHoneyTbsp*HONEY.c;
+  const preHoneyMovedFromPost=Math.min(fastPost,honeyCarbs);
+  const preRiceUnits=foodUnits(fp,fastPre,'c');
   const total=items=>items.reduce((out,[f,q])=>{for(const k of ['p','c','f','k'])out[k]+=(f[k]||0)*q;return out;},{p:0,c:0,f:0,k:0});
   const fixed=[[EGG,eggs],[foodById('protein','liver'),liverActive()?LIVER_G/100:0],[BROTH,breakfastLive()&&state.boneBroth?1:0],[pickFood(5,'dairy_drink'),milkMl/100],
-    [bf,foodUnits(bf,breakfastCarb,'c')],[fp,preRiceUnits],[fq,foodUnits(fq,fastPost,'c')],[HONEY,preHoneyTbsp]];
+    [bf,foodUnits(bf,breakfastCarb,'c')],[fp,preRiceUnits],[fq,foodUnits(fq,fastPost-preHoneyMovedFromPost,'c')],[HONEY,preHoneyTbsp]];
   const base=total(fixed);
   breakfastCarb=fixed[4][1]*bf.c;fastPre=fixed[5][1]*fp.c+preHoneyTbsp*HONEY.c;fastPost=fixed[6][1]*fq.c;fastCarbTotal=fastPre+fastPost;
   // Solve the protein allocation and remaining starch energy together, counting all foods.
@@ -692,7 +695,7 @@ function compute(){
   const starchyPre=sPre*preS.c,starchyPost=sPost*postS.c,starchyTotal=starchyPre+starchyPost;
   return {g,a,T,lbs,bmr,tdee,cal,protein,fat,carbs:r0(plan.c),eggs,carbCapped:false,deficitPct:g.deltaPct,
     breakfastCarb,fastCarbTotal,starchyTotal,starchyPre,starchyPost,fastPre,fastPost,
-    preRiceUnits,preRiceCarbs:fixed[5][1]*fp.c,preHoneyTbsp,preCream,
+    preRiceUnits,preRiceCarbs:fixed[5][1]*fp.c,preHoneyTbsp,preHoneyMovedFromPost,preCream,
     beefPre:qPre*preP.p,beefPost:qPost*postP.p,milkMl,planK:plan.k,planP:plan.p,planC:plan.c,planF:plan.f,butter,
     infeasible:plan.k>cal+15||base.p>protein+2,rest};
 }
@@ -828,7 +831,7 @@ function buildMeals(){
           </div>
           ${row.target==='fastPre'?`<label class="toggle cream-honey" data-cream-honey style="display:none">
             <input type="checkbox" data-pre-honey ${state.preHoney?'checked':''}><span class="tk"></span>
-            <span>Add 1 tbsp honey for taste (counted in carbs)</span>
+            <span>Add 1 tbsp honey for taste and pre-gym energy</span>
           </label><div class="cream-tip" data-cream-tip style="display:none"></div>`:''}
           <div class="note" data-note></div>
         </div>`;
@@ -894,7 +897,7 @@ function recompute(){
     preCard.querySelector('h3').textContent=d.preCream?'Pre-Gym Cream of Rice':'Pre-Gym Fast Pump';
     preCard.querySelector('.time').textContent=d.preCream?'🕒 About 60–90 min before the gym · adjust for comfort':'🕒 30–45 min before the gym';
     preCard.querySelector('.mnote').textContent=d.preCream
-      ? `This bowl fills your planned ${r0(d.fastPre)} g pre-gym carb slot. Your earlier meal supplies about ${r0(earlierCarbs)} g carbs too; allow enough time to digest comfortably.`
+      ? `This bowl supplies ${r0(d.fastPre)} g pre-gym carbs. Your earlier meal supplies about ${r0(earlierCarbs)} g carbs too; allow enough time to digest comfortably.`
       : 'Choose the carb you prefer. Cream of rice is a more substantial option; allow more digestion time if needed.';
   }
 
@@ -1037,7 +1040,7 @@ function recompute(){
       honeyLabel.style.display=isCream(f)?'inline-flex':'none';
       tip.style.display=isCream(f)?'block':'none';
       if(isCream(f)){
-        const fits=d.preHoneyTbsp>0 || d.fastPre>HONEY.c;
+        const fits=d.preHoneyTbsp>0 || d.preRiceCarbs>0;
         honeyChk.disabled=!fits;
         honeyChk.checked=!!d.preHoneyTbsp;
         const grams=r0(d.preRiceUnits*100), water=r5(grams*4);
@@ -1046,8 +1049,9 @@ function recompute(){
         tip.innerHTML=f.id==='tbjp'
           ? `<b>Water:</b> Start with ~${water} mL hot water (about 4 mL per g dry mix). Stir until smooth; heat/cook to the thickness you like. The 25 g scoop is only a serving guide — weigh the calculated amount.`
           : `<b>Water:</b> Start with ~${water} mL cold water (about 4 mL per g dry flour). Whisk in the flour, then heat and stir until fully cooked and thickened.`;
-        if(d.preHoneyTbsp) tip.innerHTML+=' Stir the honey in after cooking for taste.';
-        else if(!fits) tip.innerHTML+=' A full tablespoon of honey is larger than this pre-gym carb slot.';
+        if(d.preHoneyTbsp){
+          tip.innerHTML+=' Stir the honey in after cooking for taste. The rice portion stays the same; the plan moves honey carbs from the post-gym serving'+(d.preHoneyMovedFromPost<HONEY.c?' and adjusts other portions':'')+'.';
+        } else if(!fits) tip.innerHTML+=' No pre-gym carb portion is planned for this setting.';
         tip.innerHTML+=' Add a little more water if you prefer it thinner; water adds no calories.';
         ref.note.textContent=f.note;
         return;
