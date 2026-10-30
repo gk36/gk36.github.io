@@ -2808,9 +2808,9 @@
   },
   {
     "key": "egg-noodles-dry",
-    "fdcId": 169731,
+    "fdcId": 169755,
     "dataset": "SR Legacy",
-    "fdcDescription": "Noodles, egg, dry, enriched",
+    "fdcDescription": "Noodles, egg, dry, unenriched",
     "names": {
       "en": "Egg noodles (dry)",
       "el": "Νουντλς αυγού (άβραστα)",
@@ -2829,20 +2829,16 @@
       {
         "label": "1 cup",
         "g": 38
-      },
-      {
-        "label": "2 oz",
-        "g": 57
       }
     ],
     "densityGPerMl": null,
-    "notes": "USDA values are for enriched (US) noodles: iron and B vitamins may be lower in unenriched brands."
+    "notes": "Unenriched (like EU noodles). Check your pack — some brands add vitamins or iron."
   },
   {
     "key": "egg-noodles-cooked",
-    "fdcId": 169732,
+    "fdcId": 168926,
     "dataset": "SR Legacy",
-    "fdcDescription": "Noodles, egg, enriched, cooked",
+    "fdcDescription": "Noodles, egg, unenriched, cooked, without added salt",
     "names": {
       "en": "Egg noodles (cooked)",
       "el": "Νουντλς αυγού (βρασμένα)",

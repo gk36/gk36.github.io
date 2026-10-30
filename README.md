@@ -5,13 +5,17 @@ GitHub Pages.
 
 | Path | What it is |
 |---|---|
-| `/` (`index.html`) | Classic CARBMAXX planner (v1) — unchanged |
-| `/workout.html` | Classic training program + 3D exercise viewer — unchanged |
+| `/` (`index.html`) | Classic CARBMAXX planner (v1) — unchanged apart from a link to the new app |
+| `/workout.html` | Classic training program + 3D exercise viewer — unchanged apart from the same link |
 | `/hub.html` | Private, encrypted page — unchanged |
 | `/app/` | **CARBMAXX 2.0** — the new app (built from `src/`) |
 
 ## CARBMAXX 2.0 in one minute
 
+- **Type what you ate.** "2 eggs, 80 g oats and a banana" (or in Greek) — every item matched to real data and
+  checked before saving; anything unclear waits for you.
+- **What should I eat?** Three meal ideas with exact grams, sized to what's left of today, from your pantry, aimed at
+  the vitamins and minerals you're short on — with real steps, editable, logged in one tap.
 - **Diary that tells the truth.** Planned food never counts as eaten until you mark it. Plan-vs-actual is kept.
 - **Weigh it how you cooked it.** Core foods come from USDA FoodData Central in the states you weigh
   them (raw *and* roasted chicken, dry *and* cooked rice…), each with its FDC id.

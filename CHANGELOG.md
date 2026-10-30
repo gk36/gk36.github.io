@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.0.0-alpha.6 — typed meals, meal ideas, starter recipes, a new Today (unreleased, branch `carbmaxx-2`)
+
+- **Type what you ate** (Today's "What did you eat?" box, or the Log food search), in English or Greek:
+  "I ate 282 g cooked chicken breast, 300 g cooked rice, 77 g sweet chili sauce and an apple". Each item is
+  matched to a real food and shown with its calories before anything is saved.
+  - Unclear items wait for an answer: an unknown food (scan it or enter the label and come straight back),
+    cooked or raw/dry, "some" or "a glass of", or foods that differ in calories (which milk?).
+  - Every food and amount can be changed, and corrections are remembered.
+- **Meal ideas** ("What should I eat?"): three real meals with exact grams, sized to what is left of today.
+  - They are built from your pantry, aimed at today's vitamin and mineral gaps, and follow your taste.
+  - Sweet breakfasts come first, protein first, saturated fat is kept modest, and foods you avoid never
+    appear (broccoli and cabbage are pre-filled).
+  - Steps are written from the chosen foods and amounts.
+  - Edit any amount and the rest re-balances. Then log it, plan it, save it as a recipe, or put what's
+    missing on the shopping list.
+- **Lower-oxalate preference**: uses cited values only (Harvard 2023 table first), and foods without data stay
+  unknown.
+- **Starter recipes** in the Kitchen: protein cream of rice, oat pancakes, chicken and rice, steak and
+  potatoes, sweet chili chicken noodles, and lean beef soup.
+  - They are built from USDA foods and marked "Example".
+  - The sweet chili sauce has no values until you add your own bottle.
+- **Today, redesigned**: a calorie ring with what's left, the typing box, meal ideas and one row of quick
+  actions.
+- Recipes and meal ideas logged as eaten take their ingredients out of the pantry.
+- 20 more USDA foods (whey, skimmed milk, cottage cheese 1%, kiwi, maple syrup, egg noodles, broth, spices…).
+- iPhone: form fields no longer zoom the page when tapped.
+- The classic page has a "CARBMAXX 2.0" tab and banner that open the new app (live after the merge).
+
 ## 2.0.0-alpha.5 — milestone 2: sync across devices (unreleased, branch `carbmaxx-2`)
 
 - **Sign in to sync** (Settings → Sync across devices, or "Already use CARBMAXX on another device?" on the

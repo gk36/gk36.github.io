@@ -65,6 +65,48 @@ test) and models are copied from `node_modules` into `app/ocr/7.0.0/` at build t
 precache and cached by the service worker on first use. `domain/nutrition/labelText.ts` turns the text into label
 values (pure, unit-tested) and the label editor fills only empty fields.
 
+## Typed meals
+
+`domain/logging/parse.ts` reads a sentence into items:
+
+- Amount and unit: grams, kg, mL, L, oz, cups, tbsp, tsp, slices, pieces, scoops, servings; decimal commas,
+  fractions, "2 x 150 g", and English and Greek number words.
+- Cooking state and size words.
+- Splits on commas and "and/with/και/με", except inside compound names.
+
+Matching and amounts:
+
+- `domain/logging/match.ts` scores every food: exact, plural, Greek stem, alias and state fit.
+- Look-alikes are only offered as suggestions, never picked.
+- `amountFor` turns the amount into a quantity using the food's own USDA portions.
+- Anything unclear becomes a blocking issue that the review sheet (`sheets/TypedLog.tsx`) asks about.
+- Corrections are stored per phrase in the profile (`phrases`), so they sync.
+
+## Meal ideas
+
+`domain/ideas/blueprints.ts` holds recipe shapes. Each has roles (base, protein, fruit…) with per-serving ranges,
+and steps written from the chosen foods.
+
+`domain/ideas/generate.ts`:
+
+- Scores each role's options: pantry (expiring first), today's gaps per kcal, often-logged foods, oxalate when
+  preferred. Avoided foods are excluded.
+- Enumerates the top combinations.
+- Solves amounts with the same LP solver as the replan:
+  - meal kcal within ±4 %;
+  - protein shortfall expensive;
+  - fat and saturated fat as ceilings, with unknown saturated fat counted as all of the fat;
+  - closeness to a natural serving;
+  - capped credit for filling micronutrient gaps.
+- Rounds to weighable amounts and recomputes every number from the foods.
+- `rebalance` re-solves around amounts the user typed.
+
+Supporting modules:
+
+- `data/ideas.ts` sizes the meal (its share of what is left after eaten and planned food), finds the gaps
+  against the DRIs, and logs an idea as one dish entry whose ingredients stay inside it.
+- `domain/ideas/oxalate.ts` keeps cited oxalate values per food with their source and any disagreement.
+
 ## Replan engine ("plans change")
 
 `domain/planning/replan.ts` builds a small linear program (javascript-lp-solver, pure JS, loaded only when the

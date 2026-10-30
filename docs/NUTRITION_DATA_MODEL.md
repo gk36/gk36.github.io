@@ -55,7 +55,11 @@ Decimal commas (`41,5`) and simple fractions (`1 1/2`) are accepted.
 
 ## Core food set (v1)
 
-97 foods: 92 USDA SR Legacy records (2018-04) and 5 labelled derivations:
+117 foods: 112 USDA SR Legacy records (2018-04) and 5 labelled derivations. The 20 added for meal ideas and the
+starter recipes include whey protein (generic), skimmed milk *without* added vitamins A/D, cottage cheese 1%, kiwi,
+maple syrup, chia, egg noodles (unenriched), beef broth, baking powder, cinnamon, cocoa, vanilla, graham crackers,
+garlic, celery, spring onion, lemon and lime juice, and salt. Plain everyday names ("rice", "chicken", "ρύζι") are
+aliases, so typed meals find the food people usually mean.
 
 | Entry | Source type | Why |
 |---|---|---|
@@ -68,6 +72,20 @@ Decimal commas (`41,5`) and simple fractions (`1 1/2`) are accepted.
 Rice and pasta use **unenriched** USDA records (EU products are not fortified). Gnocchi is intentionally absent:
 the only USDA match is a homemade recipe unlike packaged gnocchi — add it from the pack label.
 Iodine and biotin are unknown for all core foods (SR Legacy does not measure them).
+
+## Oxalate
+
+Kept apart from the USDA values, in `domain/ideas/oxalate.ts`, because the sources and units differ:
+
+- Sources, in order: Harvard T.H. Chan Oxalate Table 2023 (mg per stated serving), peer-reviewed lab
+  measurements (mg per 100 g), then university kidney-stone lists. Each value records its source, and where
+  sources disagree (potatoes, berries, bananas, oranges, carrots…) the disagreement is noted.
+- Serving weights come from USDA portions of the same food. Raw and dry foods use their cooked pair's value
+  through the raw↔cooked yield.
+- Levels follow UPMC: low under 2 mg, moderate 2–10 mg, high over 10 mg per serving. "Very high", over 50 mg,
+  is our own cut-off for ranking.
+- Foods without a cited value (egg white, kefir, feta, cream of rice, rice noodles, chia…) are unknown, never
+  assumed low.
 
 ## Days
 
