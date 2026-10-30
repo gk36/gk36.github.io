@@ -253,8 +253,8 @@ function ItemRow({ item: i, food, setup, added, choice, isAdded, onChoice, onRem
   const name = displayName(food);
   return (
     <li class="stack-s" style={{ padding: '8px 0', borderBottom: '1px solid var(--line)' }}>
-      <div class="cluster" style={{ justifyContent: 'space-between' }}>
-        <div class="stack-s" style={{ gap: '2px', minWidth: 0 }}>
+      <div class="cluster" style={{ justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'nowrap' }}>
+        <div class="stack-s" style={{ gap: '2px', minWidth: 0, flex: '1 1 auto' }}>
           <span class="item-name">{name}</span>
           <span class="small num" aria-label={changed ? `${name}: ${isAdded ? 'add' : q(i.from)} to ${q(i.to)}` : `${name}: ${q(i.to)}, unchanged`}>
             {changed ? <>{isAdded ? <span class="muted">new</span> : <s class="muted">{q(i.from)}</s>} → <b>{i.to === 0 ? 'none' : q(i.to)}</b></> : <>{q(i.to)} <span class="muted">· unchanged</span></>}
@@ -264,7 +264,7 @@ function ItemRow({ item: i, food, setup, added, choice, isAdded, onChoice, onRem
         {isAdded ? (
           <button type="button" class="btn btn-s btn-ghost" aria-label={`Remove ${name} from this replan`} onClick={onRemove}>Remove</button>
         ) : (
-          <select class="select" style={{ width: 'auto', minHeight: '36px' }} aria-label={`What to do with ${name}`} value={choice} onChange={(e) => onChoice(e.currentTarget.value as Choice)}>
+          <select class="select" style={{ width: 'auto', minHeight: '34px', padding: '4px 28px 4px 10px', fontSize: 'var(--fs-s)', flex: 'none' }} aria-label={`What to do with ${name}`} value={choice} onChange={(e) => onChoice(e.currentTarget.value as Choice)}>
             <option value="adjust">Adjust</option>
             <option value="keep">Keep as planned</option>
             <option value="drop">Leave out</option>
@@ -276,7 +276,7 @@ function ItemRow({ item: i, food, setup, added, choice, isAdded, onChoice, onRem
         <div class="stack-s xs" style={{ paddingTop: '4px' }}>
           <span>Gives {fmt('kcal', i.n.kcal)} · protein {formatAmount(Math.round(i.n.protein * 10) / 10)} g · carbs {formatAmount(Math.round(i.n.carbs * 10) / 10)} g · fat {formatAmount(Math.round(i.n.fat * 10) / 10)} g</span>
           {per100 ? <span class="cluster">Per 100 {food.basis.per === '100ml' ? 'mL' : 'g'}: {per100.kcal ?? '?'} kcal · P {per100.protein ?? '?'} · C {per100.carbs ?? '?'} · F {per100.fat ?? '?'} <SourceBadge src={food.src} /></span> : null}
-          <span>{stock ? `Available: ${stock.approx ? 'about ' : ''}${Math.round(stock.grams)} g ${stock.source === 'batch' ? 'left in the batch' : 'in your pantry'}${stock.expiresOn ? ` (use by ${stock.expiresOn})` : ''}.` : 'Not in your pantry — check you have it, or put it on the shopping list.'}</span>
+          {i.limit !== 'blocked' ? <span>{stock ? `Available: ${stock.approx ? 'about ' : ''}${Math.round(stock.grams)} g ${stock.source === 'batch' ? 'left in the batch' : 'in your pantry'}${stock.expiresOn ? ` (use by ${stock.expiresOn})` : ''}.` : 'Not in your pantry — check you have it, or put it on the shopping list.'}</span> : null}
           <span>{i.limit === 'kept' ? 'You fixed this amount.' : i.limit === 'blocked' ? 'Left out because it is not in your pantry.' : i.limit === 'stock' ? 'Limited by what you have.' : i.limit === 'max' ? 'Capped at a sensible single serving.' : 'Chosen by the balance of your targets and the priority you picked.'}</span>
         </div>
       </details>

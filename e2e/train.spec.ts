@@ -49,3 +49,34 @@ test('import a classic program, log a workout, and the next one is prefilled', a
   expect(await page.evaluate(() => localStorage.getItem('carbmaxx_workout_profiles_v1'))).toBe(raw);
   expect(errors()).toEqual([]);
 });
+
+test('swap, add, fit into N minutes and discard happen inline — no browser pop-ups', async ({ page }) => {
+  const errors = watchErrors(page);
+  page.on('dialog', (d) => { errors().push(`unexpected ${d.type()} pop-up`); void d.dismiss(); });
+  await page.addInitScript((d) => { localStorage.setItem('carbmaxx_workout_profiles_v1', d); }, JSON.stringify(v1Workouts));
+  await onboardFresh(page);
+  await page.goto('./#/train');
+  await main(page).getByRole('button', { name: 'tester' }).click();
+  await main(page).getByRole('button', { name: 'Start Upper Strength' }).click();
+
+  const pull = main(page).getByRole('region', { name: 'Weighted Pull-Ups' });
+  await pull.getByRole('button', { name: 'Swap' }).click();
+  await pull.getByRole('textbox', { name: 'Replace with' }).fill('Chin-Ups');
+  await pull.getByRole('button', { name: 'Replace' }).click();
+  await expect(main(page).getByRole('region', { name: 'Chin-Ups' })).toContainText('replaced Weighted Pull-Ups');
+
+  await main(page).getByRole('button', { name: 'Add exercise' }).click();
+  await main(page).getByRole('textbox', { name: 'Exercise name' }).fill('Face Pulls');
+  await main(page).getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(main(page).getByRole('region', { name: 'Face Pulls' })).toBeVisible();
+
+  await main(page).getByRole('button', { name: 'I only have…' }).click();
+  await main(page).getByRole('textbox', { name: 'Minutes you have' }).fill('10');
+  await main(page).getByRole('button', { name: 'Fit' }).click();
+  await expect(page.getByText(/^Kept \d of 3 exercises/)).toBeVisible();
+
+  await main(page).getByRole('button', { name: 'Discard', exact: true }).click();
+  await main(page).getByRole('button', { name: 'Discard workout' }).click();
+  await expect(page).toHaveURL(/#\/train$/);
+  expect(errors()).toEqual([]);
+});

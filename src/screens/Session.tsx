@@ -1,5 +1,5 @@
 import type { JSX } from 'preact';
-import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useEffect, useId, useMemo, useRef, useState } from 'preact/hooks';
 import { useAsync, useLive } from '../ui/hooks';
 import { Check, Plus, Timer, Trash, X } from '../ui/icons';
 import { db, type WorkoutSession } from '../data/db';
@@ -23,12 +23,33 @@ function SetNumber({ value, onCommit, ...rest }: { value: number | null; onCommi
   return <input {...rest} value={text} onInput={(ev) => { const t = ev.currentTarget.value; setText(t); onCommit(num(t)); }} />;
 }
 
+/** A one-field inline form. Replaces window.prompt, which installed iPhone apps block or show badly. */
+function InlineAsk({ label, initial = '', numeric, submitLabel, onSubmit, onCancel }: {
+  label: string; initial?: string; numeric?: boolean; submitLabel: string; onSubmit: (v: string) => void; onCancel: () => void;
+}) {
+  const [v, setV] = useState(initial);
+  const id = useId();
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => { ref.current?.focus(); ref.current?.select(); }, []);
+  const ok = numeric ? Number(v.replace(',', '.')) > 0 : v.trim().length > 0;
+  return (
+    <form class="cluster" style={{ width: '100%' }} onSubmit={(e) => { e.preventDefault(); if (ok) onSubmit(v.trim()); }}>
+      <label for={id} class="small">{label}</label>
+      <input ref={ref} id={id} class="input" style={{ flex: '1 1 140px', minHeight: '40px' }} value={v} maxLength={120} inputMode={numeric ? 'numeric' : 'text'}
+        onInput={(e) => setV(e.currentTarget.value)} onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }} />
+      <button type="submit" class="btn btn-s btn-primary" disabled={!ok}>{submitLabel}</button>
+      <button type="button" class="btn btn-s" onClick={onCancel}>Cancel</button>
+    </form>
+  );
+}
+
 export function Session({ id }: { id: string }) {
   const stored = useLive(() => db().sessions.get(id), [id], undefined as WorkoutSession | undefined);
   const [s, setS] = useState<WorkoutSession | null>(null);
   const [rest, setRest] = useState<{ until: number } | null>(null);
   const [now, setNow] = useState(Date.now());
   const [summary, setSummary] = useState(false);
+  const [ask, setAsk] = useState<null | 'add' | 'discard'>(null);
   const [notes, setNotes] = useState('');
   const saveTimer = useRef(0);
   // Edits arrive in bursts (a reps field commits on blur in the same tick as the "done" tap), so every
@@ -93,13 +114,23 @@ export function Session({ id }: { id: string }) {
       ))}
 
       {!readOnly ? (
-        <div class="cluster">
-          <button type="button" class="btn" onClick={() => {
-            const name = prompt('Exercise name');
-            if (name?.trim()) change((cur) => ({ ...cur, exercises: [...cur.exercises, { id: uuidv7(), name: name.trim(), m: [], ss: false, plannedSets: 3, repMin: null, repMax: null, prescription: '3 sets', sets: [1, 2, 3].map(() => ({ id: uuidv7(), kind: 'working' as const, weightKg: null, reps: null, rir: null, done: false })) }] }));
-          }}><Plus size={16} aria-hidden="true" /> Add exercise</button>
-          <button type="button" class="btn btn-danger" onClick={async () => { if (confirm('Discard this workout? Logged sets will be removed.')) { clearTimeout(saveTimer.current); await discardSession(latest.current!); navigate('train'); } }}><Trash size={16} aria-hidden="true" /> Discard</button>
-        </div>
+        ask === 'add' ? (
+          <InlineAsk label="Exercise name" submitLabel="Add" onCancel={() => setAsk(null)} onSubmit={(name) => {
+            change((cur) => ({ ...cur, exercises: [...cur.exercises, { id: uuidv7(), name, m: [], ss: false, plannedSets: 3, repMin: null, repMax: null, prescription: '3 sets', sets: [1, 2, 3].map(() => ({ id: uuidv7(), kind: 'working' as const, weightKg: null, reps: null, rir: null, done: false })) }] }));
+            setAsk(null);
+          }} />
+        ) : ask === 'discard' ? (
+          <div class="callout danger cluster" role="alert">
+            <span class="grow">Discard this workout? Its logged sets will be removed.</span>
+            <button type="button" class="btn btn-s btn-danger" onClick={async () => { clearTimeout(saveTimer.current); await discardSession(latest.current!); navigate('train'); }}>Discard workout</button>
+            <button type="button" class="btn btn-s" onClick={() => setAsk(null)}>Keep it</button>
+          </div>
+        ) : (
+          <div class="cluster">
+            <button type="button" class="btn" onClick={() => setAsk('add')}><Plus size={16} aria-hidden="true" /> Add exercise</button>
+            <button type="button" class="btn btn-danger" onClick={() => setAsk('discard')}><Trash size={16} aria-hidden="true" /> Discard</button>
+          </div>
+        )
       ) : null}
 
       {!readOnly || notes ? (
@@ -123,6 +154,7 @@ export function Session({ id }: { id: string }) {
 
 function TimeBudget({ s, onChange }: { s: WorkoutSession; onChange: (f: (cur: WorkoutSession) => WorkoutSession) => void }) {
   const est = estimateMinutes(s.exercises, s.restSec);
+  const [asking, setAsking] = useState(false);
   return (
     <section class="card cluster" aria-label="Time and rest">
       <span class="small">≈ <b>{est} min</b> at {Math.round(s.restSec / 60 * 10) / 10} min rest</span>
@@ -131,14 +163,15 @@ function TimeBudget({ s, onChange }: { s: WorkoutSession; onChange: (f: (cur: Wo
           {[60, 90, 120, 150, 180, 240].map((r) => <option key={r} value={String(r)}>{r} s</option>)}
         </select>
       </label>
-      <button type="button" class="btn btn-s" onClick={() => {
-        const m = Number(prompt('How many minutes do you have?', '50'));
-        if (m > 0) {
+      {asking ? (
+        <InlineAsk label="Minutes you have" initial={String(Math.max(10, Math.round(est / 5) * 5 - 15))} numeric submitLabel="Fit" onCancel={() => setAsking(false)} onSubmit={(v) => {
+          const m = Number(v.replace(',', '.'));
           const fitted = fitToTime(s.exercises, m, s.restSec);
           onChange((cur) => ({ ...cur, exercises: fitted }));
+          setAsking(false);
           toast(`Kept ${fitted.filter((e) => !e.skipped).length} of ${fitted.length} exercises (main lifts first). Skipped ones stay in your program.`, { ms: 5000 });
-        }
-      }}>I only have…</button>
+        }} />
+      ) : <button type="button" class="btn btn-s" onClick={() => setAsking(true)}>I only have…</button>}
     </section>
   );
 }
@@ -151,6 +184,7 @@ function ExerciseCard({ e, prevSs, readOnly, startedAt, onSet, onChange }: {
   const hint = useMemo(() => progressionHint(last, e.repMax), [last, e.repMax]);
   const lastText = last ? last.sets.filter((x) => x.done && x.kind !== 'warmup').map((x) => `${x.weightKg ?? 'BW'}×${x.reps ?? '?'}`).join(', ') : null;
   const best = bestE1rm(e);
+  const [swapping, setSwapping] = useState(false);
   return (
     <section class="meal" aria-label={e.name} style={{ opacity: e.skipped ? 0.55 : 1, marginTop: prevSs ? '-10px' : undefined, borderTopLeftRadius: prevSs ? '4px' : undefined, borderTopRightRadius: prevSs ? '4px' : undefined }}>
       <div class="meal-head">
@@ -161,14 +195,17 @@ function ExerciseCard({ e, prevSs, readOnly, startedAt, onSet, onChange }: {
         </div>
         {!readOnly ? (
           <div class="cluster">
-            <button type="button" class="btn btn-s" onClick={() => {
-              const name = prompt(`Replace “${e.name}” in this workout with:`, e.name);
-              if (name?.trim()) onChange((x) => ({ ...x, name: name.trim(), note: `${x.note ? `${x.note} · ` : ''}replaced ${x.name}` }));
-            }}>Swap</button>
+            <button type="button" class="btn btn-s" aria-expanded={swapping} onClick={() => setSwapping(!swapping)}>Swap</button>
             <button type="button" class="btn btn-s" aria-pressed={!!e.skipped} onClick={() => onChange((x) => ({ ...x, skipped: !x.skipped }))}>{e.skipped ? 'Unskip' : 'Skip'}</button>
           </div>
         ) : null}
       </div>
+      {swapping && !readOnly ? (
+        <InlineAsk label="Replace with" initial={e.name} submitLabel="Replace" onCancel={() => setSwapping(false)} onSubmit={(name) => {
+          if (name !== e.name) onChange((x) => ({ ...x, name, note: `${x.note ? `${x.note} · ` : ''}replaced ${x.name}` }));
+          setSwapping(false);
+        }} />
+      ) : null}
       {lastText ? <p class="xs subtle">Last time: {lastText}{hint ? ` — ${hint}` : ''}</p> : null}
       <table class="ntable" aria-label={`${e.name} sets`}>
         <thead><tr><th scope="col">Set</th><th scope="col">kg</th><th scope="col">Reps</th><th scope="col">RIR</th><th scope="col"><span class="sr-only">Done</span></th></tr></thead>

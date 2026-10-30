@@ -1,6 +1,6 @@
 /* CARBMAXX service worker — generated at build time. */
-const VERSION = "carbmaxx-5bd0eb3de280";
-const PRECACHE = ["./","./apple-touch-icon.png","./assets/ReplanSheet-DOSVh_Hz.js","./assets/core-DSsfOJeP.js","./assets/core.meta-UvxilGrC.js","./assets/dri-table-bfmUC6jl.js","./assets/index-CO_9sLJO.css","./assets/index-CeW6S-JA.js","./assets/inter-greek-ext-wght-normal-DlzME5K_.woff2","./assets/inter-greek-wght-normal-CkhJZR-_.woff2","./assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2","./assets/inter-latin-wght-normal-Dx4kXJAl.woff2","./assets/ponyfill-DdE6jAwG.js","./assets/zxing_reader-BxB2YfIY.wasm","./assets/zxing_reader-DJ-Ysdss.js","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest"];
+const VERSION = "carbmaxx-deed0f7c7b63";
+const PRECACHE = ["./","./apple-touch-icon.png","./assets/ReplanSheet-BlQ4VFOZ.js","./assets/core-DSsfOJeP.js","./assets/core.meta-UvxilGrC.js","./assets/dri-table-bfmUC6jl.js","./assets/index-CO_9sLJO.css","./assets/index-CutDw5Fy.js","./assets/inter-greek-ext-wght-normal-DlzME5K_.woff2","./assets/inter-greek-wght-normal-CkhJZR-_.woff2","./assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2","./assets/inter-latin-wght-normal-Dx4kXJAl.woff2","./assets/ponyfill-DdE6jAwG.js","./assets/zxing_reader-BxB2YfIY.wasm","./assets/zxing_reader-DJ-Ysdss.js","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(PRECACHE)));
 });
