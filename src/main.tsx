@@ -5,6 +5,7 @@ import './styles/base.css';
 import { App } from './app/App';
 import { initProfile } from './app/store';
 import { registerServiceWorker } from './app/pwa';
+import { initSync } from './app/sync';
 
 registerServiceWorker();
 
@@ -19,6 +20,7 @@ async function boot() {
     return;
   }
   render(<App />, root);
+  void initSync();
 }
 
 void boot();

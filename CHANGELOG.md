@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.0.0-alpha.5 — milestone 2: sync across devices (unreleased, branch `carbmaxx-2`)
+
+- **Sign in to sync** (Settings → Sync across devices, or "Already use CARBMAXX on another device?" on the
+  welcome screen): diary, foods, recipes and batches, pantry, shopping list, workouts and profile follow you to
+  every device. Works offline; sync catches up on start, after changes, on returning online, and every 5 minutes.
+- Only your account can read or write your data (database rules); the newest edit of each record wins, and the
+  server refuses an older version overwriting a newer one. A device synced with one account won't sync into
+  another. The sign-in token stays on the device and never goes into backups.
+- Header chip shows Synced / Syncing… / Offline · saved here / Sync problem.
+- Off until the owner completes the one-time Firebase setup in `docs/SYNC_SETUP.md`.
+
 ## 2.0.0-alpha.4 — milestone 6: read a label from a photo (unreleased, branch `carbmaxx-2`)
 
 - **Read label photo** in the label editor: photograph the nutrition table; the numbers are read on the

@@ -7,6 +7,8 @@ import { Shield, Utensils } from '../ui/icons';
 import { StatsForm } from './parts/StatsForm';
 import { LegacyImport } from './parts/LegacyImport';
 import { InstallHint } from './parts/InstallHint';
+import { SyncCard } from './parts/SyncCard';
+import { syncConfigured } from '../data/sync/config';
 import { GOALS } from '../domain/planning/template';
 
 type Step = 'welcome' | 'import' | 'stats';
@@ -30,12 +32,18 @@ export function Onboarding() {
           <p class="muted">Log what you actually eat, keep it separate from what you planned, and see honest totals: weighed foods in the state you weighed them, unknown values shown as unknown.</p>
           <div class="callout small cluster" style={{ flexWrap: 'nowrap', alignItems: 'flex-start' }}>
             <Shield size={18} aria-hidden="true" />
-            <span>Your data stays <b>on this device</b>. Nothing is uploaded. You can export a backup any time.</span>
+            <span>Your data stays <b>on this device</b>{syncConfigured() ? ' unless you sign in to sync it to your own account' : '. Nothing is uploaded'}. You can export a backup any time.</span>
           </div>
           <InstallHint />
           <div class="cluster">
             <button type="button" class="btn btn-primary" onClick={() => setStep('import')}>Get started</button>
           </div>
+          {syncConfigured() ? (
+            <details>
+              <summary>Already use CARBMAXX on another device?</summary>
+              <div style={{ marginTop: '10px' }}><SyncCard freshDevice /></div>
+            </details>
+          ) : null}
         </section>
       ) : null}
       {step === 'import' ? (

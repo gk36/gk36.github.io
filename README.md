@@ -27,7 +27,8 @@ GitHub Pages.
 - **Pantry & shopping list.** Stock comes down when you eat or cook; bought items go back in.
 - **Train.** Log sets from your program with a rest timer, prefilled weights, PRs and weekly volume.
 - **Works offline**, installable to the Home Screen.
-- **Your data stays on your device** (IndexedDB). Export/import backups at any time.
+- **Your data stays on your device** (IndexedDB), and — once sync is switched on — in your own account, readable
+  only by you. Export/import backups at any time.
 
 ## Develop
 
@@ -62,6 +63,7 @@ macros, and that each portion weight is one of USDA's own portions) and refuses 
 - [Data migration & backups](docs/DATA_MIGRATION.md)
 - [Test plan](docs/TEST_PLAN.md)
 - [Roadmap & status](docs/ROADMAP.md)
+- [Turning on sync (owner)](docs/SYNC_SETUP.md)
 - [Changelog](CHANGELOG.md)
 
 ## Sources & licences

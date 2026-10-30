@@ -40,6 +40,23 @@ src/
 - **Schema changes** add a new Dexie `version()` with an upgrade function; existing versions are never edited.
 - **Validation:** Zod schemas guard backups, imports and custom foods (Zod runs jitless — no `eval`).
 
+## Sync
+
+`data/sync/` talks to Firebase over REST — no SDK, no third-party scripts:
+
+- **Sign-in:** email + password through the Identity Toolkit REST API; ID tokens refreshed through the Secure
+  Token API. The session lives in the `auth` settings row, which is local-only (never synced, never exported).
+- **Layout:** `/v2/users/{uid}/{table}/{id} = { u: updatedAt, r: rev, s: server time, j: exact JSON }`.
+- **Pull** per table: records with `s ≥ cursor` (indexed). A record replaces the local one only if it is newer
+  and passes the backup validation.
+- **Push:** local records whose version differs from the version last seen on the server (`syncMeta`, Dexie v5),
+  in atomic multi-path PATCHes.
+- **Safety:** the rules (`docs/firebase-rules-v2.json`) allow each account only its own folder, enforce the record
+  shape and refuse older-over-newer writes. A refused push re-pulls and retries once. A device remembers the account
+  it synced with and refuses another.
+- `app/sync.ts` runs it on start, after local changes (Dexie hooks, debounced), on `online`/visibility, and every
+  5 minutes. The status chip reflects it.
+
 ## Label OCR
 
 `integrations/ocr.ts` runs Tesseract in a Web Worker on the device: the photo is downscaled (long side ≤ 2,400 px)
@@ -70,7 +87,7 @@ replan sheet opens):
 ## Security baseline
 
 - Strict Content-Security-Policy injected into production builds (`script-src 'self' 'wasm-unsafe-eval'`,
-  `style-src 'self'`, explicit `connect-src`). GitHub Pages cannot send headers, so it is a `<meta>` tag
+  `style-src 'self'`, explicit `connect-src`: Open Food Facts, the Realtime Database, Identity Toolkit, Secure Token). GitHub Pages cannot send headers, so it is a `<meta>` tag
   (`frame-ancestors` is therefore unavailable).
 - No third-party runtime scripts; fonts and icons are bundled.
 - Text from labels, remote APIs or the user is rendered as text, never as HTML.

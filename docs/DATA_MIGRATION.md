@@ -41,6 +41,10 @@ Cloud sync with a real account is planned (see [Roadmap](ROADMAP.md)).
 
 The IndexedDB schema is versioned with Dexie. New versions add an upgrade function; old versions are never edited.
 v1 diary, foods, settings · v2 Open Food Facts cache · v3 training programs and sessions · v4 pantry, shopping list
-and day history (replans). Backups include every table except the Open Food Facts cache; older backups (without
-the newer tables) still import.
+and day history (replans) · v5 sync metadata. Backups include every table except the Open Food Facts cache and
+sync metadata; older backups (without the newer tables) still import. Device-only settings (`auth`, `sync`, the
+pre-import snapshot) are never exported and survive a "replace" import.
+
+Moving from the classic name-based cloud profiles: import the v1 profile on any device (Settings → CARBMAXX v1),
+then sign in to sync — it travels to your other devices from there. The classic data is never modified.
 Backups carry `schema: 1`; a backup from a newer app version is refused instead of being partially imported.

@@ -7,7 +7,7 @@ the owner's decision.
 |---|---|---|
 | 0 | Audit, backup, plan | ✅ done (backup of the old cloud data saved locally, outside the repo) |
 | 1 | **Ledger** — diary (planned vs eaten), Today, USDA core foods, label foods, saved meals, planner bridge, backups, v1 import | ✅ done — 252 unit + 19 e2e tests |
-| 2 | Account & sync — sign-in, per-user cloud data, conflict-safe sync, migration of v1 cloud profiles | ⏳ planned (needs a one-time Firebase console setup by the owner) |
+| 2 | Account & sync — sign-in, per-user cloud data, conflict-safe sync, migration of v1 cloud profiles | ✅ built and tested against a simulated Firebase — **switched on after the owner's one-time console setup** ([SYNC_SETUP.md](SYNC_SETUP.md)); v1 profiles move over through the existing import, then sync |
 | 3 | Packaged foods — camera barcode scanning, Open Food Facts lookup, verify & save, offline repeat | ✅ done — live camera (native reader, or a self-hosted WebAssembly reader on iPhone), photo or typed code, check-digit validation, cached lookups |
 | 4 | Kitchen — recipes and batch cooking with measured cooked yield, leftovers, scaling | ✅ done — portions are exact fractions of the weighed batch (property-tested), raw↔cooked yield estimator |
 | 5 | Nutrients — age/sex reference intakes, unknown-aware coverage report, drill-downs, meal compare | ✅ done — NASEM DRIs for 27 nutrients, upper limits only where they apply to food, top contributors, 7-day average |
@@ -31,10 +31,14 @@ the owner's decision.
   and foods without a value shown as unknown, never zero. ✅
 - **G (partial):** replan priorities "More micronutrients" and "Lowest saturated fat" (unknown saturated fat counts as
   all of the fat); an unplanned dessert is absorbed without starvation advice. A breakfast *generator* is not built yet.
+- **I (sync/privacy):** two devices on one account — a new device signs in from the welcome screen and gets the
+  diary without repeating setup; edits travel both ways; a second account sees nothing and its read of the first
+  account's folder is refused; newest edit wins even when the older device syncs last. ✅ (simulated Firebase;
+  live after setup)
 - **H (exercise log):** import a custom v1 split without touching v1 data, log weighted dips, next session prefilled
   with a progression hint. ✅ (3D animation: classic page)
 
 ## Owner decisions still open
 
 - Deploy method at merge time: committed `app/` (works today) or a GitHub Actions deploy (one setting).
-- Firebase account setup for sync (milestone 2).
+- Firebase console steps for sync (milestone 2): [SYNC_SETUP.md](SYNC_SETUP.md).

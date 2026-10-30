@@ -1,0 +1,18 @@
+{
+  "rules": {
+    "v2": {
+      "users": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid",
+          "$table": {
+            ".indexOn": ["s"],
+            "$id": {
+              ".validate": "newData.hasChildren(['u', 'r', 's', 'j']) && newData.child('u').isString() && newData.child('r').isNumber() && newData.child('s').val() === now && newData.child('j').isString() && newData.child('j').val().length < 500000 && (!data.exists() || newData.child('u').val() > data.child('u').val() || (newData.child('u').val() === data.child('u').val() && newData.child('r').val() >= data.child('r').val()))"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -8,12 +8,14 @@ const TABLES = ['entries', 'days', 'foods', 'savedMeals', 'weights', 'settings',
 type TableName = (typeof TABLES)[number];
 /** Kept across a "replace" import so the previous state can always be restored. */
 export const PRE_IMPORT_KEY = 'preImportSnapshot';
+/** Settings that belong to this device only: never exported, never overwritten by an import. */
+export const LOCAL_ONLY = new Set([PRE_IMPORT_KEY, 'auth', 'sync']);
 
 export async function exportAll(): Promise<BackupFile> {
   const d = db();
   const [entries, days, foods, savedMeals, weights, settings, programs, sessions, pantry, shopping, events] = await Promise.all([
     d.entries.toArray(), d.days.toArray(), d.foods.toArray(), d.savedMeals.toArray(), d.weights.toArray(),
-    d.settings.filter((s) => s.key !== PRE_IMPORT_KEY).toArray(), d.programs.toArray(), d.sessions.toArray(),
+    d.settings.filter((s) => !LOCAL_ONLY.has(s.key)).toArray(), d.programs.toArray(), d.sessions.toArray(),
     d.pantry.toArray(), d.shopping.toArray(), d.events.toArray(),
   ]);
   return {
@@ -68,9 +70,9 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
   await d.transaction('rw', [d.entries, d.days, d.foods, d.savedMeals, d.weights, d.settings, d.programs, d.sessions, d.pantry, d.shopping, d.events], async () => {
     if (mode === 'replace') {
       await Promise.all([d.entries.clear(), d.days.clear(), d.foods.clear(), d.savedMeals.clear(), d.weights.clear(), d.programs.clear(), d.sessions.clear(), d.pantry.clear(), d.shopping.clear(), d.events.clear()]);
-      const keep = await d.settings.get(PRE_IMPORT_KEY);
+      const keep = (await d.settings.toArray()).filter((s) => LOCAL_ONLY.has(s.key));
       await d.settings.clear();
-      if (keep) await d.settings.put(keep);
+      await d.settings.bulkPut(keep);
       await d.settings.put({ key: PRE_IMPORT_KEY, value: { savedAt: nowIso(), backup: before } });
       await d.entries.bulkPut(data.entries as LogEntry[]);
       await d.days.bulkPut(data.days as DayRecord[]);
@@ -82,7 +84,7 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
       await d.pantry.bulkPut(pantry);
       await d.shopping.bulkPut(shopping);
       await d.events.bulkPut(events);
-      await d.settings.bulkPut((data.settings as SettingRow[]).filter((s) => s.key !== PRE_IMPORT_KEY));
+      await d.settings.bulkPut((data.settings as SettingRow[]).filter((s) => !LOCAL_ONLY.has(s.key)));
       return;
     }
     const mergeTable = async <T extends { updatedAt?: string; rev?: number }>(table: { get(k: string): PromiseLike<T | undefined>; put(v: T): PromiseLike<unknown> }, rows: T[], key: (r: T) => string) => {
@@ -102,7 +104,7 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
     await mergeTable<ShoppingItem>(d.shopping, shopping, (r) => r.id);
     await mergeTable<DayEvent>(d.events, events, (r) => r.id);
     for (const s of data.settings as SettingRow[]) {
-      if (s.key === PRE_IMPORT_KEY) continue;
+      if (LOCAL_ONLY.has(s.key)) continue;
       if (!(await d.settings.get(s.key))) await d.settings.put(s);
     }
   });

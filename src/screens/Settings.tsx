@@ -4,10 +4,12 @@ import { useAsync } from '../ui/hooks';
 import { Field, NumberField, Segmented } from '../ui/controls';
 import { Download, Lock, Shield, Upload } from '../ui/icons';
 import { StatsForm } from './parts/StatsForm';
+import { SyncCard } from './parts/SyncCard';
 import { LegacyImport } from './parts/LegacyImport';
 import { backupFileName, exportAll, importBackup, parseBackup, PRE_IMPORT_KEY, type ParsedBackup } from '../data/backup';
 import { db } from '../data/db';
 import { initProfile } from '../app/store';
+import { syncStatus } from '../app/sync';
 import type { BackupFile } from '../data/schemas';
 
 function download(name: string, text: string) {
@@ -94,9 +96,14 @@ export function SettingsScreen() {
         <Segmented label="Detail" value={p.density} onChange={(v) => void updateProfile({ density: v })} options={[{ value: 'simple', label: 'Simple' }, { value: 'detailed', label: 'Detailed' }, { value: 'research', label: 'Research' }]} />
       </section>
 
+      <section class="card stack" aria-labelledby="set-sync">
+        <h2 id="set-sync" class="card-title">Sync across devices</h2>
+        <SyncCard />
+      </section>
+
       <section class="card stack" aria-labelledby="set-data">
         <h2 id="set-data" class="card-title">Your data</h2>
-        <p class="small">Everything is stored <b>on this device</b> (IndexedDB). Nothing is uploaded. Export a backup regularly{p.lastBackupAt ? ` — last one ${new Date(p.lastBackupAt).toLocaleDateString('en-GB')}` : ' — you have not made one yet'}.</p>
+        <p class="small">Everything is stored <b>on this device</b> (IndexedDB){syncStatus.value.state === 'off' ? '. Nothing is uploaded' : ', and synced to your account'}. Export a backup regularly{p.lastBackupAt ? ` — last one ${new Date(p.lastBackupAt).toLocaleDateString('en-GB')}` : ' — you have not made one yet'}.</p>
         <div class="cluster">
           <button type="button" class="btn btn-primary" onClick={() => void exportBackup()}><Download size={16} aria-hidden="true" /> Export backup</button>
           <label class="btn">

@@ -15,7 +15,7 @@ const CSP = [
   "style-src 'self'",
   "img-src 'self' data: blob: https://images.openfoodfacts.org",
   "font-src 'self'",
-  "connect-src 'self' https://world.openfoodfacts.org https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.app",
+  "connect-src 'self' https://world.openfoodfacts.org https://carbmaxx-default-rtdb.europe-west1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "media-src 'self' blob:",

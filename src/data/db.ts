@@ -102,7 +102,10 @@ export interface DayEvent {
   rev: number;
 }
 
+export interface SyncMeta { k: string; u: string; r: number }
+
 export class CarbmaxxDB extends Dexie {
+  syncMeta!: Table<SyncMeta, string>;
   pantry!: Table<PantryItem, string>;
   shopping!: Table<ShoppingItem, string>;
   events!: Table<DayEvent, string>;
@@ -134,6 +137,8 @@ export class CarbmaxxDB extends Dexie {
     this.version(3).stores({ programs: 'id, updatedAt', sessions: 'id, dayKey, startedAt, programId, updatedAt' });
     // v4: pantry lots, shopping list, and the day-change history (replans).
     this.version(4).stores({ pantry: 'id, foodId, updatedAt', shopping: 'id, foodId, updatedAt', events: 'id, dayKey, at, updatedAt' });
+    // v5: the version of each record last seen on the sync server ("table/id" → updatedAt + rev).
+    this.version(5).stores({ syncMeta: 'k' });
   }
 }
 
