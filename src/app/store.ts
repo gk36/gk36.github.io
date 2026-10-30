@@ -107,6 +107,6 @@ export function toast(text: string, opts: { action?: Toast['action']; tone?: Toa
   if (opts.action) t.action = opts.action;
   if (opts.tone) t.tone = opts.tone;
   toasts.value = [...toasts.value.slice(-2), t];
-  setTimeout(() => dismissToast(id), opts.ms ?? (opts.action ? 6500 : 3200));
+  setTimeout(() => dismissToast(id), opts.ms ?? (opts.action ? 9000 : 3200));
 }
 export const dismissToast = (id: number) => { toasts.value = toasts.value.filter((t) => t.id !== id); };

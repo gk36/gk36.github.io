@@ -4,7 +4,7 @@ import { Checkbox, NumberField, Segmented } from '../ui/controls';
 import { useAsync } from '../ui/hooks';
 import { Check, ChefHat, ChevronDown, Clock, Leaf, Pencil, Plus, Shuffle, ShoppingCart, SlidersHorizontal, Sparkles, Trash, X } from '../ui/icons';
 import { ideaFood, ideaToShopping, loadIdeaSetup, mealGoal, mealNeeds, mealOfSlot, saveIdeaAsRecipe, tasteOf, type IdeaSetup } from '../data/ideas';
-import { draftsOf, generateIdeas, nutrientWords, rebalance, roleChoices, type Idea, type IdeaInput, type IdeaItem } from '../domain/ideas/generate';
+import { draftsOf, generateIdeas, nutrientWords, rebalance, roleChoices, sized, type Idea, type IdeaInput, type IdeaItem } from '../domain/ideas/generate';
 import { EQUIPMENT_LABEL, type Equipment, type TastePrefs } from '../domain/ideas/model';
 import { OXALATE_LABEL, OXALATE_SOURCES } from '../domain/ideas/oxalate';
 import { displayName } from '../domain/nutrition/food';
@@ -127,10 +127,12 @@ function IdeaCard({ idea: initial, input, dayKey, slotId, first }: { idea: Idea;
   const T = idea.totals;
   const tgt = idea.target;
   const sat = T.satFat.known ? T.satFat.value : null;
-  const kcalOk = Math.abs(T.kcal.value - tgt.kcal) <= Math.max(25, 0.04 * tgt.kcal);
-  const proteinOk = T.protein.value >= tgt.protein - 3;
-  const fatOk = T.fat.value <= tgt.fatMax + 1;
-  const satOk = sat === null ? null : sat <= tgt.satFatMax + 0.5;
+  const band = Math.max(25, 0.04 * tgt.kcal);
+  const off = Math.abs(T.kcal.value - tgt.kcal);
+  const kcalFit: FitState = off <= band ? 'ok' : off <= 2 * band ? 'close' : 'off';
+  const proteinFit: FitState = T.protein.value >= tgt.protein - 3 ? 'ok' : T.protein.value >= tgt.protein - 8 ? 'close' : 'off';
+  const fatFit: FitState = T.fat.value <= tgt.fatMax + 1 ? 'ok' : T.fat.value <= tgt.fatMax + 4 ? 'close' : 'off';
+  const satFit: FitState | null = sat === null ? null : sat <= tgt.satFatMax + 0.5 ? 'ok' : sat <= tgt.satFatMax + 1.5 ? 'close' : 'off';
   const helps = idea.covers.filter((c) => c.pct >= 0.25).sort((a, b) => b.pct - a.pct).slice(0, 4);
   const missing = idea.items.filter((i) => i.stock === 'missing' || i.stock === 'short');
   const staples = idea.items.filter((i) => i.stock === 'staple');
@@ -144,7 +146,8 @@ function IdeaCard({ idea: initial, input, dayKey, slotId, first }: { idea: Idea;
     const choice = roleChoices(idea.blueprint, role, input).find((c) => c.food.id === foodId);
     if (!choice) return;
     const lock = new Set(fixed); lock.delete(role);
-    update(draftsOf(idea).map((d) => (d.role === role ? { ...d, food: choice.food, option: choice.option, unit: choice.option.unit ?? 'g', amount: choice.option.typical || choice.option.min } : d)), lock);
+    const opt = sized(choice.option, input);
+    update(draftsOf(idea).map((d) => (d.role === role ? { ...d, food: choice.food, option: opt, unit: opt.unit ?? 'g', amount: opt.typical || opt.min } : d)), lock);
   };
   const remove = (role: string) => update(draftsOf(idea).filter((d) => d.role !== role), fixed);
 
@@ -184,10 +187,10 @@ function IdeaCard({ idea: initial, input, dayKey, slotId, first }: { idea: Idea;
         <span class="idea-macro num"><span class="dot" style={{ background: 'var(--fat)' }} aria-hidden="true" /><b>{roundFor('fat', T.fat.value)}</b> g fat{sat !== null ? <span class="subtle"> ({roundFor('satFat', sat)} sat.)</span> : null}</span>
       </div>
       <p class="idea-fit xs">
-        <Fit ok={kcalOk} text={`${Math.round(tgt.kcal)} kcal goal`} />
-        <Fit ok={proteinOk} text={`${tgt.protein} g protein goal`} />
-        <Fit ok={fatOk} text={`fat under ${Math.round(tgt.fatMax)} g`} />
-        {satOk !== null ? <Fit ok={satOk} text={`sat. fat under ${roundFor('satFat', tgt.satFatMax)} g`} /> : <span class="subtle">saturated fat unknown for an ingredient</span>}
+        <Fit state={kcalFit} text={`${Math.round(tgt.kcal)} kcal goal`} />
+        <Fit state={proteinFit} text={`${tgt.protein} g protein goal`} />
+        <Fit state={fatFit} text={`fat under ${Math.round(tgt.fatMax)} g`} />
+        {satFit !== null ? <Fit state={satFit} text={`sat. fat under ${roundFor('satFat', tgt.satFatMax)} g`} /> : <span class="subtle">saturated fat unknown for an ingredient</span>}
       </p>
       {helps.length ? (
         <p class="small idea-helps"><Leaf size={14} aria-hidden="true" /><span>Covers {helps.map((h, i) => <span key={h.id}>{i ? (i === helps.length - 1 ? ' and ' : ', ') : ''}<b>{pctText(h.pct)}</b> of the {nutrientWords([h.id])}</span>)} you still need{helps.some((h) => idea.totals[h.id].unknown) ? ' (at least)' : ''}.</span></p>
@@ -233,8 +236,14 @@ function IdeaCard({ idea: initial, input, dayKey, slotId, first }: { idea: Idea;
   );
 }
 
-function Fit({ ok, text }: { ok: boolean; text: string }) {
-  return <span class={`fit ${ok ? 'ok' : 'warn'}`}>{ok ? <Check size={12} aria-hidden="true" /> : <X size={12} aria-hidden="true" />} {text}</span>;
+type FitState = 'ok' | 'close' | 'off';
+function Fit({ state, text }: { state: FitState; text: string }) {
+  return (
+    <span class={`fit ${state}`}>
+      {state === 'ok' ? <Check size={12} aria-hidden="true" /> : state === 'close' ? <span aria-hidden="true">≈</span> : <X size={12} aria-hidden="true" />}
+      {' '}{state === 'close' ? 'close to ' : state === 'off' ? 'misses ' : ''}{text}
+    </span>
+  );
 }
 
 function IngredientRow({ item, editing, choices, optional, lowOx, pantry, onAmount, onSwap, onRemove }: {

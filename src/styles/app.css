@@ -88,7 +88,8 @@
 .idea-fit { display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .fit { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
 .fit.ok { color: var(--ok); }
-.fit.warn { color: var(--warn); }
+.fit.close { color: var(--fg-muted); }
+.fit.off { color: var(--warn); }
 .idea-helps { display: flex; gap: 6px; align-items: flex-start; }
 .idea-helps svg { color: var(--carbs); flex: none; margin-top: 3px; }
 .idea-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }

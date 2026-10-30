@@ -47,6 +47,8 @@ export interface Option {
   label: string;
   /** Singular for counted foods ("egg"). */
   labelOne?: string;
+  /** Set once the range has been scaled to the meal's size (see portionScale). */
+  scaledBy?: number;
 }
 
 export interface Role {

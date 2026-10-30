@@ -166,6 +166,30 @@ function equipmentOk(bp: Blueprint, have: readonly Equipment[]): boolean {
   return bp.needs.some((set) => set.every((e) => have.includes(e)));
 }
 
+/**
+ * Servings follow the meal's size: the recipe ranges describe a ~600 kcal meal (300 for snacks),
+ * so a 900 kcal bulking dinner or a 350 kcal light lunch scale every range together.
+ */
+export function portionScale(meal: MealKind, kcal: number): number {
+  return Math.min(1.9, Math.max(0.55, kcal / (meal === 'snack' ? 300 : 600)));
+}
+
+export function scaleOption(o: Option, f: number): Option {
+  if (o.scaledBy !== undefined || Math.abs(f - 1) < 0.02) return { ...o, scaledBy: o.scaledBy ?? 1 };
+  if ((o.unit ?? 'g') === 'piece') {
+    const min = Math.max(1, Math.round(o.min * f));
+    const max = Math.max(min, Math.round(o.max * f));
+    return { ...o, min, max, typical: o.typical ? Math.min(max, Math.max(min, Math.round(o.typical * f))) : 0, scaledBy: f };
+  }
+  const r = (x: number) => (x >= 20 ? Math.round(x / 5) * 5 : Math.max(0.5, Math.round(x * 2) / 2));
+  const min = r(o.min * f);
+  const max = Math.max(min, r(o.max * f));
+  return { ...o, min, max, typical: o.typical ? Math.min(max, Math.max(min, r(o.typical * f))) : 0, scaledBy: f };
+}
+
+/** An option sized for this request (already-sized options are kept as they are). */
+export const sized = (o: Option, input: Pick<IdeaInput, 'meal' | 'target'>): Option => scaleOption(o, portionScale(input.meal, input.target.kcal));
+
 /* ------------------------------------------------------------------ candidates */
 
 interface Cand {
@@ -180,7 +204,8 @@ interface Cand {
   oxPerUnit: number;
 }
 
-function scoreOption(bp: Blueprint, role: Role, opt: Option, input: IdeaInput): Cand | null | 'missing-own' {
+function scoreOption(bp: Blueprint, role: Role, raw: Option, input: IdeaInput): Cand | null | 'missing-own' {
+  const opt = sized(raw, input);
   const food = resolveOption(opt, input.foods);
   if (!food) return opt.food.startsWith('match:') ? 'missing-own' : null;
   if (isAvoided(food, input.taste.avoid)) return null;
@@ -287,6 +312,35 @@ function roundAmount(c: Cand, v: number, input: IdeaInput): number {
   x = Math.round(x / step) * step;
   if (x > hi + 1e-9) x = Math.floor(hi / step) * step;
   return Math.max(0, x);
+}
+
+/**
+ * Rounding to weighable amounts can push a meal out of its calorie band; nudge the most
+ * energy-dense adjustable foods (in their own steps, within their limits) until it is back.
+ */
+function trimToTarget(drafts: ItemDraft[], combo: readonly Cand[], input: IdeaInput, fixed: ReadonlySet<string> = new Set()): ItemDraft[] {
+  const T = input.target.kcal;
+  const band = Math.max(25, 0.04 * T);
+  let k = drafts.reduce((s, d, i) => s + d.amount * (combo[i]!.per.kcal ?? 0), 0);
+  if (Math.abs(k - T) <= band) return drafts;
+  const out = drafts.map((d) => ({ ...d }));
+  const order = combo.map((_, i) => i)
+    .filter((i) => (combo[i]!.opt.unit ?? 'g') !== 'piece' && !fixed.has(combo[i]!.role.key) && out[i]!.amount > 0 && !STAPLES.has(combo[i]!.food.id))
+    .sort((a, b) => (combo[b]!.per.kcal ?? 0) - (combo[a]!.per.kcal ?? 0));
+  for (const i of order) {
+    const c = combo[i]!;
+    const per = c.per.kcal ?? 0;
+    if (per <= 0) continue;
+    const cur = out[i]!.amount;
+    const step = (c.opt.unit ?? 'g') === 'ml' ? 10 : cur >= 50 ? 5 : 1;
+    const stockCap = input.pantryOnly && c.stockUnits !== null ? c.stockUnits : Infinity;
+    const hi = Math.floor(Math.min(c.opt.max, stockCap) / step) * step;
+    const next = Math.min(Math.max(hi, c.opt.min), Math.max(c.opt.min, cur + Math.round((T - k) / per / step) * step));
+    k += (next - cur) * per;
+    out[i]!.amount = next;
+    if (Math.abs(k - T) <= band) break;
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------ assembling an idea */
@@ -414,9 +468,9 @@ export function generateIdeas(input: IdeaInput, count = 3): { ideas: Idea[]; una
     for (const combo of combos(roles, 12)) {
       const s = solveAmounts(combo, input, fatMax, satFatMax);
       if (!s.feasible) continue;
-      const drafts: ItemDraft[] = combo.map((c, i) => ({
+      const drafts: ItemDraft[] = trimToTarget(combo.map((c, i) => ({
         role: c.role.key, roleLabel: c.role.label, option: c.opt, food: c.food, unit: c.opt.unit ?? 'g', amount: roundAmount(c, s.x[i]!, input),
-      }));
+      })), combo, input);
       if (drafts.some((d, i) => !combo[i]!.role.optional && d.amount <= 0)) continue;
       const idea = assembleIdea(bp, drafts, input, 0, `${bp.id}:${combo.map((c) => c.food.id).join('+')}`);
       idea.score = rank(idea, combo, input);
@@ -512,18 +566,21 @@ export function rebalance(bp: Blueprint, items: readonly ItemDraft[], input: Ide
     if (!role || !pu) { kept.push(d); continue; }
     const st = input.stock.get(d.food.id);
     const lock = fixed.has(d.role);
+    const opt = sized(d.option, input);
     cands.push({
       role: lock ? { ...role, optional: false } : role,
-      opt: lock ? { ...d.option, min: d.amount, max: d.amount, typical: d.amount } : d.option,
+      opt: lock ? { ...opt, min: d.amount, max: d.amount, typical: d.amount } : opt,
       food: d.food, per: pu.n, gPerUnit: pu.g, stockUnits: st && pu.g ? st.grams / pu.g : null, score: 0, oxPerUnit: 0,
     });
   }
   const s = solveAmounts(cands, input, fatMax, satFatMax);
-  const drafts: ItemDraft[] = cands.map((c, i) => {
+  const rounded: ItemDraft[] = cands.map((c, i) => {
     const orig = items.find((d) => d.role === c.role.key)!;
-    const amount = fixed.has(c.role.key) ? orig.amount : s.feasible ? roundAmount({ ...c, opt: orig.option }, s.x[i]!, input) : orig.amount;
-    return { ...orig, amount };
+    const option = sized(orig.option, input);
+    const amount = fixed.has(c.role.key) ? orig.amount : s.feasible ? roundAmount({ ...c, opt: option }, s.x[i]!, input) : orig.amount;
+    return { ...orig, option, amount };
   });
+  const drafts = s.feasible ? trimToTarget(rounded, cands.map((c, i) => ({ ...c, opt: rounded[i]!.option })), input, fixed) : rounded;
   return assembleIdea(bp, [...drafts, ...kept], input, 0, key);
 }
 

@@ -48,13 +48,25 @@ describe('meal ideas', () => {
       for (const idea of ideas) {
         checkHonest(idea);
         checkBounds(idea);
-        expect(Math.abs(idea.totals.kcal.value - kcal)).toBeLessThanOrEqual(Math.max(50, 0.08 * kcal));
+        expect(Math.abs(idea.totals.kcal.value - kcal)).toBeLessThanOrEqual(Math.max(25, 0.04 * kcal));
         expect(idea.totals.protein.value).toBeGreaterThanOrEqual(protein - 6);
         expect(idea.totals.fat.value).toBeLessThanOrEqual((kcal * FAT_SHARE.moderate) / 9 + 2);
         if (idea.totals.satFat.unknown === 0) expect(idea.totals.satFat.value).toBeLessThanOrEqual((kcal * 0.1) / 9 + 1);
       }
     },
   );
+
+  it('servings scale with the meal: a 1,200 kcal bulking dinner and a 300 kcal light lunch both fit', () => {
+    for (const [meal, kcal] of [['dinner', 1200], ['lunch', 300], ['snack', 150], ['breakfast', 1000]] as const) {
+      const { ideas } = generateIdeas(input({ meal, target: { kcal, protein: Math.round(kcal * 0.075) } }));
+      expect(ideas.length).toBe(3);
+      for (const idea of ideas) {
+        checkHonest(idea);
+        checkBounds(idea);
+        expect(Math.abs(idea.totals.kcal.value - kcal)).toBeLessThanOrEqual(Math.max(25, 0.04 * kcal));
+      }
+    }
+  });
 
   it('prefers sweet breakfasts when asked, savory when not', () => {
     expect(generateIdeas(input()).ideas.every((i) => i.blueprint.taste === 'sweet')).toBe(true);
