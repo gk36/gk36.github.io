@@ -1,0 +1,3 @@
+# Built app output: committed so GitHub Pages can serve it, but never diffed or line-ending converted.
+app/** -text -diff linguist-generated=true
+src/data/foods/*.json linguist-generated=true

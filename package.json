@@ -1,0 +1,41 @@
+{
+  "name": "carbmaxx",
+  "private": true,
+  "version": "2.0.0-alpha.1",
+  "type": "module",
+  "description": "CARBMAXX 2.0: local-first nutrition ledger, planner and training tracker for GitHub Pages.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "foods:build": "node scripts/foods/build-core-foods.mjs",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "@preact/signals": "2.11.3",
+    "dexie": "4.4.6",
+    "lucide-preact": "1.57.0",
+    "preact": "10.29.8",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@babel/core": "7.29.7",
+    "@playwright/test": "1.64.1",
+    "@preact/preset-vite": "2.10.6",
+    "@types/node": "24.19.2",
+    "fake-indexeddb": "6.2.5",
+    "fast-check": "4.10.2",
+    "typescript": "7.0.2",
+    "vite": "8.3.4",
+    "vitest": "4.1.12"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

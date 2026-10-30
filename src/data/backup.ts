@@ -1,0 +1,92 @@
+import { db } from './db';
+import { nowIso } from './ids';
+import { BACKUP_SCHEMA, backupSchema, type BackupFile } from './schemas';
+import type { Food } from '../domain/nutrition/food';
+import type { DayRecord, LogEntry, SavedMeal, SettingRow, WeightRecord } from './types';
+
+const TABLES = ['entries', 'days', 'foods', 'savedMeals', 'weights', 'settings'] as const;
+/** Kept across a "replace" import so the previous state can always be restored. */
+export const PRE_IMPORT_KEY = 'preImportSnapshot';
+
+export async function exportAll(): Promise<BackupFile> {
+  const d = db();
+  const [entries, days, foods, savedMeals, weights, settings] = await Promise.all([
+    d.entries.toArray(), d.days.toArray(), d.foods.toArray(), d.savedMeals.toArray(), d.weights.toArray(),
+    d.settings.filter((s) => s.key !== PRE_IMPORT_KEY).toArray(),
+  ]);
+  return {
+    app: 'carbmaxx', kind: 'backup', schema: BACKUP_SCHEMA, exportedAt: nowIso(),
+    data: { entries, days, foods, savedMeals, weights, settings },
+  } as BackupFile;
+}
+
+export function backupFileName(date = new Date()): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `carbmaxx-backup-${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}.json`;
+}
+
+export type ParsedBackup =
+  | { ok: true; file: BackupFile; counts: Record<(typeof TABLES)[number], number> }
+  | { ok: false; error: string };
+
+/** Validates a backup completely BEFORE anything is written. */
+export function parseBackup(text: string): ParsedBackup {
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return { ok: false, error: 'This is not a valid JSON file.' };
+  }
+  const r = backupSchema.safeParse(json);
+  if (!r.success) {
+    const issue = r.error.issues[0];
+    return { ok: false, error: `Not a CARBMAXX backup, or it is damaged (${issue ? `${issue.path.join('.')}: ${issue.message}` : 'invalid'}).` };
+  }
+  if (r.data.schema > BACKUP_SCHEMA) return { ok: false, error: 'This backup was made by a newer version of CARBMAXX. Update the app first.' };
+  const counts = Object.fromEntries(TABLES.map((t) => [t, r.data.data[t].length])) as Record<(typeof TABLES)[number], number>;
+  return { ok: true, file: r.data, counts };
+}
+
+const newer = (a: { updatedAt?: string; rev?: number } | undefined, b: { updatedAt?: string; rev?: number }) =>
+  !a || (b.updatedAt ?? '') > (a.updatedAt ?? '') || ((b.updatedAt ?? '') === (a.updatedAt ?? '') && (b.rev ?? 0) > (a.rev ?? 0));
+
+/**
+ * Imports a validated backup in ONE transaction — any failure rolls everything back.
+ * 'replace' first stores the current data under PRE_IMPORT_KEY; 'merge' keeps the newer copy of each record.
+ */
+export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'): Promise<void> {
+  const d = db();
+  const before = mode === 'replace' ? await exportAll() : null;
+  await d.transaction('rw', [d.entries, d.days, d.foods, d.savedMeals, d.weights, d.settings], async () => {
+    const data = file.data;
+    if (mode === 'replace') {
+      await Promise.all([d.entries.clear(), d.days.clear(), d.foods.clear(), d.savedMeals.clear(), d.weights.clear()]);
+      const keep = await d.settings.get(PRE_IMPORT_KEY);
+      await d.settings.clear();
+      if (keep) await d.settings.put(keep);
+      await d.settings.put({ key: PRE_IMPORT_KEY, value: { savedAt: nowIso(), backup: before } });
+      await d.entries.bulkPut(data.entries as LogEntry[]);
+      await d.days.bulkPut(data.days as DayRecord[]);
+      await d.foods.bulkPut(data.foods as Food[]);
+      await d.savedMeals.bulkPut(data.savedMeals as SavedMeal[]);
+      await d.weights.bulkPut(data.weights as WeightRecord[]);
+      await d.settings.bulkPut((data.settings as SettingRow[]).filter((s) => s.key !== PRE_IMPORT_KEY));
+      return;
+    }
+    const mergeTable = async <T extends { updatedAt?: string; rev?: number }>(table: { get(k: string): PromiseLike<T | undefined>; put(v: T): PromiseLike<unknown> }, rows: T[], key: (r: T) => string) => {
+      for (const row of rows) {
+        const cur = await table.get(key(row));
+        if (newer(cur, row)) await table.put(row);
+      }
+    };
+    await mergeTable<LogEntry>(d.entries, data.entries as LogEntry[], (r) => r.id);
+    await mergeTable<DayRecord>(d.days, data.days as DayRecord[], (r) => r.dayKey);
+    await mergeTable<Food>(d.foods, data.foods as Food[], (r) => r.id);
+    await mergeTable<SavedMeal>(d.savedMeals, data.savedMeals as SavedMeal[], (r) => r.id);
+    await mergeTable<WeightRecord>(d.weights, data.weights as WeightRecord[], (r) => r.dayKey);
+    for (const s of data.settings as SettingRow[]) {
+      if (s.key === PRE_IMPORT_KEY) continue;
+      if (!(await d.settings.get(s.key))) await d.settings.put(s);
+    }
+  });
+}
