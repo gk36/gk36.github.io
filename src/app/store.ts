@@ -60,7 +60,7 @@ export const todayKey = computed<DayKey>(() => {
 
 /* ---------- sheets (one at a time) ---------- */
 export type SheetState =
-  | { kind: 'quicklog'; dayKey: DayKey; slotId?: string; status?: 'eaten' | 'planned'; query?: string; food?: Food }
+  | { kind: 'quicklog'; dayKey: DayKey; slotId?: string; status?: 'eaten' | 'planned'; query?: string; food?: Food; text?: string }
   | { kind: 'entry'; entryId: string }
   | { kind: 'food'; food: Food | FoodSnapshot; dayKey?: DayKey; slotId?: string }
   | { kind: 'food-editor'; foodId?: string; prefill?: Partial<Food>; thenLog?: { dayKey: DayKey; slotId?: string } }
@@ -76,8 +76,25 @@ export type SheetState =
   | { kind: 'pantry-item'; itemId?: string; food?: Food | FoodSnapshot };
 
 export const sheet = signal<SheetState | null>(null);
-export const openSheet = (s: SheetState) => { sheet.value = s; };
-export const closeSheet = () => { sheet.value = null; };
+/** What is typed in Today's "What did you eat?" box — kept until it is logged. */
+export const draftText = signal('');
+/**
+ * Set while the user scans or enters a food that a typed meal didn't know. The next food chosen for
+ * logging is remembered for that phrase and the user lands back on their typed list.
+ */
+export const typedResume = signal<{ text: string; phrase: string; dayKey: DayKey } | null>(null);
+export const openSheet = (s: SheetState) => {
+  const r = typedResume.value;
+  if (r && s.kind === 'quicklog' && s.food && !s.text) {
+    typedResume.value = null;
+    const id = s.food.id;
+    void updateProfile((p) => ({ phrases: { ...(p.phrases ?? {}), [r.phrase]: id } }));
+    sheet.value = { kind: 'quicklog', dayKey: r.dayKey, text: r.text };
+    return;
+  }
+  sheet.value = s;
+};
+export const closeSheet = () => { sheet.value = null; typedResume.value = null; };
 
 /* ---------- toasts ---------- */
 export interface Toast { id: number; text: string; action?: { label: string; run: () => void | Promise<void> }; tone?: 'ok' | 'warn' | 'error' }

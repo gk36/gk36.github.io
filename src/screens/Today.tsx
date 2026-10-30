@@ -11,6 +11,7 @@ import { MacroBar } from '../ui/nutrition';
 import { BookOpen, ClipboardList, Plus, RefreshCw, Repeat, ScanBarcode, Smartphone } from '../ui/icons';
 import { MealList, slotsFor } from './parts/DayView';
 import { InstallHint } from './parts/InstallHint';
+import { Composer } from './parts/Composer';
 import { NutrientGaps } from './parts/NutrientGaps';
 
 export function Today() {
@@ -47,6 +48,8 @@ export function Today() {
       </div>
 
       <InstallHint />
+
+      <Composer dayKey={day} />
 
       <section class="card" aria-labelledby="today-energy">
         <h2 id="today-energy" class="card-title">Energy</h2>

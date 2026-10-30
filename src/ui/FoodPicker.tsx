@@ -6,8 +6,10 @@ import { indexFoods, searchFoods } from '../domain/search';
 import { displayName, PREP_LABEL, type Food } from '../domain/nutrition/food';
 
 /** Search box + results; used wherever a food has to be chosen (recipes, converters). */
-export function FoodPicker({ onPick, label = 'Search foods', filter }: { onPick: (f: Food) => void; label?: string; filter?: (f: Food) => boolean }) {
-  const [q, setQ] = useState('');
+export function FoodPicker({ onPick, label = 'Search foods', filter, initialQuery = '', autoFocus }: {
+  onPick: (f: Food) => void; label?: string; filter?: (f: Food) => boolean; initialQuery?: string; autoFocus?: boolean;
+}) {
+  const [q, setQ] = useState(initialQuery);
   // Several pickers can be on screen at once (a screen and a sheet), so ids must be unique.
   const id = useId();
   const foods = useLive(() => allFoods(), [], [] as Food[]);
@@ -17,7 +19,7 @@ export function FoodPicker({ onPick, label = 'Search foods', filter }: { onPick:
   return (
     <div class="stack-s">
       <label for={id} class="label">{label}</label>
-      <input id={id} class="input" type="search" autoComplete="off" value={q} placeholder="e.g. mince, passata, ρύζι…" onInput={(e) => setQ(e.currentTarget.value)}
+      <input id={id} class="input" type="search" autoComplete="off" value={q} placeholder="e.g. mince, passata, ρύζι…" autoFocus={autoFocus} onInput={(e) => setQ(e.currentTarget.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) { e.preventDefault(); onPick(results[0]); setQ(''); } }} />
       {results.length ? (
         <ul class="list" aria-label="Matching foods">

@@ -1,0 +1,59 @@
+/* Components added in CARBMAXX 2.0 alpha.6+: typed meals, meal ideas, the redesigned Today. */
+
+/* iOS Safari zooms into any field under 16 px when it gets focus — keep every field at 16 px on phones. */
+@media (max-width: 1023px) {
+  input, select, textarea, .input, .select, .textarea { font-size: 16px; }
+}
+
+/* ---------- "What did you eat?" ---------- */
+.composer {
+  display: flex; flex-direction: column; gap: 8px; padding: 14px 14px 10px; border-radius: var(--radius-l);
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--ember) 35%, var(--line));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ember) 6%, transparent);
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.composer:focus-within { border-color: var(--ember); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ember) 14%, transparent); }
+.composer-label { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: var(--fs-l); color: var(--fg); }
+.composer-label svg { color: var(--ember-text); }
+.composer-input {
+  width: 100%; min-height: 52px; resize: none; border: 0; background: transparent; padding: 2px 0;
+  font-size: 17px; line-height: 1.45; color: var(--fg);
+}
+.composer-input::placeholder { color: var(--fg-subtle); }
+.composer-input:focus-visible { outline: none; }
+.composer-actions { display: flex; align-items: center; gap: 4px; }
+.composer-hint { margin-top: -2px; }
+
+/* ---------- check and log ---------- */
+.tl-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; cursor: pointer;
+  border-radius: var(--radius-m); border: 1px solid color-mix(in srgb, var(--ember) 45%, var(--line));
+  background: color-mix(in srgb, var(--ember) 8%, var(--surface)); color: var(--fg);
+}
+.tl-card > svg { color: var(--ember-text); flex: none; }
+.tl-card-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tl-quote {
+  margin: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 10px 12px;
+  border-radius: var(--radius-m); background: var(--surface); border: 1px dashed var(--line-strong);
+}
+.tl-quote blockquote { margin: 0; color: var(--fg-muted); overflow-wrap: anywhere; }
+.tl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tl-item { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface); }
+.tl-item.needs { border-color: color-mix(in srgb, var(--warn) 60%, var(--line)); box-shadow: inset 3px 0 0 var(--warn); }
+.tl-head { display: flex; align-items: flex-start; gap: 8px; }
+.tl-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tl-kcal { font-weight: 800; white-space: nowrap; padding-top: 6px; }
+.tl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.tl-amount { display: inline-flex; align-items: center; gap: 6px; }
+.tl-amount .input { width: 88px; min-height: 40px; padding: 6px 10px; }
+.tl-amount .select { width: auto; max-width: 200px; min-height: 40px; padding: 6px 8px; }
+.tl-issue { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--radius-s); background: color-mix(in srgb, var(--warn) 9%, var(--card)); }
+.tl-msg { display: flex; align-items: flex-start; gap: 6px; font-weight: 600; font-size: var(--fs-s); }
+.tl-msg svg { color: var(--warn); flex: none; margin-top: 2px; }
+.tl-notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); color: var(--fg-subtle); }
+.tl-notes li { display: flex; align-items: flex-start; gap: 6px; }
+.tl-notes svg { flex: none; margin-top: 2px; }
+.tl-alts { align-items: center; }
+.tl-total { flex-basis: 100%; font-size: var(--fs-s); }
+.tl-wait { color: var(--warn); font-weight: 700; }
+.tl-change { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; }

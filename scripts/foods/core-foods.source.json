@@ -11,7 +11,10 @@
         "chicken breast",
         "chicken fillet",
         "κοτόπουλο στήθος",
-        "φιλέτο κοτόπουλο"
+        "φιλέτο κοτόπουλο",
+        "chicken",
+        "κοτόπουλο",
+        "στήθος κοτόπουλο"
       ]
     },
     "group": "protein",
@@ -38,7 +41,13 @@
         "roast chicken breast",
         "cooked chicken breast",
         "ψητό κοτόπουλο",
-        "κοτόπουλο στήθος ψητό"
+        "κοτόπουλο στήθος ψητό",
+        "chicken",
+        "chicken breast",
+        "grilled chicken",
+        "κοτόπουλο",
+        "στήθος κοτόπουλο",
+        "κοτόπουλο ψητό"
       ]
     },
     "group": "protein",
@@ -123,7 +132,9 @@
         "turkey breast",
         "turkey fillet",
         "γαλοπούλα στήθος",
-        "φιλέτο γαλοπούλας"
+        "φιλέτο γαλοπούλας",
+        "turkey",
+        "γαλοπούλα"
       ]
     },
     "group": "protein",
@@ -144,7 +155,9 @@
         "roast turkey breast",
         "cooked turkey breast",
         "γαλοπούλα ψητή",
-        "στήθος γαλοπούλας ψητό"
+        "στήθος γαλοπούλας ψητό",
+        "turkey",
+        "γαλοπούλα"
       ]
     },
     "group": "protein",
@@ -273,7 +286,9 @@
         "grilled steak",
         "cooked sirloin",
         "στέικ ψητό",
-        "μπριζόλα μοσχαρίσια ψητή"
+        "μπριζόλα μοσχαρίσια ψητή",
+        "steak",
+        "μπριζόλα"
       ]
     },
     "group": "protein",
@@ -459,7 +474,9 @@
         "cooked cod",
         "baked cod",
         "μπακαλιάρος ψητός",
-        "μπακαλιάρος φούρνου"
+        "μπακαλιάρος φούρνου",
+        "cod",
+        "μπακαλιάρος"
       ]
     },
     "group": "protein",
@@ -507,7 +524,10 @@
         "cooked shrimp",
         "boiled shrimp",
         "γαρίδες βραστές",
-        "γαρίδες μαγειρεμένες"
+        "γαρίδες μαγειρεμένες",
+        "shrimp",
+        "prawns",
+        "γαρίδες"
       ]
     },
     "group": "protein",
@@ -576,7 +596,9 @@
         "cooked salmon",
         "baked salmon",
         "σολομός ψητός",
-        "σολομός φούρνου"
+        "σολομός φούρνου",
+        "salmon",
+        "σολομός"
       ]
     },
     "group": "protein",
@@ -855,7 +877,10 @@
         "greek yogurt 0%",
         "nonfat greek yogurt",
         "γιαούρτι 0%",
-        "στραγγιστό γιαούρτι"
+        "στραγγιστό γιαούρτι",
+        "yogurt",
+        "yoghurt",
+        "γιαούρτι"
       ]
     },
     "group": "dairy",
@@ -881,7 +906,10 @@
         "greek yogurt 2%",
         "low fat greek yogurt",
         "γιαούρτι 2%",
-        "στραγγιστό γιαούρτι"
+        "στραγγιστό γιαούρτι",
+        "yogurt",
+        "yoghurt",
+        "γιαούρτι"
       ]
     },
     "group": "dairy",
@@ -907,7 +935,10 @@
         "greek yogurt",
         "full fat greek yogurt",
         "γιαούρτι πλήρες",
-        "στραγγιστό γιαούρτι"
+        "στραγγιστό γιαούρτι",
+        "yogurt",
+        "yoghurt",
+        "γιαούρτι"
       ]
     },
     "group": "dairy",
@@ -1038,7 +1069,13 @@
         "jasmine",
         "basmati",
         "ρύζι μακρύκοκκο",
-        "μπασμάτι"
+        "μπασμάτι",
+        "rice",
+        "white rice",
+        "uncooked rice",
+        "ρύζι",
+        "λευκό ρύζι",
+        "ρύζι άβραστο"
       ]
     },
     "group": "starch",
@@ -1066,7 +1103,12 @@
         "boiled rice",
         "jasmine",
         "basmati",
-        "βρασμένο ρύζι"
+        "βρασμένο ρύζι",
+        "rice",
+        "white rice",
+        "ρύζι",
+        "λευκό ρύζι",
+        "ρύζι βρασμένο"
       ]
     },
     "group": "starch",
@@ -1148,7 +1190,9 @@
         "penne",
         "macaroni",
         "μακαρόνια",
-        "πένες"
+        "πένες",
+        "pasta",
+        "ζυμαρικά"
       ]
     },
     "group": "starch",
@@ -1180,7 +1224,10 @@
         "spaghetti",
         "penne",
         "μακαρόνια βρασμένα",
-        "σπαγγέτι"
+        "σπαγγέτι",
+        "pasta",
+        "ζυμαρικά",
+        "μακαρόνια"
       ]
     },
     "group": "starch",
@@ -1232,7 +1279,8 @@
         "cooked rice noodles",
         "rice vermicelli",
         "νούντλς ρυζιού βρασμένα",
-        "νούντλς"
+        "νούντλς",
+        "rice noodles"
       ]
     },
     "group": "starch",
@@ -1294,7 +1342,11 @@
         "boiled potato",
         "boiled potatoes",
         "βραστή πατάτα",
-        "πατάτες βραστές"
+        "πατάτες βραστές",
+        "potato",
+        "potatoes",
+        "πατάτα",
+        "πατάτες"
       ]
     },
     "group": "starch",
@@ -1493,7 +1545,10 @@
         "oatmeal",
         "rolled oats",
         "βρώμη",
-        "κουάκερ"
+        "κουάκερ",
+        "oat",
+        "oat flakes",
+        "βρώμη νιφάδες"
       ]
     },
     "group": "starch",
@@ -1549,7 +1604,8 @@
         "cooked cream of rice",
         "rice porridge",
         "κρέμα ρυζιού μαγειρεμένη",
-        "χυλός ρυζιού"
+        "χυλός ρυζιού",
+        "cream of rice"
       ]
     },
     "group": "starch",
@@ -2581,5 +2637,555 @@
     ],
     "densityGPerMl": null,
     "notes": "70-85% cacao solids."
+  },
+  {
+    "key": "whey-protein",
+    "fdcId": 173180,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beverages, Protein powder whey based",
+    "names": {
+      "en": "Whey protein powder (generic)",
+      "el": "Πρωτεΐνη ορού γάλακτος whey (σκόνη)",
+      "aliases": [
+        "whey",
+        "whey protein",
+        "protein powder",
+        "πρωτεΐνη",
+        "πρωτεΐνη whey",
+        "πρωτεΐνη σε σκόνη"
+      ]
+    },
+    "group": "protein",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1/3 cup",
+        "g": 32
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Generic whey protein powder (USDA). Brands differ a lot — flavoured powders often have less protein. Scan your tub for exact values."
+  },
+  {
+    "key": "milk-skim",
+    "fdcId": 173432,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Milk, nonfat, fluid, without added vitamin A and vitamin D (fat free or skim)",
+    "names": {
+      "en": "Milk, skimmed 0% (not fortified)",
+      "el": "Γάλα άπαχο 0%",
+      "aliases": [
+        "skim milk",
+        "skimmed milk",
+        "nonfat milk",
+        "fat free milk",
+        "άπαχο γάλα",
+        "γάλα άπαχο",
+        "γάλα 0%"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 245
+      }
+    ],
+    "densityGPerMl": 1.036,
+    "notes": "Without added vitamins A and D. If your carton says they are added, scan it for exact values."
+  },
+  {
+    "key": "cottage-cheese-1",
+    "fdcId": 173417,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cheese, cottage, lowfat, 1% milkfat",
+    "names": {
+      "en": "Cottage cheese, low-fat 1%",
+      "el": "Τυρί κότατζ 1%",
+      "aliases": [
+        "cottage cheese",
+        "cottage",
+        "κότατζ",
+        "τυρί cottage",
+        "cottage 1%"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup (not packed)",
+        "g": 226
+      },
+      {
+        "label": "4 oz",
+        "g": 113
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "kiwi",
+    "fdcId": 168153,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Kiwifruit, green, raw",
+    "names": {
+      "en": "Kiwi, green",
+      "el": "Ακτινίδιο",
+      "aliases": [
+        "kiwi",
+        "kiwifruit",
+        "kiwis",
+        "ακτινίδιο",
+        "ακτινίδια"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 kiwi (2\" dia)",
+        "g": 69
+      },
+      {
+        "label": "1 cup, sliced",
+        "g": 180
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Peeled flesh."
+  },
+  {
+    "key": "maple-syrup",
+    "fdcId": 169661,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Syrups, maple",
+    "names": {
+      "en": "Maple syrup",
+      "el": "Σιρόπι σφενδάμου",
+      "aliases": [
+        "maple syrup",
+        "maple",
+        "σιρόπι σφενδάμου",
+        "σιρόπι"
+      ]
+    },
+    "group": "sweet",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 20
+      }
+    ],
+    "densityGPerMl": 1.331
+  },
+  {
+    "key": "chia-seeds",
+    "fdcId": 170554,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Seeds, chia seeds, dried",
+    "names": {
+      "en": "Chia seeds",
+      "el": "Σπόροι chia",
+      "aliases": [
+        "chia",
+        "chia seeds",
+        "τσία",
+        "σπόροι τσία"
+      ]
+    },
+    "group": "fat",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 oz (28 g)",
+        "g": 28.35
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "egg-noodles-dry",
+    "fdcId": 169731,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Noodles, egg, dry, enriched",
+    "names": {
+      "en": "Egg noodles (dry)",
+      "el": "Νουντλς αυγού (άβραστα)",
+      "aliases": [
+        "egg noodles",
+        "noodles",
+        "νουντλς",
+        "νούντλς",
+        "χυλοπίτες"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "pair": "egg-noodles-cooked",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 38
+      },
+      {
+        "label": "2 oz",
+        "g": 57
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "USDA values are for enriched (US) noodles: iron and B vitamins may be lower in unenriched brands."
+  },
+  {
+    "key": "egg-noodles-cooked",
+    "fdcId": 169732,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Noodles, egg, enriched, cooked",
+    "names": {
+      "en": "Egg noodles (cooked)",
+      "el": "Νουντλς αυγού (βρασμένα)",
+      "aliases": [
+        "cooked egg noodles",
+        "νουντλς βρασμένα",
+        "χυλοπίτες βρασμένες"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "egg-noodles-dry",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 160
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "beef-broth",
+    "fdcId": 171538,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Soup, beef broth or bouillon canned, ready-to-serve",
+    "names": {
+      "en": "Beef broth (ready to use)",
+      "el": "Ζωμός βοδινού (έτοιμος)",
+      "aliases": [
+        "beef broth",
+        "beef stock",
+        "stock",
+        "ζωμός βοδινού",
+        "ζωμός μοσχαριού"
+      ]
+    },
+    "group": "drink",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 240
+      }
+    ],
+    "densityGPerMl": 1.014,
+    "notes": "Canned, ready-to-serve broth. Stock cubes and cartons vary in salt — scan yours for exact sodium."
+  },
+  {
+    "key": "baking-powder",
+    "fdcId": 172804,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Leavening agents, baking powder, double-acting, straight phosphate",
+    "names": {
+      "en": "Baking powder",
+      "el": "Μπέικιν πάουντερ",
+      "aliases": [
+        "baking powder",
+        "μπέικιν",
+        "μπεικιν πάουντερ"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tsp",
+        "g": 4.6
+      },
+      {
+        "label": "1/2 tsp",
+        "g": 2.3
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "cinnamon",
+    "fdcId": 171320,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Spices, cinnamon, ground",
+    "names": {
+      "en": "Cinnamon, ground",
+      "el": "Κανέλα (σκόνη)",
+      "aliases": [
+        "cinnamon",
+        "κανέλα"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tsp",
+        "g": 2.6
+      },
+      {
+        "label": "1 tbsp",
+        "g": 7.8
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "cocoa-powder",
+    "fdcId": 169593,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cocoa, dry powder, unsweetened",
+    "names": {
+      "en": "Cocoa powder, unsweetened",
+      "el": "Κακάο άγλυκο (σκόνη)",
+      "aliases": [
+        "cocoa",
+        "cocoa powder",
+        "κακάο"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 5.4
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "vanilla-extract",
+    "fdcId": 173471,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Vanilla extract",
+    "names": {
+      "en": "Vanilla extract",
+      "el": "Εκχύλισμα βανίλιας",
+      "aliases": [
+        "vanilla",
+        "vanilla extract",
+        "βανίλια"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tsp",
+        "g": 4.2
+      },
+      {
+        "label": "1 tbsp",
+        "g": 13
+      }
+    ],
+    "densityGPerMl": 0.879
+  },
+  {
+    "key": "graham-crackers",
+    "fdcId": 174957,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cookies, graham crackers, plain or honey (includes cinnamon)",
+    "names": {
+      "en": "Graham crackers",
+      "el": "Μπισκότα graham",
+      "aliases": [
+        "graham",
+        "graham crackers",
+        "graham cracker"
+      ]
+    },
+    "group": "sweet",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 large piece (2 squares)",
+        "g": 14
+      },
+      {
+        "label": "1 cup, crushed",
+        "g": 84
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "garlic",
+    "fdcId": 169230,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Garlic, raw",
+    "names": {
+      "en": "Garlic (raw)",
+      "el": "Σκόρδο",
+      "aliases": [
+        "garlic",
+        "σκόρδο",
+        "σκελίδα"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 clove",
+        "g": 3
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "celery",
+    "fdcId": 169988,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Celery, raw",
+    "names": {
+      "en": "Celery stalk (raw)",
+      "el": "Σέλινο (κοτσάνι)",
+      "aliases": [
+        "celery",
+        "σέλινο"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 medium stalk",
+        "g": 40
+      },
+      {
+        "label": "1 cup, chopped",
+        "g": 101
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "spring-onion",
+    "fdcId": 170005,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Onions, spring or scallions (includes tops and bulb), raw",
+    "names": {
+      "en": "Spring onion (raw)",
+      "el": "Φρέσκο κρεμμυδάκι",
+      "aliases": [
+        "spring onion",
+        "spring onions",
+        "scallion",
+        "scallions",
+        "green onion",
+        "κρεμμυδάκι",
+        "φρέσκο κρεμμύδι"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 medium",
+        "g": 15
+      },
+      {
+        "label": "1 tbsp, chopped",
+        "g": 6
+      }
+    ],
+    "densityGPerMl": null
+  },
+  {
+    "key": "lemon-juice",
+    "fdcId": 167747,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Lemon juice, raw",
+    "names": {
+      "en": "Lemon juice (fresh)",
+      "el": "Χυμός λεμονιού",
+      "aliases": [
+        "lemon juice",
+        "lemon",
+        "λεμόνι",
+        "χυμός λεμονιού"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "juice of 1 lemon",
+        "g": 48
+      },
+      {
+        "label": "1 wedge",
+        "g": 5.9
+      }
+    ],
+    "densityGPerMl": 1.031
+  },
+  {
+    "key": "lime-juice",
+    "fdcId": 168156,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Lime juice, raw",
+    "names": {
+      "en": "Lime juice (fresh)",
+      "el": "Χυμός λάιμ",
+      "aliases": [
+        "lime juice",
+        "lime",
+        "λάιμ"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "juice of 1 lime",
+        "g": 44
+      }
+    ],
+    "densityGPerMl": 1.023
+  },
+  {
+    "key": "salt",
+    "fdcId": 173468,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Salt, table",
+    "names": {
+      "en": "Salt (table)",
+      "el": "Αλάτι",
+      "aliases": [
+        "salt",
+        "αλάτι"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tsp",
+        "g": 6
+      },
+      {
+        "label": "1 dash",
+        "g": 0.4
+      }
+    ],
+    "densityGPerMl": null
   }
 ]

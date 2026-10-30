@@ -107,7 +107,7 @@ export const entrySchema = z.object({
   planned: z.object({ foodId: z.string().max(120), foodName: z.string().max(300), qty: quantitySchema }).optional(),
   time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   note: z.string().max(2000).optional(),
-  origin: z.enum(['search', 'plan', 'saved-meal', 'copy', 'quick', 'import', 'barcode', 'recipe', 'replan']),
+  origin: z.enum(['search', 'plan', 'saved-meal', 'copy', 'quick', 'import', 'barcode', 'recipe', 'replan', 'text', 'idea']),
   ...recordMeta,
 });
 

@@ -2,8 +2,9 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Sheet } from '../ui/Sheet';
 import { useAsync, useLive } from '../ui/hooks';
+import type { DayKey as DK } from '../domain/time';
 import { Segmented, NumberField, Field } from '../ui/controls';
-import { ChevronLeft, Info, Pencil, Plus, ScanBarcode, Search, Star } from '../ui/icons';
+import { ArrowRight, ChevronLeft, Info, Pencil, Plus, ScanBarcode, Search, Sparkles, Star } from '../ui/icons';
 import { MacroLine, SourceBadge } from '../ui/nutrition';
 import { allFoods, saveCustomFood } from '../data/foods/registry';
 import { ensureDay, recentFoods, type NewEntry } from '../data/entries';
@@ -11,22 +12,17 @@ import { db } from '../data/db';
 import type { SavedMeal, Slot } from '../data/types';
 import { indexFoods, searchFoods } from '../domain/search';
 import { displayName, PREP_LABEL, type Food, type Quantity } from '../domain/nutrition/food';
-import { defaultQuantity, describeQuantity, minutesOfDayLabel } from './quick-helpers';
+import { defaultQuantity, describeQuantity, guessSlot, minutesOfDayLabel } from './quick-helpers';
 import { contribution } from '../domain/nutrition/compute';
 import { closeSheet, openSheet, profile } from '../app/store';
 import { logEntry } from '../app/actions';
 import { AmountPicker } from './AmountPicker';
+import { looksLikeMealText, parseFoodText } from '../domain/logging/parse';
 import type { DayKey } from '../domain/time';
 
-interface Props { dayKey: DayKey; slotId?: string; status?: 'eaten' | 'planned'; query?: string; food?: Food }
+interface Props { dayKey: DayKey; slotId?: string; status?: 'eaten' | 'planned'; query?: string; food?: Food; text?: string }
 
-function guessSlot(slots: readonly Slot[]): string {
-  const h = new Date().getHours();
-  const want = h < 11 ? /breakfast|morning|first/i : h < 16 ? /lunch|pre|post-gym meal|midday/i : h < 22 ? /dinner|feast|evening|re-feed/i : /snack/i;
-  return (slots.find((s) => want.test(s.name)) ?? slots[0])?.id ?? 'snacks';
-}
-
-export function QuickLog({ dayKey, slotId, status: initialStatus, query: initialQuery, food: initialFood }: Props) {
+export function QuickLog({ dayKey, slotId, status: initialStatus, query: initialQuery, food: initialFood, text }: Props) {
   const p = profile.value!;
   const [query, setQuery] = useState(initialQuery ?? '');
   const [picked, setPicked] = useState<Food | null>(initialFood ?? null);
@@ -36,6 +32,8 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
   const [status, setStatus] = useState<'eaten' | 'planned'>(initialStatus ?? 'eaten');
   const [slot, setSlot] = useState<string>(slotId ?? '');
   const searchRef = useRef<HTMLInputElement>(null);
+  // A typed meal ("2 eggs and a banana") goes to the check-and-log list.
+  const [typed, setTyped] = useState<string | null>(text ?? null);
 
   const day = useAsync(() => ensureDay(dayKey), [dayKey]);
   const slots = day?.slots ?? p.defaultSlots;
@@ -48,6 +46,7 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
   const boost = useMemo(() => new Map(recents.map((r, i) => [r.food.id, 2 - i * 0.1])), [recents]);
   const results = useMemo(() => (query.trim() ? searchFoods(index, query, boost, 50) : []), [index, query, boost]);
   const lastQty = useMemo(() => new Map(recents.map((r) => [r.food.id, r.qty])), [recents]);
+  const mealText = useMemo(() => (looksLikeMealText(query) ? parseFoodText(query).items.map((i) => `${i.amount?.text ? `${i.amount.text} ` : ''}${i.words.join(' ')}`) : null), [query]);
 
   const choose = (f: Food) => {
     setPicked(f);
@@ -82,6 +81,11 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
     <Segmented label="Status" value={status} onChange={setStatus}
       options={[{ value: 'eaten', label: 'Eaten' }, { value: 'planned', label: 'Planned' }]} />
   );
+
+  if (typed !== null) {
+    return <LazyTypedLog dayKey={dayKey} text={typed} {...(slot ? { slotId: slot } : {})} {...(initialStatus ? { status: initialStatus } : {})}
+      onBack={() => { setQuery(typed); setTyped(null); requestAnimationFrame(() => searchRef.current?.focus()); }} />;
+  }
 
   if (quick) return <QuickAdd dayKey={dayKey} slot={slot} slotPicker={slotPicker} status={status} statusPicker={statusPicker} onBack={back} />;
 
@@ -138,19 +142,34 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
       <div class="field">
         <label for="ql-search" class="sr-only">Search foods</label>
         <div style={{ position: 'relative' }}>
-          <input ref={searchRef} id="ql-search" class="input" type="search" placeholder="Search foods (English or Ελληνικά)…" value={query}
+          <input ref={searchRef} id="ql-search" class="input" type="search" placeholder="Search, or type what you ate…" value={query}
             autoFocus autoComplete="off" enterKeyHint="search"
             onInput={(e) => setQuery(e.currentTarget.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && results[0]) { e.preventDefault(); choose(results[0]); } }}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              if (mealText) setTyped(query.trim());
+              else if (results[0]) choose(results[0]);
+            }}
           />
         </div>
       </div>
+      {mealText ? (
+        <button type="button" class="tl-card" onClick={() => setTyped(query.trim())}>
+          <Sparkles size={18} aria-hidden="true" />
+          <span class="tl-card-main">
+            <b>Check and log {mealText.length} food{mealText.length === 1 ? '' : 's'}</b>
+            <span class="small muted">{mealText.join(' · ')}</span>
+          </span>
+          <ArrowRight size={18} aria-hidden="true" />
+        </button>
+      ) : null}
       {query.trim() ? (
         results.length ? (
           <ul class="list" aria-label="Search results">
             {results.map((f) => <FoodResult key={f.id} food={f} onPick={() => choose(f)} />)}
           </ul>
-        ) : (
+        ) : mealText ? null : (
           <div class="empty">
             <Search size={24} aria-hidden="true" />
             <p>No match for “{query}”. Create it from the package label, or quick-add an estimate.</p>
@@ -171,13 +190,19 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
               <ul class="list" aria-label="Recent foods">
                 {recents.map((r) => <FoodResult key={r.food.id} food={r.food as Food} hint={describeQuantity(r.food, r.qty)} onPick={() => { setPicked(r.food as Food); setQty(r.qty); }} />)}
               </ul>
-            ) : <p class="small muted">Foods you log appear here for one-tap repeats. Try searching “chicken”, “ρύζι” or “yogurt”.</p>}
+            ) : <p class="small muted">Foods you log appear here for one-tap repeats. Search “chicken”, “ρύζι” or “yogurt” — or type a whole meal: “2 eggs, 80 g oats and a banana”.</p>}
           </section>
         </div>
       )}
       <p class="xs subtle">{minutesOfDayLabel()} · logging to {slots.find((s) => s.id === slot)?.name ?? 'a meal'}</p>
     </Sheet>
   );
+}
+
+/** The matcher and its review list load on first use, like the replan sheet. */
+function LazyTypedLog(props: { dayKey: DK; text: string; slotId?: string; status?: 'eaten' | 'planned'; onBack: () => void }) {
+  const mod = useAsync(() => import('./TypedLog'), []);
+  return mod ? <mod.TypedLog {...props} /> : <Sheet title="Check and log" onClose={closeSheet}><p class="muted" role="status">Reading what you ate…</p></Sheet>;
 }
 
 function FoodResult({ food, onPick, hint }: { food: Food; onPick: () => void; hint?: string }) {

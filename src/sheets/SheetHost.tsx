@@ -20,7 +20,7 @@ export function SheetHost() {
   if (!s) return null;
   const key = `${s.kind}-${JSON.stringify(s).length}-${'entryId' in s ? s.entryId : ''}`;
   switch (s.kind) {
-    case 'quicklog': return <QuickLog key={key} dayKey={s.dayKey} {...(s.slotId ? { slotId: s.slotId } : {})} {...(s.status ? { status: s.status } : {})} {...(s.query ? { query: s.query } : {})} {...(s.food ? { food: s.food } : {})} />;
+    case 'quicklog': return <QuickLog key={key} dayKey={s.dayKey} {...(s.slotId ? { slotId: s.slotId } : {})} {...(s.status ? { status: s.status } : {})} {...(s.query ? { query: s.query } : {})} {...(s.food ? { food: s.food } : {})} {...(s.text ? { text: s.text } : {})} />;
     case 'entry': return <EntryEditor key={key} entryId={s.entryId} />;
     case 'food': return <FoodDetail key={key} food={s.food} {...(s.dayKey ? { dayKey: s.dayKey } : {})} {...(s.slotId ? { slotId: s.slotId } : {})} />;
     case 'food-editor': return <FoodEditor key={key} {...(s.foodId ? { foodId: s.foodId } : {})} {...(s.prefill ? { prefill: s.prefill } : {})} {...(s.thenLog ? { thenLog: s.thenLog } : {})} />;

@@ -12,7 +12,7 @@ export interface RecordMeta {
 }
 
 export type EntryStatus = 'planned' | 'eaten' | 'skipped';
-export type EntryOrigin = 'search' | 'plan' | 'saved-meal' | 'copy' | 'quick' | 'import' | 'barcode' | 'recipe' | 'replan';
+export type EntryOrigin = 'search' | 'plan' | 'saved-meal' | 'copy' | 'quick' | 'import' | 'barcode' | 'recipe' | 'replan' | 'text' | 'idea';
 
 /** The food exactly as it was when logged — history never shifts when a food is edited later. */
 export type FoodSnapshot = Omit<Food, 'createdAt' | 'updatedAt' | 'deletedAt' | 'rev'>;
@@ -100,8 +100,31 @@ export interface Profile {
   lastBackupAt?: string | null;
   /** Take food out of the pantry when it is logged as eaten or cooked (default on). */
   pantryDeduct?: boolean;
+  /** Corrections remembered from typed meals: phrase (or "phrase|state") → food id. */
+  phrases?: Record<string, string>;
+  /** Preferences for meal ideas. */
+  taste?: TastePrefs;
   legacyProfileName?: string | null;
   updatedAt: string;
+}
+
+export type Equipment = 'hob' | 'oven' | 'microwave' | 'airfryer' | 'blender' | 'kettle';
+
+export interface TastePrefs {
+  /** Foods never suggested: food ids ("core:broccoli-raw") or plain words ("cabbage"). */
+  avoid: string[];
+  /** Breakfast ideas lean sweet (protein pancakes, cream of rice, oats, cheesecake bowls). */
+  sweetBreakfast: boolean;
+  highProtein: boolean;
+  equipment: Equipment[];
+  /** How much total fat a meal may carry. */
+  fat: 'low' | 'moderate' | 'flexible';
+  /** Saturated fat ceiling as a share of the meal's calories. */
+  satFatPct: number;
+  /** Prefer lower-oxalate foods where cited data exist. */
+  lowOxalate: boolean;
+  /** The preferences card has been seen and confirmed. */
+  confirmed: boolean;
 }
 
 export interface WeightRecord extends RecordMeta {

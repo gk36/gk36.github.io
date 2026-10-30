@@ -26,6 +26,23 @@ export async function logEntry(input: NewEntry): Promise<LogEntry> {
   return e;
 }
 
+/** Logs several items at once (a typed meal, a meal idea) with one toast and one undo for all of them. */
+export async function logEntries(inputs: readonly NewEntry[], label: string): Promise<LogEntry[]> {
+  const p = profile.value;
+  if (p && inputs[0]) await freezeTargets(p, inputs[0].dayKey);
+  const made: LogEntry[] = [];
+  const ded: Deduction[] = [];
+  for (const input of inputs) {
+    const e = await addEntry(input);
+    made.push(e);
+    if (e.status === 'eaten') ded.push(...(await pantryDeduct(e)));
+  }
+  const undo = async () => { for (const e of made) await softDelete(e.id); await undoDeductions(ded); toast('Removed'); };
+  lastUndo = undo;
+  toast(`${label}${pantryNote(ded)}`, { action: { label: 'Undo', run: undo }, tone: 'ok' });
+  return made;
+}
+
 export async function deleteWithUndo(e: LogEntry): Promise<void> {
   await softDelete(e.id);
   const undo = async () => { await restore(e.id); toast('Restored'); };
