@@ -43,7 +43,7 @@ test('Plan today writes planned entries that match the plan totals', async ({ pa
   await main(page).getByRole('button', { name: /Add to today as planned/ }).click();
   await page.goto('./#/today');
   await expect.poll(() => eatenKcal(page)).toBe(0);
-  await expect(main(page)).toContainText(/Planned, not eaten yet: \+2,6\d\d kcal/);
+  await expect(main(page)).toContainText(/\+2,6\d\d planned → the day lands near/);
   expect(errors()).toEqual([]);
 });
 
@@ -89,7 +89,7 @@ test('v1 planner profile on this device imports read-only', async ({ page }) => 
   await expect(page.getByLabel('Weight')).toHaveValue('80');
   await page.getByRole('button', { name: 'Done' }).click();
   // BMR = 800 + 1125 − 125 + 5 = 1805; × 1.725 = 3113.6; bulk +20% = 3736
-  await expect(main(page)).toContainText('of 3,736 kcal (estimate)');
+  await expect(main(page)).toContainText('of 3,736 kcal');
   expect(await page.evaluate(() => localStorage.getItem('carbmaxx_profiles_v1'))).toBe(JSON.stringify(v1));
   expect(errors()).toEqual([]);
 });

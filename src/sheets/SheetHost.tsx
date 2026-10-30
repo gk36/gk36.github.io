@@ -33,8 +33,15 @@ export function SheetHost() {
     case 'recipe': return <RecipeEditor key={`${key}-${s.foodId ?? 'new'}`} {...(s.foodId ? { foodId: s.foodId } : {})} />;
     case 'cook': return <CookSheet key={`${key}-${s.recipeId}`} recipeId={s.recipeId} />;
     case 'replan': return <LazyReplan key={key} dayKey={s.dayKey} />;
+    case 'ideas': return <LazyIdeas key={key} dayKey={s.dayKey} {...(s.slotId ? { slotId: s.slotId } : {})} />;
     case 'pantry-item': return <PantryItemSheet key={`${key}-${s.itemId ?? s.food?.id ?? 'new'}`} {...(s.itemId ? { itemId: s.itemId } : {})} {...(s.food ? { food: s.food } : {})} />;
   }
+}
+
+/** Meal ideas share the LP solver and carry the recipe library: fetched on first use. */
+function LazyIdeas({ dayKey, slotId }: { dayKey: DayKey; slotId?: string }) {
+  const mod = useAsync(() => import('./IdeasSheet'), []);
+  return mod ? <mod.IdeasSheet dayKey={dayKey} {...(slotId ? { slotId } : {})} /> : <Sheet title="Meal ideas" onClose={closeSheet}><p class="muted">Loading…</p></Sheet>;
 }
 
 /** The replan sheet carries the LP solver, so it is fetched on first use. */

@@ -1,6 +1,7 @@
 import type { Food, Quantity } from '../domain/nutrition/food';
 import type { DayKey } from '../domain/time';
 import type { PlannerInput } from '../domain/planning/template';
+import type { TastePrefs } from '../domain/ideas/model';
 
 /** Fields every synced record carries (local-first; tombstones instead of hard deletes). */
 export interface RecordMeta {
@@ -108,24 +109,7 @@ export interface Profile {
   updatedAt: string;
 }
 
-export type Equipment = 'hob' | 'oven' | 'microwave' | 'airfryer' | 'blender' | 'kettle';
-
-export interface TastePrefs {
-  /** Foods never suggested: food ids ("core:broccoli-raw") or plain words ("cabbage"). */
-  avoid: string[];
-  /** Breakfast ideas lean sweet (protein pancakes, cream of rice, oats, cheesecake bowls). */
-  sweetBreakfast: boolean;
-  highProtein: boolean;
-  equipment: Equipment[];
-  /** How much total fat a meal may carry. */
-  fat: 'low' | 'moderate' | 'flexible';
-  /** Saturated fat ceiling as a share of the meal's calories. */
-  satFatPct: number;
-  /** Prefer lower-oxalate foods where cited data exist. */
-  lowOxalate: boolean;
-  /** The preferences card has been seen and confirmed. */
-  confirmed: boolean;
-}
+export type { Equipment, TastePrefs } from '../domain/ideas/model';
 
 export interface WeightRecord extends RecordMeta {
   dayKey: DayKey;

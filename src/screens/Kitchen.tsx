@@ -2,7 +2,7 @@ import { useState } from 'preact/hooks';
 import { useAsync, useLive } from '../ui/hooks';
 import { FoodPicker } from '../ui/FoodPicker';
 import { NumberField } from '../ui/controls';
-import { ChefHat, Plus, Refrigerator, Scale } from '../ui/icons';
+import { ChefHat, Plus, Refrigerator, Scale, Sparkles } from '../ui/icons';
 import { batchUsage, finishBatch, listBatches, listRecipes, type BatchUsage } from '../data/kitchen';
 import { coreFoods, getFood } from '../data/foods/registry';
 import { estimatedYield } from '../domain/kitchen/recipe';
@@ -17,7 +17,10 @@ export function Kitchen() {
     <div class="page">
       <div class="page-head">
         <h1 class="page-title">Kitchen</h1>
-        <button type="button" class="btn btn-primary" onClick={() => openSheet({ kind: 'recipe' })}><Plus size={16} aria-hidden="true" /> New recipe</button>
+        <div class="cluster">
+          <button type="button" class="btn" onClick={() => openSheet({ kind: 'ideas', dayKey: todayKey.value })}><Sparkles size={16} aria-hidden="true" /> Meal ideas</button>
+          <button type="button" class="btn btn-primary" onClick={() => openSheet({ kind: 'recipe' })}><Plus size={16} aria-hidden="true" /> New recipe</button>
+        </div>
       </div>
 
       <section class="card stack" aria-labelledby="k-batches">
@@ -34,8 +37,8 @@ export function Kitchen() {
               <li key={r.id}>
                 <div class="item" style={{ cursor: 'default' }}>
                   <button type="button" class="item-main linkish" style={{ color: 'inherit', textAlign: 'left' }} onClick={() => openSheet({ kind: 'recipe', foodId: r.id })}>
-                    <span class="item-name">{r.names.en}</span>
-                    <span class="item-sub">{r.recipe!.components.length} ingredients · {r.recipe!.servings} servings{r.recipe!.prepMinutes ? ` · ${r.recipe!.prepMinutes} min` : ''}</span>
+                    <span class="item-name">{r.names.en}{r.recipe!.example ? <span class="badge" style={{ marginLeft: '8px' }}>Example</span> : null}</span>
+                    <span class="item-sub">{r.recipe!.components.length} ingredients · {r.recipe!.servings} serving{r.recipe!.servings === 1 ? '' : 's'}{r.recipe!.prepMinutes ? ` · ${r.recipe!.prepMinutes} min` : ''}{r.partial?.includes('kcal') ? ' · needs an ingredient' : ''}</span>
                   </button>
                   <button type="button" class="btn btn-s" onClick={() => openSheet({ kind: 'quicklog', dayKey: todayKey.value, food: r })}>Log a serving</button>
                   <button type="button" class="btn btn-s btn-primary" onClick={() => openSheet({ kind: 'cook', recipeId: r.id })}>Cook</button>

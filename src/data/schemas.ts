@@ -88,6 +88,7 @@ const recipeSchema = z.object({
   recipeId: z.string().max(120).optional(),
   finishedAt: iso.nullable().optional(),
   steps: z.string().max(8000).optional(),
+  example: z.boolean().optional(),
   prepMinutes: nonNeg.max(1440).optional(),
 });
 

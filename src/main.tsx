@@ -22,6 +22,8 @@ async function boot() {
   }
   render(<App />, root);
   void initSync();
+  // Starter recipes, once per device (their own chunk: they are built with the meal-idea library).
+  void import('./data/examples').then((m) => m.seedExamples()).catch((e: unknown) => console.error('starter recipes', e));
 }
 
 void boot();

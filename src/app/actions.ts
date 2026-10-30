@@ -2,7 +2,8 @@ import { addEntry, getEntry, markEaten, restore, revertEntry, softDelete, type N
 import { deductFromPantry, undoDeductions, type Deduction } from '../data/pantry';
 import { freezeTargets } from '../data/plan';
 import type { LogEntry } from '../data/types';
-import { displayName, type Quantity } from '../domain/nutrition/food';
+import { displayName, type Food, type Quantity } from '../domain/nutrition/food';
+import { recipeFraction } from '../domain/kitchen/recipe';
 import { describeQuantity } from '../domain/nutrition/quantity';
 import { profile, toast } from './store';
 
@@ -12,7 +13,19 @@ export const undoLast = async () => { const u = lastUndo; lastUndo = null; if (u
 export const rememberUndo = (u: () => Promise<void>) => { lastUndo = u; };
 
 /** Pantry stock goes down when food is logged as eaten (unless turned off in the pantry). */
-const pantryDeduct = async (e: LogEntry): Promise<Deduction[]> => (profile.value?.pantryDeduct === false ? [] : deductFromPantry(e.food, e.qty));
+const pantryDeduct = async (e: LogEntry): Promise<Deduction[]> => {
+  if (profile.value?.pantryDeduct === false) return [];
+  const r = e.food.recipe;
+  // A dish made on the spot (a recipe or meal idea, not a cooked batch) uses up its own ingredients.
+  if (r && !r.cookedOn) {
+    const f = recipeFraction(e.food as Food, e.qty);
+    if (f === null) return [];
+    const out: Deduction[] = [];
+    for (const c of r.components) out.push(...(await deductFromPantry(c.food, { ...c.qty, amount: c.qty.amount * f } as Quantity)));
+    return out;
+  }
+  return deductFromPantry(e.food, e.qty);
+};
 const pantryNote = (d: readonly Deduction[]) => (d.length ? ' · taken from the pantry' : '');
 
 export async function logEntry(input: NewEntry): Promise<LogEntry> {

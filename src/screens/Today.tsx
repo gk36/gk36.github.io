@@ -7,12 +7,12 @@ import { coverageNote, fmtTotal } from '../domain/nutrition/format';
 import { openSheet, profile, toast, todayKey } from '../app/store';
 import { href, navigate } from '../app/router';
 import { useAsync, useLive } from '../ui/hooks';
-import { MacroBar } from '../ui/nutrition';
-import { BookOpen, ClipboardList, Plus, RefreshCw, Repeat, ScanBarcode, Smartphone } from '../ui/icons';
+import { CalorieRing, MacroBar } from '../ui/nutrition';
+import { ArrowRight, BookOpen, ChefHat, ClipboardList, Plus, RefreshCw, Repeat, Smartphone } from '../ui/icons';
 import { MealList, slotsFor } from './parts/DayView';
 import { InstallHint } from './parts/InstallHint';
-import { Composer } from './parts/Composer';
 import { NutrientGaps } from './parts/NutrientGaps';
+import { Composer } from './parts/Composer';
 
 export function Today() {
   const p = profile.value!;
@@ -42,57 +42,58 @@ export function Today() {
           <h1 class="page-title">Today</h1>
           <p class="muted small">{formatDayLabel(day)}{targets ? ` · ${targets.label}` : ''}</p>
         </div>
-        <div class="cluster">
-          <a class="btn btn-s" href={href('diary', day)}><BookOpen size={16} aria-hidden="true" /> Full diary</a>
-        </div>
+        <a class="btn btn-s" href={href('diary', day)}><BookOpen size={16} aria-hidden="true" /> Full diary</a>
       </div>
 
       <InstallHint />
 
-      <Composer dayKey={day} />
-
-      <section class="card" aria-labelledby="today-energy">
-        <h2 id="today-energy" class="card-title">Energy</h2>
-        <div class="hero" style={{ marginTop: '8px' }}>
-          <span class="hero-num">{Math.round(t.eaten.kcal.value).toLocaleString('en-GB')}</span>
-          <span class="hero-sub">
-            {kcalTarget !== undefined ? <>of {kcalTarget.toLocaleString('en-GB')} kcal{targets?.source === 'template' ? ' (estimate)' : ''}</> : 'kcal eaten'}
-          </span>
-          {left !== undefined ? (
-            <span class="badge" style={{ marginLeft: 'auto' }}>
-              {left >= 0 ? `${Math.round(left).toLocaleString('en-GB')} kcal left` : `${Math.round(-left).toLocaleString('en-GB')} kcal over`}
-            </span>
-          ) : null}
-        </div>
-        {t.plannedCount > 0 ? (
-          <p class="small muted" style={{ marginTop: '8px' }}>
-            Planned, not eaten yet: <b>+{Math.round(t.planned.kcal.value).toLocaleString('en-GB')} kcal</b> → the day lands near <b>{Math.round(t.projected.kcal.value).toLocaleString('en-GB')} kcal</b> if you eat it all.
-          </p>
-        ) : null}
-        {!targets && entries.length === 0 ? (
-          <div class="callout" style={{ marginTop: '12px' }}>
-            Add your stats in <a href={href('plan')}>Plan</a> to see calorie and protein targets.
+      <section class="card summary" aria-labelledby="today-energy">
+        <h2 id="today-energy" class="sr-only">Energy and macros</h2>
+        <div class="summary-top">
+          <CalorieRing eaten={t.eaten.kcal.value} planned={t.planned.kcal.value} target={kcalTarget} />
+          <div class="summary-side">
+            {left !== undefined ? (
+              <>
+                <span class={`summary-left num${left < 0 ? ' over' : ''}`}>{Math.round(Math.abs(left)).toLocaleString('en-GB')}</span>
+                <span class="small muted">{left >= 0 ? 'kcal left' : 'kcal over'}{targets?.source === 'template' ? ' · estimate' : ''}</span>
+              </>
+            ) : (
+              <span class="small muted">Add your stats in <a href={href('plan')}>Plan</a> to see calorie and protein targets.</span>
+            )}
+            {t.plannedCount > 0 ? (
+              <span class="xs muted summary-planned">
+                +{Math.round(t.planned.kcal.value).toLocaleString('en-GB')} planned → the day lands near <b>{Math.round(t.projected.kcal.value).toLocaleString('en-GB')}</b>
+              </span>
+            ) : null}
           </div>
-        ) : null}
-        <div class="bars" style={{ marginTop: '16px' }}>
+        </div>
+        <div class="bars">
           <MacroBar id="protein" eaten={t.eaten.protein.value} planned={t.planned.protein.value} target={targets?.protein} />
           <MacroBar id="carbs" eaten={t.eaten.carbs.value} planned={t.planned.carbs.value} target={targets?.carbs} />
           <MacroBar id="fat" eaten={t.eaten.fat.value} planned={t.planned.fat.value} target={targets?.fat} />
         </div>
-        <p class="small muted" style={{ marginTop: '12px' }}>
+        <p class="xs subtle">
           Fibre {fmtTotal('fiber', t.eaten.fiber)}{coverageNote(t.eaten.fiber) ? ` — ${coverageNote(t.eaten.fiber)}` : ''}
           {t.carbsCaveat ? ` · ${t.carbsCaveat} label food${t.carbsCaveat > 1 ? 's' : ''} list carbs without fibre` : ''}
         </p>
       </section>
 
-      <NutrientGaps totals={t.eaten} dayKey={day} eatenCount={t.eatenCount} />
+      <Composer dayKey={day} />
 
-      <div class="cluster">
-        <button type="button" class="btn btn-primary" onClick={() => openSheet({ kind: 'quicklog', dayKey: day })}><Plus size={18} aria-hidden="true" /> Log food</button>
-        <button type="button" class="btn" onClick={() => openSheet({ kind: 'scan', dayKey: day })}><ScanBarcode size={18} aria-hidden="true" /> Scan</button>
-        <button type="button" class="btn" onClick={() => navigate('plan')}><ClipboardList size={18} aria-hidden="true" /> Plan today</button>
-        <button type="button" class="btn" onClick={() => openSheet({ kind: 'replan', dayKey: day })}><RefreshCw size={18} aria-hidden="true" /> Replan rest of day</button>
-        <button type="button" class="btn" onClick={() => void repeatYesterday()}><Repeat size={18} aria-hidden="true" /> Repeat yesterday</button>
+      <button type="button" class="ideas-entry" onClick={() => openSheet({ kind: 'ideas', dayKey: day })}>
+        <ChefHat size={24} aria-hidden="true" />
+        <span class="ideas-entry-main">
+          <b>What should I eat?</b>
+          <span class="small muted">Meal ideas with exact grams, from your pantry, fitted to what's left today</span>
+        </span>
+        <ArrowRight size={18} aria-hidden="true" />
+      </button>
+
+      <div class="quick-row" role="group" aria-label="More for today">
+        <button type="button" class="quick" onClick={() => openSheet({ kind: 'replan', dayKey: day })}><RefreshCw size={17} aria-hidden="true" /> Replan rest of day</button>
+        <button type="button" class="quick" onClick={() => navigate('plan')}><ClipboardList size={17} aria-hidden="true" /> Plan today</button>
+        <button type="button" class="quick" onClick={() => void repeatYesterday()}><Repeat size={17} aria-hidden="true" /> Repeat yesterday</button>
+        <button type="button" class="quick" onClick={() => openSheet({ kind: 'quicklog', dayKey: day })}><Plus size={17} aria-hidden="true" /> Log food</button>
       </div>
 
       <section aria-labelledby="today-meals" class="stack">
@@ -101,12 +102,14 @@ export function Today() {
           <div class="card empty">
             <Smartphone size={28} aria-hidden="true" />
             <h3>Nothing logged yet today</h3>
-            <p>Log what you eat with <b>+ Log</b>, or turn your planner into planned meals with <b>Plan today</b>. Planned food never counts as eaten until you tap <b>Eaten</b>.</p>
+            <p>Type what you ate above, ask for <b>meal ideas</b>, or turn your planner into planned meals with <b>Plan today</b>. Planned food never counts as eaten until you tap <b>Eaten</b>.</p>
           </div>
         ) : (
           <MealList dayKey={day} slots={slots} entries={entries} compact />
         )}
       </section>
+
+      <NutrientGaps totals={t.eaten} dayKey={day} eatenCount={t.eatenCount} />
     </div>
   );
 }

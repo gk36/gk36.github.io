@@ -74,7 +74,7 @@ test('acceptance C: plan → eat differently → unplanned juice → pantry-only
   expect(grams('core:chicken-breast-raw')).toBeLessThanOrEqual(420);
   expect(grams('core:potato-boiled')).toBeLessThanOrEqual(336);
   // The sheet's promise is what the diary now projects.
-  await expect(main(page)).toContainText(`Planned, not eaten yet: +${newPlanKcal.toLocaleString('en-GB')} kcal`);
+  await expect(main(page)).toContainText(`+${newPlanKcal.toLocaleString('en-GB')} planned`);
 
   // Undo puts the previous plan back exactly.
   await page.getByRole('status').locator('.toast', { hasText: 'Replanned' }).getByRole('button', { name: 'Undo' }).click();

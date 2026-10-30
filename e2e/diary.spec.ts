@@ -5,7 +5,8 @@ test('onboarding gives Mifflin–St Jeor targets (73 kg, 174 cm, 18 y, male, mod
   const errors = watchErrors(page);
   await onboardFresh(page);
   // BMR = 10·73 + 6.25·174 − 5·18 + 5 = 1732.5; ×1.55 = 2685; recomp = maintenance; protein 1.0 g/lb = 161 g
-  await expect(main(page)).toContainText('of 2,685 kcal (estimate)');
+  await expect(main(page)).toContainText('of 2,685 kcal');
+  await expect(main(page)).toContainText('kcal left · estimate');
   await expect(main(page).getByRole('progressbar', { name: 'Protein' })).toHaveAttribute('aria-valuemax', '161');
   expect(errors()).toEqual([]);
 });
@@ -36,7 +37,7 @@ test('planned food does not count as eaten until marked; delete has undo', async
   const oj = food('orange-juice');
   await logFood(page, 'orange juice', /Orange juice/i, '255', { unit: 'mL', status: 'Planned' });
   await expect.poll(() => eatenKcal(page)).toBe(0);
-  await expect(main(page)).toContainText('Planned, not eaten yet');
+  await expect(main(page)).toContainText(/\+[\d,]+ planned → the day lands near/);
   await main(page).getByRole('button', { name: /Mark Orange juice.*eaten/ }).click();
   await expect.poll(() => eatenKcal(page)).toBe(Math.round(2.55 * oj.densityGPerMl! * oj.n.kcal!));
 
@@ -79,7 +80,7 @@ test('copying yesterday creates planned entries on today', async ({ page }) => {
   await d.getByRole('button', { name: 'Log eaten' }).click();
   await page.getByRole('link', { name: 'Today' }).first().click();
   await main(page).getByRole('button', { name: 'Repeat yesterday' }).click();
-  await expect(main(page)).toContainText('Planned, not eaten yet');
+  await expect(main(page)).toContainText(/\+[\d,]+ planned → the day lands near/);
   await expect.poll(() => eatenKcal(page)).toBe(0);
   expect(errors()).toEqual([]);
 });

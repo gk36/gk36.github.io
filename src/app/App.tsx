@@ -79,7 +79,8 @@ export function App() {
       default: return <Today />;
     }
   })();
-  const showFab = ['today', 'diary', 'plan', 'foods'].includes(r.name);
+  // Today has its own "What did you eat?" box, so the floating button would only cover it.
+  const showFab = ['diary', 'plan', 'foods'].includes(r.name);
 
   return (
     <div class="app">

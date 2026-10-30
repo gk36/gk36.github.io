@@ -60,6 +60,12 @@ function TotalsBox({ components, servings, totalG }: { components: Component[]; 
       {servings > 0 ? <span><b>Per serving (÷ {servings}):</b> <MacroLine n={per(servings)} /></span> : null}
       {totalG ? <span><b>Per 100 g cooked:</b> <MacroLine n={per(totalG / 100)} /></span> : null}
       <span class="xs subtle">Raw/as-used ingredients weigh {Math.round(t.ingredientG)} g{totalG ? `; finished weight ${Math.round(totalG)} g (${Math.round((totalG / Math.max(1, t.ingredientG)) * 100)}% — water lost or gained in cooking)` : ''}.</span>
+      {t.partial.includes('kcal') ? (
+        <span class="small" style={{ color: 'var(--warn)', fontWeight: 600 }}>
+          {components.filter((c) => c.food.n.kcal === undefined).map((c) => c.food.names.en).join(', ')} has no values yet, so the totals above leave it out.
+          Scan or enter your product (Foods), then remove this line and add yours.
+        </span>
+      ) : null}
       {partial.length ? <span class="xs subtle">Some ingredients have no data for {partial.map((id) => NUTRIENTS[id].label.toLowerCase()).join(', ')} — those totals are “at least”.</span> : null}
       {t.errors.map((e) => <span key={e} class="error">{e}</span>)}
     </div>

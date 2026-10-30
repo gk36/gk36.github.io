@@ -296,8 +296,9 @@ export function matchMention(m: Mention, ctx: MatchContext): MatchedItem {
   const scored = rows.map((r) => scoreRow(m.words, phrase, r, ctx, m.state)).filter((s) => s.matched > 0);
   const full = scored.filter((s) => s.matched === s.total && s.sure).sort(order);
   const lookalike = scored.filter((s) => s.matched === s.total && !s.sure).sort(order);
+  // A dish never stands in for part of a phrase ("sweet chili sauce" is not "Sweet chili chicken noodles").
   const partial = scored
-    .filter((s) => s.matched < s.total && s.strong && s.matched / s.total >= 0.5)
+    .filter((s) => s.matched < s.total && s.strong && s.matched / s.total >= 0.5 && !s.row.food.recipe)
     .sort((a, b) => b.matched - a.matched || order(a, b));
 
   let food: Food | null = remembered;

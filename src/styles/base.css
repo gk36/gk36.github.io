@@ -151,7 +151,7 @@ p { margin: 0; }
 .seg button { min-height: 36px; padding: 0 12px; border: 0; border-radius: var(--radius-s); background: transparent; color: var(--fg-muted); font-weight: 700; cursor: pointer; }
 .seg button[aria-checked='true'] { background: var(--raised); color: var(--fg); box-shadow: var(--shadow-1); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); font-weight: 600; font-size: var(--fs-s); cursor: pointer; }
+.chip { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); font-weight: 600; font-size: var(--fs-s); cursor: pointer; }
 .chip[aria-pressed='true'] { border-color: var(--ember); color: var(--ember-text); }
 
 /* ---------- badges ---------- */

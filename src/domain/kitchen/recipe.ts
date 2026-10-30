@@ -26,6 +26,8 @@ export interface RecipeInfo {
   finishedAt?: string | null;
   steps?: string;
   prepMinutes?: number;
+  /** A starter recipe that came with the app (cleared once the user saves their own version). */
+  example?: boolean;
 }
 
 export interface RecipeTotals {

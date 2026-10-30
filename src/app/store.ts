@@ -73,6 +73,7 @@ export type SheetState =
   | { kind: 'recipe'; foodId?: string }
   | { kind: 'cook'; recipeId: string }
   | { kind: 'replan'; dayKey: DayKey }
+  | { kind: 'ideas'; dayKey: DayKey; slotId?: string }
   | { kind: 'pantry-item'; itemId?: string; food?: Food | FoodSnapshot };
 
 export const sheet = signal<SheetState | null>(null);

@@ -39,6 +39,34 @@ export function MacroBar({ id, eaten, planned, target, label }: { id: NutrientId
   );
 }
 
+/**
+ * Today's calories as a ring: solid = eaten, faint = planned on top. The numbers are always written
+ * in the middle and in the label, never colour alone.
+ */
+export function CalorieRing({ eaten, planned, target }: { eaten: number; planned: number; target?: number | undefined }) {
+  const size = 132, stroke = 12, r = (size - stroke) / 2, c = 2 * Math.PI * r, mid = size / 2;
+  const t = target && target > 0 ? target : null;
+  const e = t ? Math.min(1, eaten / t) : 0;
+  const p = t ? Math.max(0, Math.min(1 - e, planned / t)) : 0;
+  const over = t !== null && eaten > t * 1.05;
+  const label = t
+    ? `${Math.round(eaten).toLocaleString('en-GB')} of ${Math.round(t).toLocaleString('en-GB')} kcal eaten${planned ? `, ${Math.round(planned).toLocaleString('en-GB')} more planned` : ''}`
+    : `${Math.round(eaten).toLocaleString('en-GB')} kcal eaten`;
+  return (
+    <div class="ring" role="img" aria-label={label}>
+      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true">
+        <circle class="ring-track" cx={mid} cy={mid} r={r} stroke-width={stroke} />
+        {p > 0 ? <circle class="ring-planned" cx={mid} cy={mid} r={r} stroke-width={stroke} stroke-dasharray={`${p * c} ${c}`} stroke-dashoffset={-e * c} transform={`rotate(-90 ${mid} ${mid})`} /> : null}
+        {e > 0 ? <circle class={`ring-fill${over ? ' over' : ''}`} cx={mid} cy={mid} r={r} stroke-width={stroke} stroke-dasharray={`${e * c} ${c}`} transform={`rotate(-90 ${mid} ${mid})`} /> : null}
+      </svg>
+      <div class="ring-center" aria-hidden="true">
+        <span class="hero-num">{Math.round(eaten).toLocaleString('en-GB')}</span>
+        <span class="xs muted">{t ? `of ${Math.round(t).toLocaleString('en-GB')} kcal` : 'kcal eaten'}</span>
+      </div>
+    </div>
+  );
+}
+
 /** Nutrient table that says "unknown" instead of inventing zeros. */
 export function NutrientTable({ ids, values, totals, caption }: { ids: readonly NutrientId[]; values?: NutrientMap; totals?: Totals; caption?: string }) {
   return (
