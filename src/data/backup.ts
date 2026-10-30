@@ -1,22 +1,23 @@
-import { db } from './db';
+import { db, type Program, type WorkoutSession } from './db';
 import { nowIso } from './ids';
 import { BACKUP_SCHEMA, backupSchema, type BackupFile } from './schemas';
 import type { Food } from '../domain/nutrition/food';
 import type { DayRecord, LogEntry, SavedMeal, SettingRow, WeightRecord } from './types';
 
-const TABLES = ['entries', 'days', 'foods', 'savedMeals', 'weights', 'settings'] as const;
+const TABLES = ['entries', 'days', 'foods', 'savedMeals', 'weights', 'settings', 'programs', 'sessions'] as const;
+type TableName = (typeof TABLES)[number];
 /** Kept across a "replace" import so the previous state can always be restored. */
 export const PRE_IMPORT_KEY = 'preImportSnapshot';
 
 export async function exportAll(): Promise<BackupFile> {
   const d = db();
-  const [entries, days, foods, savedMeals, weights, settings] = await Promise.all([
+  const [entries, days, foods, savedMeals, weights, settings, programs, sessions] = await Promise.all([
     d.entries.toArray(), d.days.toArray(), d.foods.toArray(), d.savedMeals.toArray(), d.weights.toArray(),
-    d.settings.filter((s) => s.key !== PRE_IMPORT_KEY).toArray(),
+    d.settings.filter((s) => s.key !== PRE_IMPORT_KEY).toArray(), d.programs.toArray(), d.sessions.toArray(),
   ]);
   return {
     app: 'carbmaxx', kind: 'backup', schema: BACKUP_SCHEMA, exportedAt: nowIso(),
-    data: { entries, days, foods, savedMeals, weights, settings },
+    data: { entries, days, foods, savedMeals, weights, settings, programs, sessions },
   } as BackupFile;
 }
 
@@ -26,7 +27,7 @@ export function backupFileName(date = new Date()): string {
 }
 
 export type ParsedBackup =
-  | { ok: true; file: BackupFile; counts: Record<(typeof TABLES)[number], number> }
+  | { ok: true; file: BackupFile; counts: Record<TableName, number> }
   | { ok: false; error: string };
 
 /** Validates a backup completely BEFORE anything is written. */
@@ -43,7 +44,7 @@ export function parseBackup(text: string): ParsedBackup {
     return { ok: false, error: `Not a CARBMAXX backup, or it is damaged (${issue ? `${issue.path.join('.')}: ${issue.message}` : 'invalid'}).` };
   }
   if (r.data.schema > BACKUP_SCHEMA) return { ok: false, error: 'This backup was made by a newer version of CARBMAXX. Update the app first.' };
-  const counts = Object.fromEntries(TABLES.map((t) => [t, r.data.data[t].length])) as Record<(typeof TABLES)[number], number>;
+  const counts = Object.fromEntries(TABLES.map((t) => [t, (r.data.data[t] ?? []).length])) as Record<TableName, number>;
   return { ok: true, file: r.data, counts };
 }
 
@@ -57,10 +58,12 @@ const newer = (a: { updatedAt?: string; rev?: number } | undefined, b: { updated
 export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'): Promise<void> {
   const d = db();
   const before = mode === 'replace' ? await exportAll() : null;
-  await d.transaction('rw', [d.entries, d.days, d.foods, d.savedMeals, d.weights, d.settings], async () => {
-    const data = file.data;
+  const data = file.data;
+  const programs = (data.programs ?? []) as Program[];
+  const sessions = (data.sessions ?? []) as WorkoutSession[];
+  await d.transaction('rw', [d.entries, d.days, d.foods, d.savedMeals, d.weights, d.settings, d.programs, d.sessions], async () => {
     if (mode === 'replace') {
-      await Promise.all([d.entries.clear(), d.days.clear(), d.foods.clear(), d.savedMeals.clear(), d.weights.clear()]);
+      await Promise.all([d.entries.clear(), d.days.clear(), d.foods.clear(), d.savedMeals.clear(), d.weights.clear(), d.programs.clear(), d.sessions.clear()]);
       const keep = await d.settings.get(PRE_IMPORT_KEY);
       await d.settings.clear();
       if (keep) await d.settings.put(keep);
@@ -70,6 +73,8 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
       await d.foods.bulkPut(data.foods as Food[]);
       await d.savedMeals.bulkPut(data.savedMeals as SavedMeal[]);
       await d.weights.bulkPut(data.weights as WeightRecord[]);
+      await d.programs.bulkPut(programs);
+      await d.sessions.bulkPut(sessions);
       await d.settings.bulkPut((data.settings as SettingRow[]).filter((s) => s.key !== PRE_IMPORT_KEY));
       return;
     }
@@ -84,6 +89,8 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
     await mergeTable<Food>(d.foods, data.foods as Food[], (r) => r.id);
     await mergeTable<SavedMeal>(d.savedMeals, data.savedMeals as SavedMeal[], (r) => r.id);
     await mergeTable<WeightRecord>(d.weights, data.weights as WeightRecord[], (r) => r.dayKey);
+    await mergeTable<Program>(d.programs, programs, (r) => r.id);
+    await mergeTable<WorkoutSession>(d.sessions, sessions, (r) => r.id);
     for (const s of data.settings as SettingRow[]) {
       if (s.key === PRE_IMPORT_KEY) continue;
       if (!(await d.settings.get(s.key))) await d.settings.put(s);

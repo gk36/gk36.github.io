@@ -10,7 +10,7 @@ export const NUTRIENT_IDS = [
   'kcal', 'protein', 'carbs', 'fat',
   'fiber', 'sugars', 'satFat', 'monoFat', 'polyFat', 'transFat', 'cholesterol',
   'sodium', 'potassium', 'calcium', 'magnesium', 'phosphorus', 'iron', 'zinc', 'copper', 'manganese', 'selenium', 'iodine',
-  'vitA', 'vitC', 'vitD', 'vitE', 'vitK', 'thiamin', 'riboflavin', 'niacin', 'pantothenic', 'vitB6', 'biotin', 'folate', 'vitB12', 'choline',
+  'vitA', 'retinol', 'vitC', 'vitD', 'vitE', 'vitK', 'thiamin', 'riboflavin', 'niacin', 'pantothenic', 'vitB6', 'biotin', 'folate', 'vitB12', 'choline',
   'epa', 'dha', 'ala', 'water', 'alcohol', 'caffeine', 'oxalate',
 ] as const;
 
@@ -61,6 +61,8 @@ export const NUTRIENTS: Readonly<Record<NutrientId, NutrientDef>> = {
   selenium: def('selenium', 'Selenium', 'Selenium', 'µg', 'mineral', [1103], 1),
   iodine: def('iodine', 'Iodine', 'Iodine', 'µg', 'mineral', [1100], 0, 'Rarely measured; usually unknown.'),
   vitA: def('vitA', 'Vitamin A (RAE)', 'Vit A', 'µg', 'vitamin', [1106], 0, 'Retinol activity equivalents (RAE), not IU.'),
+  retinol: def('retinol', 'Retinol (preformed vitamin A)', 'Retinol', 'µg', 'vitamin', [1105], 0,
+    'Preformed vitamin A (liver, dairy, eggs). The upper limit applies to this, not to carotenoids.'),
   vitC: def('vitC', 'Vitamin C', 'Vit C', 'mg', 'vitamin', [1162], 1),
   vitD: def('vitD', 'Vitamin D', 'Vit D', 'µg', 'vitamin', [1114], 1, 'µg (1 µg = 40 IU).'),
   vitE: def('vitE', 'Vitamin E (α-tocopherol)', 'Vit E', 'mg', 'vitamin', [1109], 1),

@@ -5,6 +5,9 @@ import { FoodDetail } from './FoodDetail';
 import { FoodEditor } from './FoodEditor';
 import { SwapSheet } from './SwapSheet';
 import { CopyDaySheet, SavedMealSheet, SlotsSheet } from './SmallSheets';
+import { NutrientSheet } from './NutrientSheet';
+import { ScanSheet } from './ScanSheet';
+import { CookSheet, RecipeEditor } from './RecipeSheets';
 
 /** Renders the one open sheet. Keyed so switching sheets remounts cleanly (focus, state). */
 export function SheetHost() {
@@ -20,5 +23,9 @@ export function SheetHost() {
     case 'copy-day': return <CopyDaySheet key={key} toDay={s.toDay} />;
     case 'saved-meal': return <SavedMealSheet key={key} {...(s.mealId ? { mealId: s.mealId } : {})} {...(s.fromEntries ? { fromEntries: s.fromEntries } : {})} />;
     case 'slots': return <SlotsSheet key={key} dayKey={s.dayKey} />;
+    case 'nutrient': return <NutrientSheet key={`${key}-${s.id}`} id={s.id} dayKey={s.dayKey} range={s.range} />;
+    case 'scan': return <ScanSheet key={key} dayKey={s.dayKey} {...(s.slotId ? { slotId: s.slotId } : {})} />;
+    case 'recipe': return <RecipeEditor key={`${key}-${s.foodId ?? 'new'}`} {...(s.foodId ? { foodId: s.foodId } : {})} />;
+    case 'cook': return <CookSheet key={`${key}-${s.recipeId}`} recipeId={s.recipeId} />;
   }
 }

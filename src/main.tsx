@@ -4,6 +4,9 @@ import './styles/tokens.css';
 import './styles/base.css';
 import { App } from './app/App';
 import { initProfile } from './app/store';
+import { registerServiceWorker } from './app/pwa';
+
+registerServiceWorker();
 
 async function boot() {
   const root = document.getElementById('app');

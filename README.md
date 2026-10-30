@@ -18,6 +18,11 @@ GitHub Pages.
 - **Unknown is never zero.** Missing nutrient data is shown as unknown, and totals say “≥ … · known for 7 of 9 foods”.
 - **Your labels.** Add any packaged food from its label (Greek/EU or US style, per 100 g, per 100 mL or per serving).
 - **Your planner.** The v1 meal template (goals, cut styles, gym/rest timings, food picks) writes *planned* entries.
+- **Scan it.** Barcode by camera, photo or typing → Open Food Facts → check → save; saved products work offline.
+- **Cook once, eat all week.** Batch recipes weighed after cooking; every portion is an exact share of the batch.
+- **See every nutrient.** Coverage against your age/sex reference intakes, with what contributed each one.
+- **Train.** Log sets from your program with a rest timer, prefilled weights, PRs and weekly volume.
+- **Works offline**, installable to the Home Screen.
 - **Your data stays on your device** (IndexedDB). Export/import backups at any time.
 
 ## Develop
@@ -59,5 +64,11 @@ macros, and that each portion weight is one of USDA's own portions) and refuses 
 
 - Generic food composition: U.S. Department of Agriculture, Agricultural Research Service. FoodData Central,
   SR Legacy (2018). Public domain (CC0 1.0).
+- Packaged products: Open Food Facts contributors, Open Database License (ODbL); attribution is shown wherever
+  their data appears. Crowd-sourced — the app asks you to check it against the package.
+- Reference intakes: National Academies of Sciences, Engineering, and Medicine, Dietary Reference Intakes (via NIH
+  Office of Dietary Supplements fact sheets and the 2019 sodium/potassium report); sources per nutrient in
+  `src/domain/micros/dri-table.json`.
+- Barcode reading on browsers without a built-in reader: zxing-wasm (MIT) / ZXing-C++ (Apache-2.0), self-hosted.
 - Calorie estimate: Mifflin–St Jeor × activity factor — an estimate to check against your weight trend.
 - This app is general information, not medical or dietetic advice.

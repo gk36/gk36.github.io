@@ -5,6 +5,7 @@ import { nowIso } from '../data/ids';
 import { dayKeyFor, type DayKey } from '../domain/time';
 import type { Food } from '../domain/nutrition/food';
 import type { FoodSnapshot } from '../data/types';
+import type { NutrientId } from '../domain/nutrition/nutrients';
 
 /* ---------- profile ---------- */
 export const profile = signal<Profile | null>(null);
@@ -66,7 +67,11 @@ export type SheetState =
   | { kind: 'copy-day'; toDay: DayKey }
   | { kind: 'saved-meal'; mealId?: string; fromEntries?: string[]; dayKey?: DayKey }
   | { kind: 'swap'; entryId: string }
-  | { kind: 'slots'; dayKey: DayKey };
+  | { kind: 'slots'; dayKey: DayKey }
+  | { kind: 'nutrient'; id: NutrientId; dayKey: DayKey; range: 'day' | 'week' }
+  | { kind: 'scan'; dayKey: DayKey; slotId?: string }
+  | { kind: 'recipe'; foodId?: string }
+  | { kind: 'cook'; recipeId: string };
 
 export const sheet = signal<SheetState | null>(null);
 export const openSheet = (s: SheetState) => { sheet.value = s; };

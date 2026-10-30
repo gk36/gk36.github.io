@@ -8,7 +8,7 @@ import { NUTRIENTS, NUTRIENT_IDS, type NutrientId } from '../domain/nutrition/nu
 import { displayName, PREP_LABEL, type Food, type Quantity } from '../domain/nutrition/food';
 import { contribution, energyCheck } from '../domain/nutrition/compute';
 import { defaultQuantity, describeQuantity } from '../domain/nutrition/quantity';
-import { deleteCustomFood, restoreCustomFood } from '../data/foods/registry';
+import { deleteCustomFood, restoreCustomFood, saveCustomFood } from '../data/foods/registry';
 import type { FoodSnapshot } from '../data/types';
 import { closeSheet, openSheet, todayKey, toast } from '../app/store';
 import { AmountPicker } from './AmountPicker';
@@ -63,6 +63,17 @@ export function FoodDetail({ food, dayKey, slotId }: { food: Food | FoodSnapshot
         {food.notes ? <p class="small">{food.notes}</p> : null}
       </div>
 
+      {isCustom && food.src.type === 'off' && !food.src.verifiedAt ? (
+        <div class="callout small cluster" role="note">
+          <span>From Open Food Facts and not yet checked. Compare the numbers with the package.</span>
+          <button type="button" class="btn btn-s" onClick={async () => {
+            await saveCustomFood({ ...(food as Food), src: { ...food.src, confidence: 'high', verifiedAt: new Date().toISOString().slice(0, 10) } });
+            toast('Marked as checked against the package', { tone: 'ok' });
+            closeSheet();
+          }}>Checked against the package</button>
+          <button type="button" class="btn btn-s" onClick={() => openSheet({ kind: 'food-editor', foodId: food.id })}>Fix values</button>
+        </div>
+      ) : null}
       {check?.mismatch ? (
         <div class="callout warn small" role="note">
           <TriangleAlert size={16} aria-hidden="true" /> Stated energy {Math.round(check.stated)} kcal vs {Math.round(check.computed)} kcal implied by the macros. The stated value is kept; check the label if this is your entry.

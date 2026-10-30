@@ -7,7 +7,48 @@ import type { DayRecord, LegacyArchive, LogEntry, SavedMeal, SettingRow, WeightR
  * and `updatedAt`, deletes are tombstones. Schema changes MUST add a new version() with an
  * upgrade function — never edit an existing version.
  */
+export interface OffLookup {
+  code: string;
+  fetchedAt: string;
+  status: 'found' | 'not-found';
+  /** Trimmed Open Food Facts product JSON (only the requested fields). */
+  product?: unknown;
+}
+
+export interface Program {
+  id: string;
+  name: string;
+  days: import('../domain/training/program').ProgramDay[];
+  active: boolean;
+  source: 'v1' | 'user' | 'default';
+  importedFrom?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  rev: number;
+}
+
+export interface WorkoutSession {
+  id: string;
+  dayKey: string;
+  programId: string | null;
+  programDayId: string | null;
+  name: string;
+  startedAt: string;
+  endedAt: string | null;
+  restSec: number;
+  exercises: import('../domain/training/metrics').SessionExercise[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  rev: number;
+}
+
 export class CarbmaxxDB extends Dexie {
+  programs!: Table<Program, string>;
+  sessions!: Table<WorkoutSession, string>;
+  offLookups!: Table<OffLookup, string>;
   entries!: Table<LogEntry, string>;
   days!: Table<DayRecord, string>;
   foods!: Table<Food, string>;
@@ -27,6 +68,10 @@ export class CarbmaxxDB extends Dexie {
       settings: 'key',
       legacy: 'key',
     });
+    // v2: cache of Open Food Facts lookups (barcode scans work offline once seen).
+    this.version(2).stores({ offLookups: 'code, fetchedAt' });
+    // v3: training programs and logged workout sessions.
+    this.version(3).stores({ programs: 'id, updatedAt', sessions: 'id, dayKey, startedAt, programId, updatedAt' });
   }
 }
 

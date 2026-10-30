@@ -1,4 +1,5 @@
 import type { NutrientId } from './nutrients';
+import type { RecipeInfo } from '../kitchen/recipe';
 
 /** Nutrient amounts per the food's basis. A missing key means UNKNOWN — never zero. */
 export type NutrientMap = Partial<Record<NutrientId, number>>;
@@ -67,6 +68,10 @@ export interface Food {
   notes?: string;
   /** For label entries converted from "per serving": what the label actually showed. */
   labelServing?: { label: string; g?: number; ml?: number };
+  /** Recipes and batches keep their ingredients (see domain/kitchen/recipe.ts). */
+  recipe?: RecipeInfo;
+  /** Nutrients that some ingredient of a recipe does not report (its `n` value is a lower bound). */
+  partial?: NutrientId[];
   createdAt?: string;
   updatedAt?: string;
   deletedAt?: string | null;

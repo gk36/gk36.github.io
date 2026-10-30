@@ -51,7 +51,7 @@ const recordMeta = {
   rev: z.number().int().nonnegative(),
 };
 
-export const foodSchema = z.object({
+const baseFoodShape = {
   id: z.string().min(1).max(120),
   names: z.object({ en: z.string().min(1).max(200), el: z.string().max(200).optional(), aliases: z.array(z.string().max(80)).max(30).optional() }),
   kind: z.enum(['generic', 'branded', 'custom']),
@@ -70,11 +70,28 @@ export const foodSchema = z.object({
   pair: z.string().max(120).optional(),
   notes: z.string().max(2000).optional(),
   labelServing: z.object({ label: z.string().max(120), g: nonNeg.optional(), ml: nonNeg.optional() }).optional(),
+  partial: z.array(z.enum(NUTRIENT_IDS)).optional(),
   createdAt: iso.optional(),
   updatedAt: iso.optional(),
   deletedAt: iso.nullable().optional(),
   rev: z.number().int().nonnegative().optional(),
+};
+
+/** Recipe ingredients are plain foods (recipes are flattened, never nested). */
+const componentFoodSchema = z.object(baseFoodShape).omit({ createdAt: true, updatedAt: true, deletedAt: true, rev: true });
+
+const recipeSchema = z.object({
+  components: z.array(z.object({ food: componentFoodSchema, qty: quantitySchema })).min(1).max(80),
+  totalG: nonNeg.nullable(),
+  servings: num.positive().max(1000),
+  cookedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  recipeId: z.string().max(120).optional(),
+  finishedAt: iso.nullable().optional(),
+  steps: z.string().max(8000).optional(),
+  prepMinutes: nonNeg.max(1440).optional(),
 });
+
+export const foodSchema = z.object({ ...baseFoodShape, recipe: recipeSchema.optional() });
 
 const snapshotSchema = foodSchema.omit({ createdAt: true, updatedAt: true, deletedAt: true, rev: true });
 
@@ -120,6 +137,31 @@ export const weightSchema = z.object({ dayKey, kg: num.min(20).max(400), ...reco
 
 export const settingSchema = z.object({ key: z.string().min(1).max(80), value: z.unknown() });
 
+const loggedSetSchema = z.object({
+  id: z.string().max(80), kind: z.enum(['warmup', 'working', 'drop']), weightKg: num.min(0).max(2000).nullable(),
+  reps: num.min(0).max(1000).nullable(), rir: num.min(0).max(10).nullable().optional(), done: z.boolean(),
+});
+const sessionExerciseSchema = z.object({
+  id: z.string().max(80), name: z.string().min(1).max(120), m: z.array(z.string().max(30)).max(8), ss: z.boolean(),
+  plannedSets: num.nullable(), repMin: num.nullable(), repMax: num.nullable(), prescription: z.string().max(80),
+  note: z.string().max(400).optional(), skipped: z.boolean().optional(), sets: z.array(loggedSetSchema).max(60),
+});
+const programExerciseSchema = z.object({
+  id: z.string().max(80), name: z.string().min(1).max(120), sets: z.string().max(10), reps: z.string().max(30),
+  note: z.string().max(400), ss: z.boolean(), m: z.array(z.string().max(30)).max(8), anim: z.string().max(30),
+});
+export const programSchema = z.object({
+  id: z.string().min(1).max(80), name: z.string().min(1).max(120), active: z.boolean(), source: z.enum(['v1', 'user', 'default']),
+  importedFrom: z.string().max(40).optional(),
+  days: z.array(z.object({ id: z.string().max(80), name: z.string().max(80), rest: z.boolean(), exercises: z.array(programExerciseSchema).max(40) })).max(21),
+  ...recordMeta,
+});
+export const sessionSchema = z.object({
+  id: z.string().min(1).max(80), dayKey, programId: z.string().max(80).nullable(), programDayId: z.string().max(80).nullable(),
+  name: z.string().max(120), startedAt: iso, endedAt: iso.nullable(), restSec: num.min(0).max(1800),
+  exercises: z.array(sessionExerciseSchema).max(60), notes: z.string().max(4000).optional(), ...recordMeta,
+});
+
 export const BACKUP_SCHEMA = 1;
 
 export const backupSchema = z.object({
@@ -134,6 +176,9 @@ export const backupSchema = z.object({
     savedMeals: z.array(savedMealSchema),
     weights: z.array(weightSchema),
     settings: z.array(settingSchema),
+    /** Added after the first backups — optional so older files still import. */
+    programs: z.array(programSchema).optional(),
+    sessions: z.array(sessionSchema).optional(),
   }),
 });
 

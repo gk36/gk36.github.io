@@ -1,19 +1,24 @@
 import { contribution } from './nutrition/compute';
 import { sumNutrients, type Totals } from './nutrition/compute';
 import type { NutrientMap } from './nutrition/food';
+import { compositeParts } from './kitchen/recipe';
 import type { LogEntry } from '../data/types';
 
 export interface EntryNutrients {
   id: string;
+  /** Known totals for the entry (for display). */
   n: NutrientMap;
+  /** What totals should sum: the food itself, or each ingredient of a recipe/batch portion. */
+  parts: NutrientMap[];
   error?: string;
   carbsExcludeUnknownFiber: boolean;
 }
 
 export function entryNutrients(e: Pick<LogEntry, 'id' | 'food' | 'qty'>): EntryNutrients {
   const c = contribution(e.food, e.qty);
-  if ('error' in c) return { id: e.id, n: {}, error: c.error, carbsExcludeUnknownFiber: false };
-  return { id: e.id, n: c.n, carbsExcludeUnknownFiber: c.carbsExcludeUnknownFiber };
+  if ('error' in c) return { id: e.id, n: {}, parts: [], error: c.error, carbsExcludeUnknownFiber: false };
+  const parts = e.food.recipe ? compositeParts(e.food, e.qty) : null;
+  return { id: e.id, n: c.n, parts: parts ?? [c.n], carbsExcludeUnknownFiber: c.carbsExcludeUnknownFiber };
 }
 
 export interface DayTotals {
@@ -37,9 +42,9 @@ export function dayTotals(entries: readonly LogEntry[]): DayTotals {
     if (e.deletedAt) continue;
     const r = entryNutrients(e);
     if (e.status === 'eaten') {
-      eaten.push(r.n);
+      eaten.push(...r.parts);
       if (r.carbsExcludeUnknownFiber) carbsCaveat += 1;
-    } else if (e.status === 'planned') planned.push(r.n);
+    } else if (e.status === 'planned') planned.push(...r.parts);
   }
   return {
     eaten: sumNutrients(eaten),

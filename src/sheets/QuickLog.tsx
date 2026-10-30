@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { Sheet } from '../ui/Sheet';
 import { useAsync, useLive } from '../ui/hooks';
 import { Segmented, NumberField, Field } from '../ui/controls';
-import { ChevronLeft, Info, Pencil, Plus, Search, Star } from '../ui/icons';
+import { ChevronLeft, Info, Pencil, Plus, ScanBarcode, Search, Star } from '../ui/icons';
 import { MacroLine, SourceBadge } from '../ui/nutrition';
 import { allFoods, saveCustomFood } from '../data/foods/registry';
 import { ensureDay, recentFoods, type NewEntry } from '../data/entries';
@@ -131,6 +131,7 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
   return (
     <Sheet title="Log food" onClose={closeSheet}
       footer={<>
+        <button type="button" class="btn" onClick={() => openSheet({ kind: 'scan', dayKey, ...(slot ? { slotId: slot } : {}) })}><ScanBarcode size={16} aria-hidden="true" /> Scan</button>
         <button type="button" class="btn" onClick={() => setQuick(true)}><Plus size={16} aria-hidden="true" /> Quick add</button>
         <button type="button" class="btn" onClick={() => openSheet({ kind: 'food-editor', thenLog: { dayKey, slotId: slot } })}><Pencil size={16} aria-hidden="true" /> New food from label</button>
       </>}>

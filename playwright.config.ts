@@ -11,6 +11,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
     timezoneId: 'Europe/Athens',
     locale: 'en-GB',
+    // Request mocks (page/context.route) don't see requests from pages a service worker controls
+    // (WebKit), so the worker is off except in the offline spec, which opts back in.
+    serviceWorkers: 'block',
   },
   webServer: {
     command: 'npm run preview',
