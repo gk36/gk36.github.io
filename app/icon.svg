@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CARBMAXX">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff6a3d"/>
+      <stop offset="1" stop-color="#ff8c42"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#g)"/>
+  <path fill="#14110f" d="M262 92c14 62-30 92-30 140 0 26 17 44 39 44 31 0 46-29 40-72 52 40 79 92 79 140 0 69-58 112-134 112s-134-45-134-114c0-92 92-127 140-250z"/>
+  <path fill="#ff8c42" d="M256 300c-3 34-36 46-36 78 0 23 16 38 36 38s36-15 36-38c0-32-33-44-36-78z"/>
+</svg>

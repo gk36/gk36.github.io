@@ -1,3 +1,12 @@
 # Built app output: committed so GitHub Pages can serve it, but never diffed or line-ending converted.
 app/** -text -diff linguist-generated=true
 src/data/foods/*.json linguist-generated=true
+
+# App source is always LF, so a build on Windows is byte-identical to the CI build on Linux
+# (CI checks that the committed app/ matches the source).
+src/** text=auto eol=lf
+scripts/** text=auto eol=lf
+e2e/** text=auto eol=lf
+tests/** text=auto eol=lf
+*.png binary
+*.woff2 binary

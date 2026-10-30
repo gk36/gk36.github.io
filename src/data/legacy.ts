@@ -118,7 +118,7 @@ export function legacyToProfile(snap: PlannerInput, base: Profile, name: string 
     ...base,
     sex: snap.sex, weightKg: snap.kg, heightCm: snap.cm,
     birthDate: base.birthDate ?? null, ageYears: base.birthDate ? (base.ageYears ?? null) : snap.age,
-    planner, defaultDayType: snap.day, targetMode: 'template', legacyProfileName: name, onboarded: true,
+    planner, defaultDayType: snap.day, targetMode: 'template', legacyProfileName: name,
   };
 }
 

@@ -1,0 +1,2585 @@
+[
+  {
+    "key": "chicken-breast-raw",
+    "fdcId": 171077,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Chicken, broiler or fryers, breast, skinless, boneless, meat only, raw",
+    "names": {
+      "en": "Chicken breast, skinless (raw)",
+      "el": "Στήθος κοτόπουλου χωρίς πέτσα (ωμό)",
+      "aliases": [
+        "chicken breast",
+        "chicken fillet",
+        "κοτόπουλο στήθος",
+        "φιλέτο κοτόπουλο"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "chicken-breast-roasted",
+    "portions": [
+      {
+        "label": "1 breast (boneless, skinless)",
+        "g": 272
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Plain fresh breast meat, no added brine/solution."
+  },
+  {
+    "key": "chicken-breast-roasted",
+    "fdcId": 171477,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Chicken, broilers or fryers, breast, meat only, cooked, roasted",
+    "names": {
+      "en": "Chicken breast, skinless (roasted)",
+      "el": "Στήθος κοτόπουλου χωρίς πέτσα (ψητό)",
+      "aliases": [
+        "roast chicken breast",
+        "cooked chicken breast",
+        "ψητό κοτόπουλο",
+        "κοτόπουλο στήθος ψητό"
+      ]
+    },
+    "group": "protein",
+    "prep": "roasted",
+    "pair": "chicken-breast-raw",
+    "portions": [
+      {
+        "label": "1/2 breast (bone and skin removed)",
+        "g": 86
+      },
+      {
+        "label": "1 cup, chopped or diced",
+        "g": 140
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Meat only, no skin, roasted without added fat. Weigh after cooking."
+  },
+  {
+    "key": "chicken-thigh-raw",
+    "fdcId": 173627,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Chicken, broilers or fryers, dark meat, thigh, meat only, raw",
+    "names": {
+      "en": "Chicken thigh, skinless (raw)",
+      "el": "Φιλέτο μπούτι κοτόπουλου χωρίς πέτσα (ωμό)",
+      "aliases": [
+        "chicken thigh",
+        "boneless thigh",
+        "μπούτι κοτόπουλο",
+        "φιλέτο μπούτι"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "chicken-thigh-roasted",
+    "portions": [
+      {
+        "label": "1 thigh (meat only, no skin)",
+        "g": 149
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Thigh meat only (no skin, no bone)."
+  },
+  {
+    "key": "chicken-thigh-roasted",
+    "fdcId": 172388,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Chicken, broilers or fryers, thigh, meat only, cooked, roasted",
+    "names": {
+      "en": "Chicken thigh, skinless (roasted)",
+      "el": "Φιλέτο μπούτι κοτόπουλου χωρίς πέτσα (ψητό)",
+      "aliases": [
+        "roast chicken thigh",
+        "cooked chicken thigh",
+        "μπούτι κοτόπουλο ψητό",
+        "φιλέτο μπούτι ψητό"
+      ]
+    },
+    "group": "protein",
+    "prep": "roasted",
+    "pair": "chicken-thigh-raw",
+    "portions": [
+      {
+        "label": "1 thigh (meat only, no skin)",
+        "g": 116
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Thigh meat only (no skin, no bone). Weigh after cooking."
+  },
+  {
+    "key": "turkey-breast-raw",
+    "fdcId": 174515,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Turkey, retail parts, breast, meat only, raw",
+    "names": {
+      "en": "Turkey breast, skinless (raw)",
+      "el": "Στήθος γαλοπούλας χωρίς πέτσα (ωμό)",
+      "aliases": [
+        "turkey breast",
+        "turkey fillet",
+        "γαλοπούλα στήθος",
+        "φιλέτο γαλοπούλας"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "turkey-breast-roasted",
+    "densityGPerMl": null,
+    "notes": "Retail breast cut, meat only (no skin), no added solution."
+  },
+  {
+    "key": "turkey-breast-roasted",
+    "fdcId": 174516,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Turkey, retail parts, breast, meat only, cooked, roasted",
+    "names": {
+      "en": "Turkey breast, skinless (roasted)",
+      "el": "Στήθος γαλοπούλας χωρίς πέτσα (ψητό)",
+      "aliases": [
+        "roast turkey breast",
+        "cooked turkey breast",
+        "γαλοπούλα ψητή",
+        "στήθος γαλοπούλας ψητό"
+      ]
+    },
+    "group": "protein",
+    "prep": "roasted",
+    "pair": "turkey-breast-raw",
+    "densityGPerMl": null,
+    "notes": "Retail breast cut, meat only (no skin), no added solution. Not sliced deli turkey. Weigh after cooking."
+  },
+  {
+    "key": "beef-ground-95-raw",
+    "fdcId": 171790,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, ground, 95% lean meat / 5% fat, raw",
+    "names": {
+      "en": "Ground beef 95% lean (raw)",
+      "el": "Κιμάς μοσχαρίσιος 5% λιπαρά (ωμός)",
+      "aliases": [
+        "ground beef 95",
+        "lean ground beef",
+        "minced beef",
+        "κιμάς μοσχαρίσιος",
+        "άπαχος κιμάς"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "beef-ground-95-cooked",
+    "densityGPerMl": null,
+    "notes": "95% lean / 5% fat."
+  },
+  {
+    "key": "beef-ground-95-cooked",
+    "fdcId": 174028,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, ground, 95% lean meat / 5% fat, crumbles, cooked, pan-browned",
+    "names": {
+      "en": "Ground beef 95% lean, browned (cooked)",
+      "el": "Κιμάς μοσχαρίσιος 5% λιπαρά (σοταρισμένος)",
+      "aliases": [
+        "cooked ground beef 95",
+        "browned mince",
+        "κιμάς μαγειρεμένος",
+        "κιμάς σοταρισμένος"
+      ]
+    },
+    "group": "protein",
+    "prep": "pan-cooked",
+    "pair": "beef-ground-95-raw",
+    "densityGPerMl": null,
+    "notes": "Pan-browned crumbles. Weigh after cooking."
+  },
+  {
+    "key": "beef-ground-90-raw",
+    "fdcId": 174030,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, ground, 90% lean meat / 10% fat, raw",
+    "names": {
+      "en": "Ground beef 90% lean (raw)",
+      "el": "Κιμάς μοσχαρίσιος 10% λιπαρά (ωμός)",
+      "aliases": [
+        "ground beef 90",
+        "ground beef",
+        "minced beef",
+        "κιμάς μοσχαρίσιος",
+        "κιμάς"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "beef-ground-90-cooked",
+    "densityGPerMl": null,
+    "notes": "90% lean / 10% fat."
+  },
+  {
+    "key": "beef-ground-90-cooked",
+    "fdcId": 171794,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, ground, 90% lean meat / 10% fat, crumbles, cooked, pan-browned",
+    "names": {
+      "en": "Ground beef 90% lean, browned (cooked)",
+      "el": "Κιμάς μοσχαρίσιος 10% λιπαρά (σοταρισμένος)",
+      "aliases": [
+        "cooked ground beef",
+        "browned mince",
+        "κιμάς μαγειρεμένος",
+        "κιμάς σοταρισμένος"
+      ]
+    },
+    "group": "protein",
+    "prep": "pan-cooked",
+    "pair": "beef-ground-90-raw",
+    "densityGPerMl": null,
+    "notes": "Pan-browned crumbles. Weigh after cooking."
+  },
+  {
+    "key": "beef-steak-lean-raw",
+    "fdcId": 174055,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, top sirloin, steak, separable lean only, trimmed to 1/8\" fat, all grades, raw",
+    "names": {
+      "en": "Beef top sirloin steak, lean only (raw)",
+      "el": "Μοσχαρίσιο στέικ σιρλόιν, μόνο το άπαχο (ωμό)",
+      "aliases": [
+        "sirloin",
+        "steak",
+        "lean steak",
+        "μοσχαρίσιο στέικ",
+        "μπριζόλα μοσχαρίσια"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "beef-steak-lean-cooked",
+    "densityGPerMl": null,
+    "notes": "Lean only: weigh with the visible fat trimmed off. US values, all grades."
+  },
+  {
+    "key": "beef-steak-lean-cooked",
+    "fdcId": 174054,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, top sirloin, steak, separable lean only, trimmed to 1/8\" fat, all grades, cooked, broiled",
+    "names": {
+      "en": "Beef top sirloin steak, lean only (grilled)",
+      "el": "Μοσχαρίσιο στέικ σιρλόιν, μόνο το άπαχο (ψητό)",
+      "aliases": [
+        "grilled steak",
+        "cooked sirloin",
+        "στέικ ψητό",
+        "μπριζόλα μοσχαρίσια ψητή"
+      ]
+    },
+    "group": "protein",
+    "prep": "grilled",
+    "pair": "beef-steak-lean-raw",
+    "densityGPerMl": null,
+    "notes": "Broiled (grilled), lean only, visible fat trimmed. Weigh after cooking."
+  },
+  {
+    "key": "lamb-leg-lean-raw",
+    "fdcId": 174313,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Lamb, leg, whole (shank and sirloin), separable lean only, trimmed to 1/4\" fat, choice, raw",
+    "names": {
+      "en": "Lamb leg, lean only (raw)",
+      "el": "Αρνί μπούτι, μόνο το άπαχο (ωμό)",
+      "aliases": [
+        "lamb",
+        "leg of lamb",
+        "αρνί",
+        "αρνίσιο μπούτι"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "lamb-leg-lean-roasted",
+    "densityGPerMl": null,
+    "notes": "Whole leg (shank and sirloin), lean only, US choice grade; weigh without bone and visible fat."
+  },
+  {
+    "key": "lamb-leg-lean-roasted",
+    "fdcId": 174314,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Lamb, leg, whole (shank and sirloin), separable lean only, trimmed to 1/4\" fat, choice, cooked, roasted",
+    "names": {
+      "en": "Lamb leg, lean only (roasted)",
+      "el": "Αρνί μπούτι, μόνο το άπαχο (ψητό)",
+      "aliases": [
+        "roast lamb",
+        "cooked lamb",
+        "αρνί ψητό",
+        "αρνί στον φούρνο"
+      ]
+    },
+    "group": "protein",
+    "prep": "roasted",
+    "pair": "lamb-leg-lean-raw",
+    "densityGPerMl": null,
+    "notes": "Lean meat only (no bone, visible fat removed), US choice grade. Weigh after cooking."
+  },
+  {
+    "key": "bison-raw",
+    "fdcId": 175293,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Bison, ground, grass-fed, raw",
+    "names": {
+      "en": "Ground bison (raw)",
+      "el": "Κιμάς βίσονα (ωμός)",
+      "aliases": [
+        "bison",
+        "ground bison",
+        "βίσονας",
+        "κιμάς βίσονα"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "bison-cooked",
+    "densityGPerMl": null,
+    "notes": "Grass-fed ground bison (about 7% fat raw). Lean bison steak cuts are leaner (FDC 173851: 109 kcal, 1.8 g fat)."
+  },
+  {
+    "key": "bison-cooked",
+    "fdcId": 173847,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Bison, ground, grass-fed, cooked",
+    "names": {
+      "en": "Ground bison (cooked)",
+      "el": "Κιμάς βίσονα (μαγειρεμένος)",
+      "aliases": [
+        "cooked bison",
+        "bison burger",
+        "βίσονας μαγειρεμένος",
+        "μπιφτέκι βίσονα"
+      ]
+    },
+    "group": "protein",
+    "prep": "pan-cooked",
+    "pair": "bison-raw",
+    "densityGPerMl": null,
+    "notes": "Grass-fed ground bison, cooked (FDC does not state the method). Weigh after cooking."
+  },
+  {
+    "key": "pork-tenderloin-raw",
+    "fdcId": 168249,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Pork, fresh, loin, tenderloin, separable lean only, raw",
+    "names": {
+      "en": "Pork tenderloin, lean only (raw)",
+      "el": "Χοιρινό ψαρονέφρι, μόνο το άπαχο (ωμό)",
+      "aliases": [
+        "pork tenderloin",
+        "pork fillet",
+        "ψαρονέφρι",
+        "χοιρινό φιλέτο"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "pork-tenderloin-roasted",
+    "portions": [
+      {
+        "label": "1 whole tenderloin",
+        "g": 505
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Lean only, visible fat trimmed, no added solution."
+  },
+  {
+    "key": "pork-tenderloin-roasted",
+    "fdcId": 168250,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Pork, fresh, loin, tenderloin, separable lean only, cooked, roasted",
+    "names": {
+      "en": "Pork tenderloin, lean only (roasted)",
+      "el": "Χοιρινό ψαρονέφρι, μόνο το άπαχο (ψητό)",
+      "aliases": [
+        "roast pork tenderloin",
+        "cooked pork",
+        "ψαρονέφρι ψητό",
+        "χοιρινό ψητό"
+      ]
+    },
+    "group": "protein",
+    "prep": "roasted",
+    "pair": "pork-tenderloin-raw",
+    "portions": [
+      {
+        "label": "1 whole tenderloin",
+        "g": 402
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Lean only, no added solution. Weigh after cooking."
+  },
+  {
+    "key": "cod-raw",
+    "fdcId": 171955,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Fish, cod, Atlantic, raw",
+    "names": {
+      "en": "Atlantic cod (raw)",
+      "el": "Μπακαλιάρος Ατλαντικού (ωμός)",
+      "aliases": [
+        "cod",
+        "cod fillet",
+        "μπακαλιάρος",
+        "φιλέτο μπακαλιάρου"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "cod-cooked",
+    "portions": [
+      {
+        "label": "1 fillet",
+        "g": 231
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Fresh or frozen fillet. Not salt cod (μπακαλιάρος παστός), which is very different."
+  },
+  {
+    "key": "cod-cooked",
+    "fdcId": 171956,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Fish, cod, Atlantic, cooked, dry heat",
+    "names": {
+      "en": "Atlantic cod (baked)",
+      "el": "Μπακαλιάρος Ατλαντικού (ψητός)",
+      "aliases": [
+        "cooked cod",
+        "baked cod",
+        "μπακαλιάρος ψητός",
+        "μπακαλιάρος φούρνου"
+      ]
+    },
+    "group": "protein",
+    "prep": "baked",
+    "pair": "cod-raw",
+    "portions": [
+      {
+        "label": "1 fillet",
+        "g": 180
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Cooked by dry heat (baked/grilled) without added fat. Weigh after cooking."
+  },
+  {
+    "key": "shrimp-raw",
+    "fdcId": 175179,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Crustaceans, shrimp, raw",
+    "names": {
+      "en": "Shrimp (raw)",
+      "el": "Γαρίδες (ωμές)",
+      "aliases": [
+        "shrimp",
+        "prawns",
+        "γαρίδες",
+        "γαρίδα"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "shrimp-cooked",
+    "densityGPerMl": null,
+    "notes": "Shrimp without water-retaining additives. Frozen shrimp treated with phosphates has less protein per 100 g (FDC 174210: 13.6 g)."
+  },
+  {
+    "key": "shrimp-cooked",
+    "fdcId": 175180,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Crustaceans, shrimp, cooked",
+    "names": {
+      "en": "Shrimp (cooked)",
+      "el": "Γαρίδες (μαγειρεμένες)",
+      "aliases": [
+        "cooked shrimp",
+        "boiled shrimp",
+        "γαρίδες βραστές",
+        "γαρίδες μαγειρεμένες"
+      ]
+    },
+    "group": "protein",
+    "prep": "boiled",
+    "pair": "shrimp-raw",
+    "densityGPerMl": null,
+    "notes": "Cooked without added fat (FDC does not state the method); no water-retaining additives. Weigh after cooking."
+  },
+  {
+    "key": "tuna-canned-water-drained",
+    "fdcId": 173709,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Fish, tuna, light, canned in water, drained solids (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Light tuna in water (drained)",
+      "el": "Τόνος σε νερό (στραγγισμένος)",
+      "aliases": [
+        "tuna",
+        "canned tuna",
+        "tuna in water",
+        "τόνος",
+        "τόνος σε νερό"
+      ]
+    },
+    "group": "protein",
+    "prep": "drained",
+    "densityGPerMl": null,
+    "notes": "Drained solids only; regular (salted) canning. Use the drained weight printed on the can."
+  },
+  {
+    "key": "salmon-raw",
+    "fdcId": 175167,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Fish, salmon, Atlantic, farmed, raw",
+    "names": {
+      "en": "Atlantic salmon, farmed (raw)",
+      "el": "Σολομός Ατλαντικού ιχθυοκαλλιέργειας (ωμός)",
+      "aliases": [
+        "salmon",
+        "salmon fillet",
+        "σολομός",
+        "φιλέτο σολομού"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "salmon-cooked",
+    "portions": [
+      {
+        "label": "1/2 fillet",
+        "g": 198
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Farmed salmon. Wild Atlantic salmon is much leaner (FDC 173686: 142 kcal, 6.3 g fat)."
+  },
+  {
+    "key": "salmon-cooked",
+    "fdcId": 175168,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Fish, salmon, Atlantic, farmed, cooked, dry heat",
+    "names": {
+      "en": "Atlantic salmon, farmed (baked)",
+      "el": "Σολομός Ατλαντικού ιχθυοκαλλιέργειας (ψητός)",
+      "aliases": [
+        "cooked salmon",
+        "baked salmon",
+        "σολομός ψητός",
+        "σολομός φούρνου"
+      ]
+    },
+    "group": "protein",
+    "prep": "baked",
+    "pair": "salmon-raw",
+    "portions": [
+      {
+        "label": "1/2 fillet",
+        "g": 178
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Cooked by dry heat (baked/grilled) without added fat. Weigh after cooking."
+  },
+  {
+    "key": "beef-liver-raw",
+    "fdcId": 169451,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, variety meats and by-products, liver, raw",
+    "names": {
+      "en": "Beef liver (raw)",
+      "el": "Συκώτι μοσχαρίσιο (ωμό)",
+      "aliases": [
+        "liver",
+        "beef liver",
+        "συκώτι",
+        "συκώτι μοσχαρίσιο"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "beef-liver-cooked",
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "beef-liver-cooked",
+    "fdcId": 168627,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beef, variety meats and by-products, liver, cooked, pan-fried",
+    "names": {
+      "en": "Beef liver (pan-fried)",
+      "el": "Συκώτι μοσχαρίσιο (τηγανητό)",
+      "aliases": [
+        "cooked liver",
+        "fried liver",
+        "συκώτι τηγανητό",
+        "συκωτάκια"
+      ]
+    },
+    "group": "protein",
+    "prep": "pan-cooked",
+    "pair": "beef-liver-raw",
+    "portions": [
+      {
+        "label": "1 slice",
+        "g": 81
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Pan-fried. Weigh after cooking; any oil you use is not included."
+  },
+  {
+    "key": "egg-whole-raw",
+    "fdcId": 171287,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Egg, whole, raw, fresh",
+    "names": {
+      "en": "Egg, whole (raw)",
+      "el": "Αυγό ολόκληρο (ωμό)",
+      "aliases": [
+        "egg",
+        "eggs",
+        "αυγό",
+        "αυγά"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "pair": "egg-whole-boiled",
+    "portions": [
+      {
+        "label": "1 large",
+        "g": 50
+      },
+      {
+        "label": "1 medium",
+        "g": 44
+      },
+      {
+        "label": "1 extra large",
+        "g": 56
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Weights are without the shell."
+  },
+  {
+    "key": "egg-whole-boiled",
+    "fdcId": 173424,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Egg, whole, cooked, hard-boiled",
+    "names": {
+      "en": "Egg, whole (hard-boiled)",
+      "el": "Αυγό ολόκληρο (βραστό σφιχτό)",
+      "aliases": [
+        "boiled egg",
+        "hard boiled egg",
+        "βραστό αυγό",
+        "αυγό σφιχτό"
+      ]
+    },
+    "group": "protein",
+    "prep": "boiled",
+    "pair": "egg-whole-raw",
+    "portions": [
+      {
+        "label": "1 large",
+        "g": 50
+      },
+      {
+        "label": "1 cup, chopped",
+        "g": 136
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Weights are without the shell."
+  },
+  {
+    "key": "egg-white-raw",
+    "fdcId": 172183,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Egg, white, raw, fresh",
+    "names": {
+      "en": "Egg white (raw)",
+      "el": "Ασπράδι αυγού (ωμό)",
+      "aliases": [
+        "egg white",
+        "egg whites",
+        "ασπράδι",
+        "ασπράδια αυγού"
+      ]
+    },
+    "group": "protein",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 large egg white",
+        "g": 33
+      },
+      {
+        "label": "1 cup",
+        "g": 243
+      }
+    ],
+    "densityGPerMl": 1.027,
+    "notes": "Fresh egg white; carton liquid egg whites are similar. Density from FDC portion 1 cup (236.6 ml) = 243 g."
+  },
+  {
+    "key": "milk-whole",
+    "fdcId": 171265,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Milk, whole, 3.25% milkfat, with added vitamin D",
+    "names": {
+      "en": "Milk, whole 3.25%",
+      "el": "Γάλα πλήρες 3,25%",
+      "aliases": [
+        "whole milk",
+        "full fat milk",
+        "γάλα πλήρες",
+        "φρέσκο γάλα"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 244
+      },
+      {
+        "label": "1 tbsp",
+        "g": 15
+      }
+    ],
+    "densityGPerMl": 1.031,
+    "notes": "US milk with added vitamin D; Greek milk is often not fortified. Density from FDC portion 1 cup (236.6 ml) = 244 g."
+  },
+  {
+    "key": "milk-2",
+    "fdcId": 171267,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Milk, reduced fat, fluid, 2% milkfat, with added vitamin A and vitamin D",
+    "names": {
+      "en": "Milk, reduced fat 2%",
+      "el": "Γάλα 2% λιπαρά",
+      "aliases": [
+        "2% milk",
+        "reduced fat milk",
+        "γάλα 2%",
+        "ημιαποβουτυρωμένο γάλα"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 244
+      }
+    ],
+    "densityGPerMl": 1.031,
+    "notes": "US milk with added vitamins A and D. Greek \"light\" milk is usually 1.5% fat (between this and 1%). Density from FDC portion 1 cup (236.6 ml) = 244 g."
+  },
+  {
+    "key": "milk-1",
+    "fdcId": 170872,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D",
+    "names": {
+      "en": "Milk, low fat 1%",
+      "el": "Γάλα 1% λιπαρά",
+      "aliases": [
+        "1% milk",
+        "low fat milk",
+        "γάλα 1%",
+        "ελαφρύ γάλα"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 244
+      }
+    ],
+    "densityGPerMl": 1.031,
+    "notes": "US milk with added vitamins A and D. Greek \"light\" milk is usually 1.5% fat (between 1% and 2%). Density from FDC portion 1 cup (236.6 ml) = 244 g."
+  },
+  {
+    "key": "kefir-plain",
+    "fdcId": 170904,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Kefir, lowfat, plain, LIFEWAY",
+    "names": {
+      "en": "Kefir, plain low fat",
+      "el": "Κεφίρ σκέτο, χαμηλά λιπαρά",
+      "aliases": [
+        "kefir",
+        "plain kefir",
+        "κεφίρ",
+        "κεφίρ σκέτο"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 243
+      }
+    ],
+    "densityGPerMl": 1.027,
+    "notes": "Plain, unsweetened. Values are for Lifeway low-fat plain kefir (USDA has no generic plain kefir). Density from FDC portion 1 cup (236.6 ml) = 243 g."
+  },
+  {
+    "key": "greek-yogurt-nonfat",
+    "fdcId": 170894,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Yogurt, Greek, plain, nonfat (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Greek yogurt, plain 0%",
+      "el": "Γιαούρτι στραγγιστό 0%",
+      "aliases": [
+        "greek yogurt 0%",
+        "nonfat greek yogurt",
+        "γιαούρτι 0%",
+        "στραγγιστό γιαούρτι"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 container",
+        "g": 170
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Plain, unsweetened, nonfat strained yogurt."
+  },
+  {
+    "key": "greek-yogurt-lowfat",
+    "fdcId": 170903,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Yogurt, Greek, plain, lowfat",
+    "names": {
+      "en": "Greek yogurt, plain 2%",
+      "el": "Γιαούρτι στραγγιστό 2%",
+      "aliases": [
+        "greek yogurt 2%",
+        "low fat greek yogurt",
+        "γιαούρτι 2%",
+        "στραγγιστό γιαούρτι"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 container (7 oz)",
+        "g": 200
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Plain, unsweetened, low-fat (about 2% fat) strained yogurt."
+  },
+  {
+    "key": "greek-yogurt-whole",
+    "fdcId": 171304,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Yogurt, Greek, plain, whole milk",
+    "names": {
+      "en": "Greek yogurt, plain, whole milk 5%",
+      "el": "Γιαούρτι στραγγιστό πλήρες 5%",
+      "aliases": [
+        "greek yogurt",
+        "full fat greek yogurt",
+        "γιαούρτι πλήρες",
+        "στραγγιστό γιαούρτι"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "densityGPerMl": null,
+    "notes": "Plain, unsweetened, whole-milk strained yogurt (5 g fat per 100 g). 10% yogurts are richer."
+  },
+  {
+    "key": "cottage-cheese-2",
+    "fdcId": 172182,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cheese, cottage, lowfat, 2% milkfat",
+    "names": {
+      "en": "Cottage cheese, 2% fat",
+      "el": "Τυρί cottage 2% λιπαρά",
+      "aliases": [
+        "cottage cheese",
+        "cottage",
+        "τυρί cottage",
+        "κότατζ"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup (not packed)",
+        "g": 226
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "feta",
+    "fdcId": 173420,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cheese, feta",
+    "names": {
+      "en": "Feta cheese",
+      "el": "Φέτα",
+      "aliases": [
+        "feta",
+        "feta cheese",
+        "φέτα",
+        "τυρί φέτα"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup, crumbled",
+        "g": 150
+      },
+      {
+        "label": "1 wedge (1.33 oz)",
+        "g": 38
+      },
+      {
+        "label": "1 cubic inch",
+        "g": 17
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "USDA feta (14 g protein, 21.5 g fat, 3.9 g carbs per 100 g). Greek PDO feta labels are similar but usually show under 1 g carbs."
+  },
+  {
+    "key": "mozzarella-part-skim",
+    "fdcId": 170847,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cheese, mozzarella, part skim milk",
+    "names": {
+      "en": "Mozzarella, part-skim",
+      "el": "Μοτσαρέλα με μειωμένα λιπαρά",
+      "aliases": [
+        "mozzarella",
+        "part skim mozzarella",
+        "μοτσαρέλα",
+        "μοτσαρέλα light"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "densityGPerMl": null,
+    "notes": "Regular part-skim mozzarella. Low-moisture part-skim (block/shredded pizza cheese, FDC 171244) is richer: 295 kcal, 19.8 g fat per 100 g."
+  },
+  {
+    "key": "butter",
+    "fdcId": 173410,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Butter, salted",
+    "names": {
+      "en": "Butter, salted",
+      "el": "Βούτυρο αλατισμένο",
+      "aliases": [
+        "butter",
+        "salted butter",
+        "βούτυρο",
+        "βούτυρο αλατισμένο"
+      ]
+    },
+    "group": "dairy",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 14.2
+      },
+      {
+        "label": "1 pat (1\" sq, 1/3\" high)",
+        "g": 5
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Salted butter; unsalted (FDC 173430) has the same macros."
+  },
+  {
+    "key": "rice-white-raw",
+    "fdcId": 169756,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice, white, long-grain, regular, raw, unenriched",
+    "names": {
+      "en": "White rice, long-grain (dry)",
+      "el": "Ρύζι λευκό μακρύκοκκο (άβραστο)",
+      "aliases": [
+        "long grain rice",
+        "jasmine",
+        "basmati",
+        "ρύζι μακρύκοκκο",
+        "μπασμάτι"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "pair": "rice-white-cooked",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 185
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Generic long-grain values; jasmine/basmati are close but not identical. Unenriched USDA record: EU/Greek rice and pasta are not fortified, so this avoids overstating iron and B vitamins."
+  },
+  {
+    "key": "rice-white-cooked",
+    "fdcId": 169757,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice, white, long-grain, regular, unenriched, cooked without salt",
+    "names": {
+      "en": "White rice, long-grain (cooked)",
+      "el": "Ρύζι λευκό μακρύκοκκο (βρασμένο)",
+      "aliases": [
+        "cooked rice",
+        "boiled rice",
+        "jasmine",
+        "basmati",
+        "βρασμένο ρύζι"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "rice-white-raw",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 158
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Cooked in water without salt. Generic long-grain values; jasmine/basmati are close but not identical. Unenriched USDA record: EU/Greek rice and pasta are not fortified, so this avoids overstating iron and B vitamins."
+  },
+  {
+    "key": "rice-short-raw",
+    "fdcId": 168931,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice, white, short-grain, raw, unenriched",
+    "names": {
+      "en": "White rice, short-grain (dry)",
+      "el": "Ρύζι λευκό στρογγυλόκοκκο (άβραστο)",
+      "aliases": [
+        "sushi rice",
+        "short grain rice",
+        "ρύζι για σούσι",
+        "γλασέ"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "pair": "rice-short-cooked",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 200
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Short-grain (sushi-type) rice. Unenriched USDA record: EU/Greek rice and pasta are not fortified, so this avoids overstating iron and B vitamins."
+  },
+  {
+    "key": "rice-short-cooked",
+    "fdcId": 168932,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice, white, short-grain, cooked, unenriched",
+    "names": {
+      "en": "White rice, short-grain (cooked)",
+      "el": "Ρύζι λευκό στρογγυλόκοκκο (βρασμένο)",
+      "aliases": [
+        "cooked sushi rice",
+        "short grain rice cooked",
+        "ρύζι σούσι βρασμένο",
+        "γλασέ βρασμένο"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "rice-short-raw",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 205
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Plain cooked rice without salt; seasoned sushi rice (vinegar, sugar, salt) is not included. Unenriched USDA record: EU/Greek rice and pasta are not fortified, so this avoids overstating iron and B vitamins."
+  },
+  {
+    "key": "pasta-dry",
+    "fdcId": 168927,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Pasta, dry, unenriched",
+    "names": {
+      "en": "Pasta (dry)",
+      "el": "Ζυμαρικά (άβραστα)",
+      "aliases": [
+        "spaghetti",
+        "penne",
+        "macaroni",
+        "μακαρόνια",
+        "πένες"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "pair": "pasta-cooked",
+    "portions": [
+      {
+        "label": "1 cup penne",
+        "g": 95
+      },
+      {
+        "label": "1 cup elbows",
+        "g": 122
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Plain durum wheat pasta. Unenriched USDA record: EU/Greek rice and pasta are not fortified, so this avoids overstating iron and B vitamins."
+  },
+  {
+    "key": "pasta-cooked",
+    "fdcId": 168928,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Pasta, cooked, unenriched, without added salt",
+    "names": {
+      "en": "Pasta (cooked)",
+      "el": "Ζυμαρικά (βρασμένα)",
+      "aliases": [
+        "cooked pasta",
+        "spaghetti",
+        "penne",
+        "μακαρόνια βρασμένα",
+        "σπαγγέτι"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "pasta-dry",
+    "portions": [
+      {
+        "label": "1 cup spaghetti (not packed)",
+        "g": 124
+      },
+      {
+        "label": "1 cup penne",
+        "g": 107
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Boiled without salt. Unenriched USDA record: EU/Greek rice and pasta are not fortified, so this avoids overstating iron and B vitamins."
+  },
+  {
+    "key": "rice-noodles-dry",
+    "fdcId": 169742,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice noodles, dry",
+    "names": {
+      "en": "Rice noodles (dry)",
+      "el": "Νούντλς ρυζιού (άβραστα)",
+      "aliases": [
+        "rice noodles",
+        "rice vermicelli",
+        "pad thai noodles",
+        "νούντλς ρυζιού"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "pair": "rice-noodles-cooked",
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "rice-noodles-cooked",
+    "fdcId": 168914,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice noodles, cooked",
+    "names": {
+      "en": "Rice noodles (cooked)",
+      "el": "Νούντλς ρυζιού (βρασμένα)",
+      "aliases": [
+        "cooked rice noodles",
+        "rice vermicelli",
+        "νούντλς ρυζιού βρασμένα",
+        "νούντλς"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "rice-noodles-dry",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 176
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "potato-raw",
+    "fdcId": 170028,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Potatoes, white, flesh and skin, raw",
+    "names": {
+      "en": "Potato, white (raw)",
+      "el": "Πατάτα (ωμή)",
+      "aliases": [
+        "potato",
+        "potatoes",
+        "πατάτα",
+        "πατάτες"
+      ]
+    },
+    "group": "starch",
+    "prep": "raw",
+    "pair": "potato-boiled",
+    "portions": [
+      {
+        "label": "1 small",
+        "g": 92
+      },
+      {
+        "label": "1 medium",
+        "g": 213
+      },
+      {
+        "label": "1 large",
+        "g": 369
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "USDA \"white\" potato type, weighed with skin (peeled raw potato is very similar). The all-varieties average (FDC 170026) is a bit higher: 77 kcal, 17.5 g carbs per 100 g."
+  },
+  {
+    "key": "potato-boiled",
+    "fdcId": 170440,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Potatoes, boiled, cooked without skin, flesh, without salt",
+    "names": {
+      "en": "Potato, peeled (boiled)",
+      "el": "Πατάτα χωρίς φλούδα (βραστή)",
+      "aliases": [
+        "boiled potato",
+        "boiled potatoes",
+        "βραστή πατάτα",
+        "πατάτες βραστές"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "potato-raw",
+    "portions": [
+      {
+        "label": "1 small",
+        "g": 125
+      },
+      {
+        "label": "1 medium",
+        "g": 167
+      },
+      {
+        "label": "1 large",
+        "g": 300
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Peeled, boiled without salt (flesh only)."
+  },
+  {
+    "key": "potato-russet-raw",
+    "fdcId": 170027,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Potatoes, russet, flesh and skin, raw (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Potato, russet (raw)",
+      "el": "Πατάτα russet (ωμή)",
+      "aliases": [
+        "russet potato",
+        "baking potato",
+        "idaho potato",
+        "πατάτα για ψήσιμο"
+      ]
+    },
+    "group": "starch",
+    "prep": "raw",
+    "pair": "potato-baked",
+    "portions": [
+      {
+        "label": "1 small",
+        "g": 170
+      },
+      {
+        "label": "1 medium",
+        "g": 213
+      },
+      {
+        "label": "1 large",
+        "g": 369
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Flesh and skin."
+  },
+  {
+    "key": "potato-baked",
+    "fdcId": 170033,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Potatoes, baked, flesh, without salt",
+    "names": {
+      "en": "Potato, flesh only (baked)",
+      "el": "Πατάτα χωρίς φλούδα (ψητή στον φούρνο)",
+      "aliases": [
+        "baked potato",
+        "jacket potato",
+        "πατάτα φούρνου",
+        "ψητή πατάτα"
+      ]
+    },
+    "group": "starch",
+    "prep": "baked",
+    "pair": "potato-russet-raw",
+    "portions": [
+      {
+        "label": "1 potato (2-1/3\" x 4-3/4\")",
+        "g": 156
+      },
+      {
+        "label": "1/2 cup",
+        "g": 61
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Baked in skin, flesh only (skin not eaten), without salt."
+  },
+  {
+    "key": "sweet-potato-raw",
+    "fdcId": 168482,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Sweet potato, raw, unprepared (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Sweet potato (raw)",
+      "el": "Γλυκοπατάτα (ωμή)",
+      "aliases": [
+        "sweet potato",
+        "yam",
+        "γλυκοπατάτα",
+        "γλυκοπατάτες"
+      ]
+    },
+    "group": "starch",
+    "prep": "raw",
+    "pair": "sweet-potato-baked",
+    "portions": [
+      {
+        "label": "1 sweet potato (5\" long)",
+        "g": 130
+      },
+      {
+        "label": "1 cup, cubes",
+        "g": 133
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "sweet-potato-boiled",
+    "fdcId": 168484,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Sweet potato, cooked, boiled, without skin",
+    "names": {
+      "en": "Sweet potato, peeled (boiled)",
+      "el": "Γλυκοπατάτα χωρίς φλούδα (βραστή)",
+      "aliases": [
+        "boiled sweet potato",
+        "mashed sweet potato",
+        "γλυκοπατάτα βραστή",
+        "πουρές γλυκοπατάτας"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "sweet-potato-raw",
+    "portions": [
+      {
+        "label": "1 medium",
+        "g": 151
+      },
+      {
+        "label": "1 cup, mashed",
+        "g": 328
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Boiled without skin, without salt."
+  },
+  {
+    "key": "sweet-potato-baked",
+    "fdcId": 168483,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Sweet potato, cooked, baked in skin, flesh, without salt",
+    "names": {
+      "en": "Sweet potato, flesh only (baked)",
+      "el": "Γλυκοπατάτα χωρίς φλούδα (ψητή στον φούρνο)",
+      "aliases": [
+        "baked sweet potato",
+        "roasted sweet potato",
+        "γλυκοπατάτα φούρνου",
+        "ψητή γλυκοπατάτα"
+      ]
+    },
+    "group": "starch",
+    "prep": "baked",
+    "pair": "sweet-potato-raw",
+    "portions": [
+      {
+        "label": "1 medium (2\" dia, 5\" long, raw)",
+        "g": 114
+      },
+      {
+        "label": "1 large",
+        "g": 180
+      },
+      {
+        "label": "1 cup",
+        "g": 200
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Baked in skin, flesh only, without salt."
+  },
+  {
+    "key": "oats-dry",
+    "fdcId": 173904,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cereals, oats, regular and quick, not fortified, dry",
+    "names": {
+      "en": "Oats, rolled (dry)",
+      "el": "Νιφάδες βρώμης (άβραστες)",
+      "aliases": [
+        "oats",
+        "oatmeal",
+        "rolled oats",
+        "βρώμη",
+        "κουάκερ"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 81
+      },
+      {
+        "label": "1/3 cup",
+        "g": 27
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Regular or quick rolled oats, not fortified."
+  },
+  {
+    "key": "cream-of-rice-dry",
+    "fdcId": 173900,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cereals, CREAM OF RICE, dry",
+    "names": {
+      "en": "Cream of Rice (dry)",
+      "el": "Κρέμα ρυζιού (άβραστη)",
+      "aliases": [
+        "cream of rice",
+        "rice cereal",
+        "κρέμα ρυζιού"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "pair": "cream-of-rice-cooked",
+    "portions": [
+      {
+        "label": "1/4 cup (1 serving)",
+        "g": 45
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "cream-of-rice-cooked",
+    "fdcId": 173914,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cereals, CREAM OF RICE, cooked with water, with salt",
+    "names": {
+      "en": "Cream of Rice (cooked with water)",
+      "el": "Κρέμα ρυζιού (μαγειρεμένη με νερό)",
+      "aliases": [
+        "cooked cream of rice",
+        "rice porridge",
+        "κρέμα ρυζιού μαγειρεμένη",
+        "χυλός ρυζιού"
+      ]
+    },
+    "group": "starch",
+    "prep": "boiled",
+    "pair": "cream-of-rice-dry",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 244
+      },
+      {
+        "label": "3/4 cup",
+        "g": 183
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "USDA only has cream of rice cooked with salt (173 mg sodium per 100 g); cooked without salt, sodium is near zero and nothing else changes. These cooked values are more watery (52 kcal per 100 g) than USDA's own survey recipe of 45 g dry + 240 g water (69 kcal per 100 g), so logging the dry weight (cream-of-rice-dry) is more accurate."
+  },
+  {
+    "key": "rice-flour",
+    "fdcId": 169714,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Rice flour, white, unenriched",
+    "names": {
+      "en": "Rice flour, white",
+      "el": "Αλεύρι ρυζιού λευκό",
+      "aliases": [
+        "rice flour",
+        "αλεύρι ρυζιού",
+        "ρυζάλευρο"
+      ]
+    },
+    "group": "starch",
+    "prep": "dry",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 158
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "White rice flour, unenriched."
+  },
+  {
+    "key": "bread-sourdough",
+    "fdcId": 172675,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Bread, french or vienna (includes sourdough)",
+    "names": {
+      "en": "Bread, sourdough or French",
+      "el": "Ψωμί με προζύμι ή γαλλικό (μπαγκέτα)",
+      "aliases": [
+        "sourdough",
+        "french bread",
+        "baguette",
+        "ψωμί με προζύμι",
+        "μπαγκέτα"
+      ]
+    },
+    "group": "starch",
+    "prep": "as-sold",
+    "densityGPerMl": null,
+    "notes": "White French/Vienna bread, includes sourdough. Weigh your slice (FDC's only slice weight, 139 g, is not a typical slice)."
+  },
+  {
+    "key": "rice-cakes",
+    "fdcId": 170250,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Snacks, rice cakes, brown rice, plain, unsalted",
+    "names": {
+      "en": "Rice cakes, brown rice, plain",
+      "el": "Ρυζογκοφρέτες ολικής άλεσης, σκέτες",
+      "aliases": [
+        "rice cakes",
+        "rice cake",
+        "ρυζογκοφρέτες",
+        "γκοφρέτες ρυζιού"
+      ]
+    },
+    "group": "starch",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cake",
+        "g": 9
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Plain, unsalted brown rice cakes."
+  },
+  {
+    "key": "banana",
+    "fdcId": 173944,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Bananas, raw",
+    "names": {
+      "en": "Banana",
+      "el": "Μπανάνα",
+      "aliases": [
+        "banana",
+        "bananas",
+        "μπανάνα",
+        "μπανάνες"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 small",
+        "g": 101
+      },
+      {
+        "label": "1 medium",
+        "g": 118
+      },
+      {
+        "label": "1 large",
+        "g": 136
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Weights are peeled."
+  },
+  {
+    "key": "orange",
+    "fdcId": 169097,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Oranges, raw, all commercial varieties",
+    "names": {
+      "en": "Orange",
+      "el": "Πορτοκάλι",
+      "aliases": [
+        "orange",
+        "oranges",
+        "πορτοκάλι",
+        "πορτοκάλια"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 small (2-3/8\" dia)",
+        "g": 96
+      },
+      {
+        "label": "1 orange (2-5/8\" dia)",
+        "g": 131
+      },
+      {
+        "label": "1 large (3-1/16\" dia)",
+        "g": 184
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "All commercial varieties; weights are peeled. FDC has no \"medium\"; the 2-5/8\" fruit is the standard size."
+  },
+  {
+    "key": "orange-juice",
+    "fdcId": 169098,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Orange juice, raw (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Orange juice, fresh",
+      "el": "Χυμός πορτοκάλι φρεσκοστυμμένος",
+      "aliases": [
+        "orange juice",
+        "fresh orange juice",
+        "χυμός πορτοκάλι",
+        "φυσικός χυμός"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 248
+      },
+      {
+        "label": "juice of 1 orange",
+        "g": 86
+      }
+    ],
+    "densityGPerMl": 1.048,
+    "notes": "Freshly squeezed (raw) juice. Density from FDC portion 1 cup (236.6 ml) = 248 g."
+  },
+  {
+    "key": "apple",
+    "fdcId": 171688,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Apples, raw, with skin (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Apple, with skin",
+      "el": "Μήλο με τη φλούδα",
+      "aliases": [
+        "apple",
+        "apples",
+        "μήλο",
+        "μήλα"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 small (2-3/4\" dia)",
+        "g": 149
+      },
+      {
+        "label": "1 medium (3\" dia)",
+        "g": 182
+      },
+      {
+        "label": "1 large (3-1/4\" dia)",
+        "g": 223
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Weights are without the core."
+  },
+  {
+    "key": "strawberries",
+    "fdcId": 167762,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Strawberries, raw",
+    "names": {
+      "en": "Strawberries",
+      "el": "Φράουλες",
+      "aliases": [
+        "strawberry",
+        "strawberries",
+        "φράουλα",
+        "φράουλες"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup, whole",
+        "g": 144
+      },
+      {
+        "label": "1 medium (1-1/4\" dia)",
+        "g": 12
+      },
+      {
+        "label": "1 large (1-3/8\" dia)",
+        "g": 18
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "blueberries",
+    "fdcId": 171711,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Blueberries, raw",
+    "names": {
+      "en": "Blueberries",
+      "el": "Μύρτιλα",
+      "aliases": [
+        "blueberry",
+        "blueberries",
+        "μύρτιλο",
+        "μύρτιλα"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 148
+      },
+      {
+        "label": "50 berries",
+        "g": 68
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "raspberries",
+    "fdcId": 167755,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Raspberries, raw",
+    "names": {
+      "en": "Raspberries",
+      "el": "Σμέουρα",
+      "aliases": [
+        "raspberry",
+        "raspberries",
+        "σμέουρο",
+        "σμέουρα"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 123
+      },
+      {
+        "label": "10 raspberries",
+        "g": 19
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "grapes",
+    "fdcId": 174683,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Grapes, red or green (European type, such as Thompson seedless), raw",
+    "names": {
+      "en": "Grapes, red or green",
+      "el": "Σταφύλια λευκά ή κόκκινα",
+      "aliases": [
+        "grapes",
+        "grape",
+        "σταφύλι",
+        "σταφύλια",
+        "σουλτανίνα"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 151
+      },
+      {
+        "label": "10 grapes",
+        "g": 49
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "European-type table grapes (e.g. Thompson seedless / σουλτανίνα)."
+  },
+  {
+    "key": "watermelon",
+    "fdcId": 167765,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Watermelon, raw",
+    "names": {
+      "en": "Watermelon",
+      "el": "Καρπούζι",
+      "aliases": [
+        "watermelon",
+        "καρπούζι"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup, diced",
+        "g": 152
+      },
+      {
+        "label": "1 wedge (about 1/16 of a melon)",
+        "g": 286
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Flesh only (no rind)."
+  },
+  {
+    "key": "dates-medjool",
+    "fdcId": 168191,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Dates, medjool",
+    "names": {
+      "en": "Medjool dates",
+      "el": "Χουρμάδες Medjool",
+      "aliases": [
+        "dates",
+        "medjool",
+        "χουρμάδες",
+        "χουρμάς"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 date (pitted)",
+        "g": 24
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Weight without the pit."
+  },
+  {
+    "key": "mango",
+    "fdcId": 169910,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Mangos, raw",
+    "names": {
+      "en": "Mango",
+      "el": "Μάνγκο",
+      "aliases": [
+        "mango",
+        "mangoes",
+        "μάνγκο"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup, pieces",
+        "g": 165
+      },
+      {
+        "label": "1 mango (flesh only)",
+        "g": 336
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Flesh only (no skin or stone)."
+  },
+  {
+    "key": "coconut-water",
+    "fdcId": 174831,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Beverages, Coconut water, ready-to-drink, unsweetened",
+    "names": {
+      "en": "Coconut water, unsweetened",
+      "el": "Νερό καρύδας χωρίς ζάχαρη",
+      "aliases": [
+        "coconut water",
+        "νερό καρύδας"
+      ]
+    },
+    "group": "fruit",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 245
+      }
+    ],
+    "densityGPerMl": 1.036,
+    "notes": "Packaged ready-to-drink, unsweetened. Water straight from the coconut (FDC 170174) is similar (19 kcal per 100 g). Density from FDC portion 1 cup (236.6 ml) = 245 g."
+  },
+  {
+    "key": "spinach-raw",
+    "fdcId": 168462,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Spinach, raw",
+    "names": {
+      "en": "Spinach (raw)",
+      "el": "Σπανάκι (ωμό)",
+      "aliases": [
+        "spinach",
+        "baby spinach",
+        "σπανάκι",
+        "σπανάκι baby"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 cup",
+        "g": 30
+      },
+      {
+        "label": "1 leaf",
+        "g": 10
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "broccoli-raw",
+    "fdcId": 170379,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Broccoli, raw",
+    "names": {
+      "en": "Broccoli (raw)",
+      "el": "Μπρόκολο (ωμό)",
+      "aliases": [
+        "broccoli",
+        "μπρόκολο",
+        "μπρόκολα"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "pair": "broccoli-cooked",
+    "portions": [
+      {
+        "label": "1 cup, chopped",
+        "g": 91
+      },
+      {
+        "label": "1 stalk",
+        "g": 151
+      },
+      {
+        "label": "1 spear (about 5\" long)",
+        "g": 31
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "broccoli-cooked",
+    "fdcId": 169967,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Broccoli, cooked, boiled, drained, without salt",
+    "names": {
+      "en": "Broccoli (boiled, drained)",
+      "el": "Μπρόκολο (βραστό, στραγγισμένο)",
+      "aliases": [
+        "cooked broccoli",
+        "steamed broccoli",
+        "μπρόκολο βραστό",
+        "μπρόκολο"
+      ]
+    },
+    "group": "veg",
+    "prep": "boiled",
+    "pair": "broccoli-raw",
+    "portions": [
+      {
+        "label": "1/2 cup, chopped",
+        "g": 78
+      },
+      {
+        "label": "1 spear (about 5\" long)",
+        "g": 37
+      },
+      {
+        "label": "1 medium stalk (7-1/2\" to 8\" long)",
+        "g": 180
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Boiled, drained, without salt."
+  },
+  {
+    "key": "pepper-red-raw",
+    "fdcId": 170108,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Peppers, sweet, red, raw",
+    "names": {
+      "en": "Red bell pepper (raw)",
+      "el": "Πιπεριά κόκκινη (ωμή)",
+      "aliases": [
+        "red pepper",
+        "bell pepper",
+        "πιπεριά",
+        "κόκκινη πιπεριά"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 medium",
+        "g": 119
+      },
+      {
+        "label": "1 large",
+        "g": 164
+      },
+      {
+        "label": "1 cup, chopped",
+        "g": 149
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Sweet red bell pepper."
+  },
+  {
+    "key": "mushrooms-white-raw",
+    "fdcId": 169251,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Mushrooms, white, raw",
+    "names": {
+      "en": "White mushrooms (raw)",
+      "el": "Μανιτάρια λευκά (ωμά)",
+      "aliases": [
+        "mushrooms",
+        "button mushrooms",
+        "champignon",
+        "μανιτάρια",
+        "σαμπινιόν"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 cup, pieces or slices",
+        "g": 70
+      },
+      {
+        "label": "1 medium",
+        "g": 18
+      },
+      {
+        "label": "1 large",
+        "g": 23
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "carrots-raw",
+    "fdcId": 170393,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Carrots, raw",
+    "names": {
+      "en": "Carrots (raw)",
+      "el": "Καρότα (ωμά)",
+      "aliases": [
+        "carrot",
+        "carrots",
+        "καρότο",
+        "καρότα"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 medium",
+        "g": 61
+      },
+      {
+        "label": "1 large (7-1/4\" to 8-1/2\" long)",
+        "g": 72
+      },
+      {
+        "label": "1 cup, chopped",
+        "g": 128
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "tomato-raw",
+    "fdcId": 170457,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Tomatoes, red, ripe, raw, year round average",
+    "names": {
+      "en": "Tomato, red (raw)",
+      "el": "Ντομάτα (ωμή)",
+      "aliases": [
+        "tomato",
+        "tomatoes",
+        "ντομάτα",
+        "ντομάτες",
+        "τομάτα"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 medium (2-3/5\" dia)",
+        "g": 123
+      },
+      {
+        "label": "1 large (3\" dia)",
+        "g": 182
+      },
+      {
+        "label": "1 cherry tomato",
+        "g": 17
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Red, ripe, year-round average."
+  },
+  {
+    "key": "cucumber-raw",
+    "fdcId": 168409,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Cucumber, with peel, raw",
+    "names": {
+      "en": "Cucumber, with peel (raw)",
+      "el": "Αγγούρι με τη φλούδα (ωμό)",
+      "aliases": [
+        "cucumber",
+        "αγγούρι",
+        "αγγούρια"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 cucumber (8-1/4\")",
+        "g": 301
+      },
+      {
+        "label": "1/2 cup, slices",
+        "g": 52
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "onion-raw",
+    "fdcId": 170000,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Onions, raw",
+    "names": {
+      "en": "Onion (raw)",
+      "el": "Κρεμμύδι (ωμό)",
+      "aliases": [
+        "onion",
+        "onions",
+        "κρεμμύδι",
+        "ξερό κρεμμύδι"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 small",
+        "g": 70
+      },
+      {
+        "label": "1 medium (2-1/2\" dia)",
+        "g": 110
+      },
+      {
+        "label": "1 cup, chopped",
+        "g": 160
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "lettuce-romaine",
+    "fdcId": 169247,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Lettuce, cos or romaine, raw",
+    "names": {
+      "en": "Romaine lettuce (raw)",
+      "el": "Μαρούλι (ωμό)",
+      "aliases": [
+        "lettuce",
+        "romaine",
+        "cos lettuce",
+        "μαρούλι",
+        "μαρούλια"
+      ]
+    },
+    "group": "veg",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "1 cup, shredded",
+        "g": 47
+      },
+      {
+        "label": "1 outer leaf",
+        "g": 28
+      },
+      {
+        "label": "1 head",
+        "g": 626
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": ""
+  },
+  {
+    "key": "olive-oil",
+    "fdcId": 171413,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Oil, olive, salad or cooking",
+    "names": {
+      "en": "Olive oil",
+      "el": "Ελαιόλαδο",
+      "aliases": [
+        "olive oil",
+        "extra virgin olive oil",
+        "evoo",
+        "ελαιόλαδο",
+        "λάδι"
+      ]
+    },
+    "group": "fat",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 13.5
+      },
+      {
+        "label": "1 tsp",
+        "g": 4.5
+      }
+    ],
+    "densityGPerMl": 0.913,
+    "notes": "Same values for extra virgin and other olive oils. Density from FDC portion 1 cup (236.6 ml) = 216 g."
+  },
+  {
+    "key": "honey",
+    "fdcId": 169640,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Honey",
+    "names": {
+      "en": "Honey",
+      "el": "Μέλι",
+      "aliases": [
+        "honey",
+        "μέλι",
+        "θυμαρίσιο μέλι"
+      ]
+    },
+    "group": "sweet",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 21
+      },
+      {
+        "label": "1 cup",
+        "g": 339
+      }
+    ],
+    "densityGPerMl": 1.433,
+    "notes": "Density from FDC portion 1 cup (236.6 ml) = 339 g."
+  },
+  {
+    "key": "sugar",
+    "fdcId": 169655,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Sugars, granulated",
+    "names": {
+      "en": "Sugar, white",
+      "el": "Ζάχαρη λευκή",
+      "aliases": [
+        "sugar",
+        "white sugar",
+        "ζάχαρη",
+        "κρυσταλλική ζάχαρη"
+      ]
+    },
+    "group": "sweet",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tsp",
+        "g": 4.2
+      },
+      {
+        "label": "1 cube",
+        "g": 2.3
+      },
+      {
+        "label": "1 cup",
+        "g": 200
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "White granulated sugar."
+  },
+  {
+    "key": "ketchup",
+    "fdcId": 168556,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Catsup",
+    "names": {
+      "en": "Ketchup",
+      "el": "Κέτσαπ",
+      "aliases": [
+        "ketchup",
+        "catsup",
+        "κέτσαπ"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 17
+      },
+      {
+        "label": "1 packet",
+        "g": 9
+      }
+    ],
+    "densityGPerMl": 1.149,
+    "notes": "Regular tomato ketchup. Density from FDC portion 1 tbsp (14.79 ml) = 17 g."
+  },
+  {
+    "key": "soy-sauce",
+    "fdcId": 174277,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Soy sauce made from soy and wheat (shoyu)",
+    "names": {
+      "en": "Soy sauce",
+      "el": "Σάλτσα σόγιας",
+      "aliases": [
+        "soy sauce",
+        "shoyu",
+        "σόγια",
+        "σάλτσα σόγιας"
+      ]
+    },
+    "group": "other",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 tbsp",
+        "g": 16
+      },
+      {
+        "label": "1 tsp",
+        "g": 5.3
+      },
+      {
+        "label": "1 packet",
+        "g": 8.9
+      }
+    ],
+    "densityGPerMl": 1.078,
+    "notes": "Regular (not low-sodium) soy sauce from soy and wheat; very salty (5,490 mg sodium per 100 g). Density from FDC portion 1 cup (236.6 ml) = 255 g."
+  },
+  {
+    "key": "peanut-butter",
+    "fdcId": 174266,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Peanut butter, smooth style, with salt (Includes foods for USDA's Food Distribution Program)",
+    "names": {
+      "en": "Peanut butter, smooth",
+      "el": "Φυστικοβούτυρο κρεμώδες",
+      "aliases": [
+        "peanut butter",
+        "creamy peanut butter",
+        "φυστικοβούτυρο",
+        "βούτυρο φυστικιού"
+      ]
+    },
+    "group": "fat",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "2 tbsp",
+        "g": 32
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Regular smooth peanut butter with salt. Unsalted (FDC 172470) has the same macros."
+  },
+  {
+    "key": "almonds",
+    "fdcId": 170567,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Nuts, almonds",
+    "names": {
+      "en": "Almonds (raw)",
+      "el": "Αμύγδαλα (ωμά)",
+      "aliases": [
+        "almonds",
+        "almond",
+        "αμύγδαλα",
+        "αμύγδαλο"
+      ]
+    },
+    "group": "fat",
+    "prep": "raw",
+    "portions": [
+      {
+        "label": "23 almonds (1 oz)",
+        "g": 28.35
+      },
+      {
+        "label": "1 almond",
+        "g": 1.2
+      },
+      {
+        "label": "1 cup, whole",
+        "g": 143
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "Natural, unroasted, unsalted."
+  },
+  {
+    "key": "dark-chocolate",
+    "fdcId": 170273,
+    "dataset": "SR Legacy",
+    "fdcDescription": "Chocolate, dark, 70-85% cacao solids",
+    "names": {
+      "en": "Dark chocolate 70-85%",
+      "el": "Μαύρη σοκολάτα 70-85%",
+      "aliases": [
+        "dark chocolate",
+        "μαύρη σοκολάτα",
+        "σοκολάτα υγείας",
+        "bitter"
+      ]
+    },
+    "group": "sweet",
+    "prep": "as-sold",
+    "portions": [
+      {
+        "label": "1 bar",
+        "g": 101
+      }
+    ],
+    "densityGPerMl": null,
+    "notes": "70-85% cacao solids."
+  }
+]

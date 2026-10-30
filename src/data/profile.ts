@@ -46,7 +46,7 @@ export async function loadProfile(): Promise<Profile> {
 }
 
 export async function saveProfile(p: Profile): Promise<Profile> {
-  const next = { ...p, updatedAt: nowIso() };
+  const next = p.updatedAt ? p : { ...p, updatedAt: nowIso() };
   await db().settings.put({ key: 'profile', value: next });
   return next;
 }

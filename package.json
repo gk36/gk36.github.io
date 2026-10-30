@@ -12,8 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "foods:build": "node scripts/foods/build-core-foods.mjs",
-    "check": "npm run typecheck && npm run test && npm run build"
+    "foods:build": "node --max-old-space-size=4096 scripts/foods/build-core-foods.ts",
+    "check": "npm run typecheck && npm run test && npm run build",
+    "icons": "node scripts/icons/render-icons.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",

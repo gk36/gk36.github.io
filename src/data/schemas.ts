@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { NUTRIENT_IDS } from '../domain/nutrition/nutrients';
 
+// The app's CSP forbids eval; without this Zod probes `Function('')` to decide whether to JIT
+// its validators, which browsers report as a CSP violation.
+z.config({ jitless: true });
+
 /** Validation for everything that crosses a trust boundary: imports, backups, storage reads. */
 
 const num = z.number().finite();
@@ -59,6 +63,7 @@ export const foodSchema = z.object({
   densityGPerMl: num.positive().max(3).optional(),
   portions: z.array(portionSchema).max(40),
   n: nutrientMapSchema,
+  nd: z.partialRecord(z.enum(NUTRIENT_IDS), z.string().max(12)).optional(),
   carbsIncludeFiber: z.boolean(),
   kcalOrigin: z.enum(['label', 'database', 'computed']),
   src: sourceSchema,

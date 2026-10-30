@@ -1,0 +1,24 @@
+import { sheet } from '../app/store';
+import { QuickLog } from './QuickLog';
+import { EntryEditor } from './EntryEditor';
+import { FoodDetail } from './FoodDetail';
+import { FoodEditor } from './FoodEditor';
+import { SwapSheet } from './SwapSheet';
+import { CopyDaySheet, SavedMealSheet, SlotsSheet } from './SmallSheets';
+
+/** Renders the one open sheet. Keyed so switching sheets remounts cleanly (focus, state). */
+export function SheetHost() {
+  const s = sheet.value;
+  if (!s) return null;
+  const key = `${s.kind}-${JSON.stringify(s).length}-${'entryId' in s ? s.entryId : ''}`;
+  switch (s.kind) {
+    case 'quicklog': return <QuickLog key={key} dayKey={s.dayKey} {...(s.slotId ? { slotId: s.slotId } : {})} {...(s.status ? { status: s.status } : {})} {...(s.query ? { query: s.query } : {})} {...(s.food ? { food: s.food } : {})} />;
+    case 'entry': return <EntryEditor key={key} entryId={s.entryId} />;
+    case 'food': return <FoodDetail key={key} food={s.food} {...(s.dayKey ? { dayKey: s.dayKey } : {})} {...(s.slotId ? { slotId: s.slotId } : {})} />;
+    case 'food-editor': return <FoodEditor key={key} {...(s.foodId ? { foodId: s.foodId } : {})} {...(s.prefill ? { prefill: s.prefill } : {})} {...(s.thenLog ? { thenLog: s.thenLog } : {})} />;
+    case 'swap': return <SwapSheet key={key} entryId={s.entryId} />;
+    case 'copy-day': return <CopyDaySheet key={key} toDay={s.toDay} />;
+    case 'saved-meal': return <SavedMealSheet key={key} {...(s.mealId ? { mealId: s.mealId } : {})} {...(s.fromEntries ? { fromEntries: s.fromEntries } : {})} />;
+    case 'slots': return <SlotsSheet key={key} dayKey={s.dayKey} />;
+  }
+}

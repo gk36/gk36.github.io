@@ -77,11 +77,16 @@ export function resolveQuantity(food: Food, qty: Quantity): Resolved {
   }
 }
 
-/** A friendly default quantity for a food (its first portion, else 100 g / 100 mL / 1 unit). */
+/**
+ * A sensible first quantity. Weighed foods (meat, starch, dairy, sauces…) start in grams/mL because
+ * that is how they are measured; foods eaten by the piece (fruit, eggs, per-serving items) start at
+ * one piece.
+ */
 export function defaultQuantity(food: Food): Quantity {
   if (food.basis.per === 'unit') return { amount: 1, unit: 'portion', portionId: 'unit' };
   const p = food.portions[0];
-  if (p) return { amount: 1, unit: 'portion', portionId: p.id };
+  const byPiece = food.group === 'fruit' || /(^|[-:])egg(-|$)/.test(food.id) || /\begg\b/i.test(food.names.en);
+  if (p && byPiece) return { amount: 1, unit: 'portion', portionId: p.id };
   return food.basis.per === '100ml' ? { amount: 100, unit: 'ml' } : { amount: 100, unit: 'g' };
 }
 

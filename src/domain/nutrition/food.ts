@@ -52,6 +52,8 @@ export interface Food {
   densityGPerMl?: number;
   portions: Portion[];
   n: NutrientMap;
+  /** Per-nutrient USDA derivation codes (e.g. "A" analytical, "Z" assumed zero) — see core.meta.json. */
+  nd?: Partial<Record<NutrientId, string>>;
   /**
    * true = carbs is TOTAL carbohydrate including fibre (USDA / US labels);
    * false = carbs EXCLUDES fibre (EU labels, incl. Greek packaging).
