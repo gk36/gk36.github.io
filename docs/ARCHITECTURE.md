@@ -105,7 +105,8 @@ Supporting modules:
 
 - `data/ideas.ts` sizes the meal (its share of what is left after eaten and planned food), finds the gaps
   against the DRIs, and logs an idea as one dish entry whose ingredients stay inside it.
-- `domain/ideas/oxalate.ts` keeps cited oxalate values per food with their source and any disagreement.
+- `domain/micros/oxalate.ts` keeps cited oxalate values per food with their source and any disagreement. The
+  same module totals a day's oxalate for the Nutrients page (`screens/parts/OxalateCard.tsx`).
 
 ## Replan engine ("plans change")
 

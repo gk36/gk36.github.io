@@ -35,13 +35,15 @@ export function Kitchen() {
           <ul class="list">
             {recipes.map((r) => (
               <li key={r.id}>
-                <div class="item" style={{ cursor: 'default' }}>
-                  <button type="button" class="item-main linkish" style={{ color: 'inherit', textAlign: 'left' }} onClick={() => openSheet({ kind: 'recipe', foodId: r.id })}>
+                <div class="recipe-row">
+                  <button type="button" class="recipe-main" onClick={() => openSheet({ kind: 'recipe', foodId: r.id })}>
                     <span class="item-name">{r.names.en}{r.recipe!.example ? <span class="badge" style={{ marginLeft: '8px' }}>Example</span> : null}</span>
                     <span class="item-sub">{r.recipe!.components.length} ingredients · {r.recipe!.servings} serving{r.recipe!.servings === 1 ? '' : 's'}{r.recipe!.prepMinutes ? ` · ${r.recipe!.prepMinutes} min` : ''}{r.partial?.includes('kcal') ? ' · needs an ingredient' : ''}</span>
                   </button>
-                  <button type="button" class="btn btn-s" onClick={() => openSheet({ kind: 'quicklog', dayKey: todayKey.value, food: r })}>Log a serving</button>
-                  <button type="button" class="btn btn-s btn-primary" onClick={() => openSheet({ kind: 'cook', recipeId: r.id })}>Cook</button>
+                  <div class="recipe-actions">
+                    <button type="button" class="btn btn-s" onClick={() => openSheet({ kind: 'quicklog', dayKey: todayKey.value, food: r })}>Log a serving</button>
+                    <button type="button" class="btn btn-s btn-primary" onClick={() => openSheet({ kind: 'cook', recipeId: r.id })}>Cook</button>
+                  </div>
                 </div>
               </li>
             ))}

@@ -13,6 +13,11 @@
  * to rank meal ideas.
  */
 
+import type { Food, Quantity } from '../nutrition/food';
+import { displayName } from '../nutrition/food';
+import { contribution } from '../nutrition/compute';
+import { estimatedYield, recipeFraction } from '../kitchen/recipe';
+
 export type OxalateSource = 'harvard-2023' | 'honow-hesse-2002' | 'siener-2021' | 'nguyen-savage-2013' | 'uchicago' | 'upmc' | 'wake-forest' | 'derived';
 
 export const OXALATE_SOURCES: Record<OxalateSource, { title: string; url: string }> = {
@@ -25,6 +30,17 @@ export const OXALATE_SOURCES: Record<OxalateSource, { title: string; url: string
   'wake-forest': { title: 'Wake Forest Baptist Urology — oxalate food list (2008)', url: 'https://www.wakehealth.edu/-/media/WakeForest/Clinical/Files/Urology/Oxalate-Food-List.pdf' },
   derived: { title: 'Average of the three berries above (as the food itself is)', url: 'https://hsph.harvard.edu/wp-content/uploads/2024/07/OXALATE-TABLE-1.xlsx' },
 };
+
+/**
+ * Daily context, quoted from the sources (there is no official daily intake): UPMC — "limit your
+ * oxalate to 40 to 50 mg each day" on a low-oxalate diet; University of Chicago Kidney Stone Program —
+ * "a reasonable goal is below 100 mg of oxalate daily. An ideal would be about 50 mg daily", and
+ * "typical diets contain upward of 200 – 300 mg".
+ */
+export const OXALATE_DAILY_CONTEXT = {
+  upmc: { text: 'Low-oxalate diet: 40–50 mg a day', url: 'https://www.upmc.com/healthbeat/urology/help-prevent-kidney-stones-with-a-low-oxalate-diet' },
+  uchicago: { text: 'Kidney-stone prevention: under 100 mg a day, ideally about 50 mg', url: 'https://kidneystones.uchicago.edu/how-to-eat-a-low-oxalate-diet/' },
+} as const;
 
 export interface OxalateInfo {
   /** mg per the source's serving (null when the source gives only per 100 g or only a category). */
@@ -43,7 +59,7 @@ export interface OxalateInfo {
 
 const oz = 28.349523125;
 const h = (mg: number, serving: string, servingG: number | null, conflict?: string): OxalateInfo =>
-  ({ mg, serving, servingG, per100g: servingG ? Math.round((mg * 100 * 10) / servingG) / 10 : null, src: 'harvard-2023', ...(conflict ? { conflict } : {}) });
+  ({ mg, serving, servingG, per100g: servingG ? (mg * 100) / servingG : null, src: 'harvard-2023', ...(conflict ? { conflict } : {}) });
 const lab = (per100g: number, src: OxalateSource, conflict?: string): OxalateInfo =>
   ({ mg: null, serving: null, servingG: null, per100g, src, ...(conflict ? { conflict } : {}) });
 const low = (src: OxalateSource): OxalateInfo => ({ mg: null, serving: null, servingG: null, per100g: null, category: 'low', src });
@@ -108,7 +124,7 @@ export const OXALATE: Readonly<Record<string, OxalateInfo>> = {
   'pepper-red-raw': h(2.2, '2 rings', 20),
   'mushrooms-white-raw': h(0, '1 mushroom', 18),
   'carrots-raw': h(4.5, '1/2 large', 36, 'The UChicago list gives 15 mg per ½ large carrot; UPMC lists carrots as high.'),
-  'tomato-raw': h(3.1, '2 slices', null),
+  'tomato-raw': h(3.1, '2 slices (USDA medium slice, 20 g each)', 40),
   'cucumber-raw': h(1, '1/4 cucumber', 75),
   'onion-raw': h(2.1, '1 onion', 110),
   'lettuce-romaine': h(0.3, '1 cup', 47),
@@ -135,22 +151,95 @@ export const OXALATE_LABEL: Record<OxalateLevel, string> = { low: 'Low oxalate',
 
 export const levelFor = (mg: number): OxalateLevel => (mg < 2 ? 'low' : mg <= 10 ? 'moderate' : mg <= 50 ? 'high' : 'very-high');
 
-export interface OxalateEstimate { mg: number | null; level: OxalateLevel; info: OxalateInfo }
+export interface OxalateEstimate {
+  mg: number | null;
+  level: OxalateLevel;
+  info: OxalateInfo;
+  /** The value is the cooked pair's, converted to this raw/dry weight. */
+  fromPair?: true;
+}
 
 /**
  * Oxalate in an amount of a core food. `cookedFactor` converts a raw/dry weight to the cooked weight
  * the value refers to (from the USDA raw↔cooked pair). Null = no cited value for this food.
  */
 export function oxalateFor(key: string, grams: number | null, opts: { pairKey?: string; cookedFactor?: number | null } = {}): OxalateEstimate | null {
-  let info = OXALATE[key];
-  let factor = 1;
-  if (!info && opts.pairKey && OXALATE[opts.pairKey] && opts.cookedFactor) { info = OXALATE[opts.pairKey]; factor = opts.cookedFactor; }
+  const own = OXALATE[key];
+  const viaPair = !own && opts.pairKey && opts.cookedFactor ? OXALATE[opts.pairKey] : undefined;
+  const info = own ?? viaPair;
   if (!info) return null;
-  if (info.category) return { mg: null, level: 'low', info };
+  const factor = viaPair ? opts.cookedFactor! : 1;
+  const est = (mg: number | null, level: OxalateLevel): OxalateEstimate => (viaPair ? { mg, level, info, fromPair: true } : { mg, level, info });
+  if (info.category) return est(null, 'low');
+  // A food measured at zero is zero in any amount.
+  if (info.mg === 0 || info.per100g === 0) return est(0, 'low');
   if (info.per100g !== null && grams !== null) {
     const mg = (info.per100g * grams * factor) / 100;
-    return { mg, level: levelFor(mg), info };
+    return est(mg, levelFor(mg));
   }
-  if (info.mg !== null) return { mg: null, level: levelFor(info.mg), info };
+  // Only a per-serving value whose weight isn't known: the level is known, the amount isn't.
+  if (info.mg !== null) return est(null, levelFor(info.mg));
   return null;
+}
+
+/* ------------------------------------------------------------------ foods, entries and days */
+
+/** Oxalate in an amount of a food. Core foods use their cited value; raw/dry ones go through their cooked pair. */
+export function oxalateOfFood(food: Pick<Food, 'id' | 'prep' | 'pair' | 'n'>, grams: number | null, core: ReadonlyMap<string, Pick<Food, 'n'>>): OxalateEstimate | null {
+  if (!food.id.startsWith('core:')) return null;
+  let pairKey: string | undefined;
+  let factor = 1;
+  if (food.pair && (food.prep === 'raw' || food.prep === 'dry')) {
+    pairKey = food.pair.slice(5);
+    const pair = core.get(food.pair);
+    // Without a yield estimate (low-protein foods) the raw weight is used as is, which slightly overstates.
+    const y = pair ? estimatedYield(food, pair) : null;
+    if (y) factor = y;
+  }
+  return oxalateFor(food.id.slice(5), grams, pairKey ? { pairKey, cookedFactor: factor } : {});
+}
+
+export interface OxalatePart {
+  foodId: string;
+  label: string;
+  grams: number | null;
+  kcal: number;
+  est: OxalateEstimate | null;
+}
+
+/** Oxalate for a logged amount. A dish counts each of its ingredients (its share of them). */
+export function entryOxalate(food: Food, qty: Quantity, core: ReadonlyMap<string, Pick<Food, 'n'>>): OxalatePart[] {
+  const info = food.recipe;
+  if (info) {
+    const f = recipeFraction(food, qty);
+    if (f !== null) return info.components.flatMap((c) => entryOxalate(c.food, { ...c.qty, amount: c.qty.amount * f } as Quantity, core));
+  }
+  const c = contribution(food, qty);
+  const grams = 'error' in c ? null : c.grams;
+  return [{ foodId: food.id, label: displayName(food), grams, kcal: 'error' in c ? 0 : c.n.kcal ?? 0, est: info ? null : oxalateOfFood(food, grams, core) }];
+}
+
+export interface OxalateTotal {
+  /** Sum over foods with a cited value for their amount — a lower bound when anything else was eaten. */
+  mg: number;
+  /** Foods counted in mg. */
+  counted: number;
+  /** Foods whose source gives a per-serving level but no weight, so their amount can't be added. */
+  levelOnly: number;
+  /** Foods with no cited value at all. */
+  noData: number;
+  /** Share of the calories that come from foods counted in mg (0–1). */
+  energyShare: number;
+  parts: OxalatePart[];
+}
+
+export function sumOxalate(parts: readonly OxalatePart[]): OxalateTotal {
+  let mg = 0, counted = 0, levelOnly = 0, noData = 0, kAll = 0, kCounted = 0;
+  for (const p of parts) {
+    kAll += p.kcal;
+    if (p.est?.mg !== null && p.est?.mg !== undefined) { mg += p.est.mg; counted += 1; kCounted += p.kcal; }
+    else if (p.est) levelOnly += 1;
+    else noData += 1;
+  }
+  return { mg, counted, levelOnly, noData, energyShare: kAll > 0 ? kCounted / kAll : parts.length ? counted / parts.length : 1, parts: [...parts] };
 }

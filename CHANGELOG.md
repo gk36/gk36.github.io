@@ -1,5 +1,31 @@
 # Changelog
 
+## 2.0.0-alpha.7 — oxalate in the daily report, iPhone polish, launch prep (unreleased, branch `carbmaxx-2`)
+
+- **Oxalate on the Nutrients page**: today's total, or the 7-day average, from foods with a cited value.
+  - Foods without a usable amount are listed under "Not counted", and the total then says "at least" (≥).
+  - Each food shows its amount, its level (low, moderate, high, very high) and any disagreement between
+    sources. Recipes and meal ideas count through their ingredients.
+  - There is no official daily intake, so the card quotes UPMC (40–50 mg a day on a low-oxalate diet) and
+    the University of Chicago (under 100 mg, ideally about 50), with links. You can set the limit your
+    doctor gave you.
+  - A food's page shows its oxalate value and source, or "no cited value — unknown, not zero".
+- **iPhone polish**:
+  - Log food: Scan, Quick add and New food from label are chips under the search box.
+  - Recipe ingredients get a line of their own; Kitchen recipe rows put their buttons underneath.
+  - Meal headers read "X kcal eaten · +Y planned", with a round add button.
+  - Dropdowns are restyled, and Plan's food picks use one column.
+  - Pantry amounts show in grams. Partial calories always say "≥". Recipes are labelled in Foods.
+  - At most two messages stack at the bottom. Sheets have a grab handle.
+  - The Diary's Gym/Rest switch fits on a phone, and the Home Screen hint is shorter.
+- Fixes: Log food keeps the chosen meal only when that meal exists on the day. Pantry items start at a
+  sensible amount (one egg, 250 g of fruit or vegetables, otherwise 100 g or 100 mL).
+- Faster starts: the starter-recipe code downloads only on the first start. Lighthouse on a simulated
+  phone: Performance 97–99, Accessibility 100, Best Practices 100, SEO 100.
+- Accessibility scans run in light and dark mode. They now also cover meal ideas, typed meals, the recipe
+  editor, the food page and the oxalate card.
+- [Launch checklist](docs/LAUNCH_CHECKLIST.md) for going live, step by step.
+
 ## 2.0.0-alpha.6 — typed meals, meal ideas, starter recipes, a new Today (unreleased, branch `carbmaxx-2`)
 
 - **Type what you ate** (Today's "What did you eat?" box, or the Log food search), in English or Greek:

@@ -68,6 +68,7 @@ macros, and that each portion weight is one of USDA's own portions) and refuses 
 - [Test plan](docs/TEST_PLAN.md)
 - [Roadmap & status](docs/ROADMAP.md)
 - [Turning on sync (owner)](docs/SYNC_SETUP.md)
+- [Launch checklist (owner)](docs/LAUNCH_CHECKLIST.md)
 - [Changelog](CHANGELOG.md)
 
 ## Sources & licences

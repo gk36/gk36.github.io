@@ -7,7 +7,7 @@ import { fold } from '../logging/parse';
 import { stem } from '../logging/match';
 import { BLUEPRINTS } from './blueprints';
 import { FAT_SHARE, type AmountUnit, type Blueprint, type Chosen, type ChosenMap, type Equipment, type MealKind, type Option, type Role, type TastePrefs } from './model';
-import { oxalateFor, type OxalateEstimate } from './oxalate';
+import { oxalateOfFood, type OxalateEstimate } from '../micros/oxalate';
 
 /**
  * Meal ideas from real recipes, the user's pantry and today's numbers.
@@ -154,13 +154,7 @@ function cookedFactor(food: Food, foods: ReadonlyMap<string, Food>): { pair: Foo
   return y ? { pair, factor: y } : null;
 }
 
-function oxalateOf(food: Food, grams: number | null, foods: ReadonlyMap<string, Food>): OxalateEstimate | null {
-  if (!food.id.startsWith('core:')) return null;
-  const cf = cookedFactor(food, foods);
-  // Without a yield estimate (low-protein foods) the raw weight is used as is — it slightly overstates.
-  const pairKey = cf?.pair.id.slice(5) ?? (food.pair && (food.prep === 'raw' || food.prep === 'dry') ? food.pair.slice(5) : undefined);
-  return oxalateFor(food.id.slice(5), grams, pairKey ? { pairKey, cookedFactor: cf?.factor ?? 1 } : {});
-}
+const oxalateOf = (food: Food, grams: number | null, foods: ReadonlyMap<string, Food>): OxalateEstimate | null => oxalateOfFood(food, grams, foods);
 
 function equipmentOk(bp: Blueprint, have: readonly Equipment[]): boolean {
   return bp.needs.some((set) => set.every((e) => have.includes(e)));

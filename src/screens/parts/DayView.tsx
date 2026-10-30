@@ -33,7 +33,7 @@ export function EntryRow({ e, compact }: { e: LogEntry; compact?: boolean }) {
         {r.error ? <span class="error">{r.error}</span> : null}
       </button>
       <div class="item-end">
-        <span class="num"><b>{r.n.kcal === undefined ? '?' : roundFor('kcal', r.n.kcal)}</b> <span class="muted small">kcal</span></span>
+        <span class="num"><b>{r.n.kcal === undefined ? '?' : `${e.food.partial?.includes('kcal') ? '≥ ' : ''}${roundFor('kcal', r.n.kcal)}`}</b> <span class="muted small">kcal</span></span>
         {!compact ? <span class="small muted num">P {r.n.protein === undefined ? '?' : roundFor('protein', r.n.protein)}</span> : null}
       </div>
       {planned ? (
@@ -54,14 +54,12 @@ export function MealList({ dayKey, slots, entries, compact }: { dayKey: DayKey; 
         return (
           <section class="meal" key={s.id} aria-label={s.name}>
             <div class="meal-head">
-              <div>
+              <div class="meal-title">
                 <h3 class="meal-name">{s.name}</h3>
                 <div class="meal-meta">{[s.badge, s.time].filter(Boolean).join(' · ')}</div>
+                <div class="meal-kcal small num"><b>{Math.round(kcal)}</b> kcal eaten{plannedKcal ? <span class="subtle"> · +{Math.round(plannedKcal)} planned</span> : null}</div>
               </div>
-              <div class="cluster">
-                <span class="small num"><b>{Math.round(kcal)}</b> kcal{plannedKcal ? <span class="subtle"> · +{Math.round(plannedKcal)} planned</span> : null}</span>
-                <button type="button" class="btn btn-ghost btn-icon btn-s" aria-label={`Add food to ${s.name}`} onClick={() => openSheet({ kind: 'quicklog', dayKey, slotId: s.id })}><Plus size={18} /></button>
-              </div>
+              <button type="button" class="btn btn-icon meal-add" aria-label={`Add food to ${s.name}`} onClick={() => openSheet({ kind: 'quicklog', dayKey, slotId: s.id })}><Plus size={18} /></button>
             </div>
             {rows.length ? <div class="list">{rows.map((e) => <EntryRow key={e.id} e={e} compact={compact} />)}</div> : <p class="small subtle" style={{ padding: '4px 0 6px' }}>Nothing yet.</p>}
           </section>

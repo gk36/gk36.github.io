@@ -24,7 +24,7 @@ export function InstallHint() {
         <b>Add CARBMAXX to your Home Screen</b>
         <button type="button" class="btn btn-ghost btn-icon btn-s" aria-label="Dismiss" onClick={() => { setHidden(true); try { localStorage.setItem(KEY, '1'); } catch { /* ignore */ } }}><X size={16} /></button>
       </div>
-      <p class="small">Safari clears a website's saved data after 7 days of not opening it. Installed apps are exempt. Tap <Share size={14} aria-label="Share" style={{ display: 'inline' }} /> then <b>Add to Home Screen</b>, and open CARBMAXX from there. (A Home Screen app has its own storage, so do this before logging lots of food — or move it over with Export/Import backup.)</p>
+      <p class="small">Safari deletes a website's data after 7 days unused; Home Screen apps keep it. Tap <Share size={14} aria-label="Share" style={{ display: 'inline' }} /> → <b>Add to Home Screen</b>, then open CARBMAXX from there. Do it before logging lots: the Home Screen app starts with its own storage (move data over with a backup).</p>
     </div>
   );
 }

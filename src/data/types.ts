@@ -105,6 +105,8 @@ export interface Profile {
   phrases?: Record<string, string>;
   /** Preferences for meal ideas. */
   taste?: TastePrefs;
+  /** A daily oxalate limit the user chose (e.g. from their doctor); none by default. */
+  oxalateLimitMg?: number | null;
   legacyProfileName?: string | null;
   updatedAt: string;
 }

@@ -90,9 +90,9 @@ export function TypedLog({ dayKey, text, slotId, status: initialStatus, onBack }
   }, [foods, recents, parsed]);
 
   useEffect(() => {
-    if (slot || !slots.length) return;
-    setSlot(slotFromHint(parsed?.slot ?? null, slots) ?? guessSlot(slots));
-  }, [slots.length, parsed]);
+    if (!slots.length || slots.some((s) => s.id === slot)) return;
+    setSlot((slotId && slots.some((s) => s.id === slotId) ? slotId : null) ?? slotFromHint(parsed?.slot ?? null, slots) ?? guessSlot(slots));
+  }, [slots.map((s) => s.id).join('|'), parsed]);
 
   const update = (key: string, f: (r: Row) => Row | null) =>
     setRows((rs) => (rs ?? []).flatMap((r) => (r.key === key ? (f(r) ? [f(r)!] : []) : [r])));
@@ -191,7 +191,7 @@ function kcalLabel(food: Food, qty: Quantity | null): string {
     if (!('error' in c) && c.n.kcal !== undefined) return `${Math.round(c.n.kcal).toLocaleString('en-GB')} kcal`;
   }
   const per = food.basis.per === 'unit' ? `/${food.basis.unitLabel}` : food.basis.per === '100ml' ? '/100 mL' : '/100 g';
-  return food.n.kcal === undefined ? '? kcal' : `${Math.round(food.n.kcal)} kcal${per}`;
+  return food.n.kcal === undefined ? '? kcal' : `${food.partial?.includes('kcal') ? '≥ ' : ''}${Math.round(food.n.kcal)} kcal${per}`;
 }
 
 function ItemRow({ row, onChange, onRemove, onFetch }: { row: Row; onChange: (f: (r: Row) => Row) => void; onRemove: () => void; onFetch: (how: 'scan' | 'label') => void }) {

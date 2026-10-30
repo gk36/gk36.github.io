@@ -96,7 +96,9 @@ export function describeQuantity(food: Food, qty: Quantity): string {
   if (qty.unit === 'ml') return `${n} mL`;
   if (food.basis.per === 'unit' && qty.portionId === 'unit') return `${n} × ${food.basis.unitLabel}`;
   const p = findPortion(food, qty.portionId);
-  return p ? `${n} × ${p.label}` : `${n} portion`;
+  if (!p) return `${n} portion`;
+  // "1 small" rather than "1 × 1 small"; "2 × 1 small" stays explicit.
+  return qty.amount === 1 && /^1\s/.test(p.label) ? p.label : `${n} × ${p.label}`;
 }
 
 export function formatAmount(x: number): string {

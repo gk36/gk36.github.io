@@ -31,15 +31,17 @@ function Ingredients({ components, onChange }: { components: Component[]; onChan
           const cur = opts.find((o) => o.key === qtyKey(c.qty)) ?? opts[0];
           return (
             <li key={`${c.food.id}-${i}`}>
-              <div class="item" style={{ cursor: 'default' }}>
-                <div class="item-main"><span class="item-name">{displayName(c.food)}</span><span class="item-sub">{c.food.prep}</span></div>
-                <input class="input input-num" style={{ maxWidth: '96px' }} inputMode="decimal" aria-label={`${displayName(c.food)} amount`} value={String(c.qty.amount)}
+              <div class="ing-row">
+                <div class="ing-name"><span class="item-name">{displayName(c.food)}</span><span class="item-sub">{c.food.prep}{c.food.n.kcal === undefined ? ' · no values yet' : ''}</span></div>
+                <div class="ing-controls">
+                <input class="input input-num" inputMode="decimal" aria-label={`${displayName(c.food)} amount`} value={String(c.qty.amount)}
                   onChange={(e) => { const v = Number(e.currentTarget.value.replace(',', '.')); if (Number.isFinite(v) && v >= 0 && cur) set(i, cur.qty(v)); }} />
-                <select class="select" style={{ maxWidth: '150px' }} aria-label={`${displayName(c.food)} unit`} value={cur?.key}
+                <select class="select" aria-label={`${displayName(c.food)} unit`} value={cur?.key}
                   onChange={(e) => { const o = opts.find((x) => x.key === e.currentTarget.value); if (o) set(i, o.qty(o.key === 'g' || o.key === 'ml' ? 100 : 1)); }}>
                   {opts.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
                 </select>
                 <button type="button" class="btn btn-icon btn-s btn-danger" aria-label={`Remove ${displayName(c.food)}`} onClick={() => onChange(components.filter((_, j) => j !== i))}><Trash size={15} /></button>
+                </div>
               </div>
             </li>
           );

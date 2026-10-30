@@ -53,9 +53,9 @@ export function Foods({ tab: tabParam }: { tab?: string }) {
                 <button type="button" key={f.id} class="item" onClick={() => openSheet({ kind: 'food', food: f })}>
                   <div class="item-main">
                     <span class="item-name">{displayName(f)}</span>
-                    <span class="item-sub cluster"><SourceBadge src={f.src} />{f.prep !== 'as-sold' ? <span>{PREP_LABEL[f.prep]}</span> : null}{f.names.el ? <span lang="el">{f.names.el}</span> : null}</span>
+                    <span class="item-sub cluster">{f.recipe ? <span class="badge">{f.recipe.example ? 'Example recipe' : f.recipe.cookedOn ? 'Batch' : 'Recipe'}</span> : <SourceBadge src={f.src} />}{f.prep !== 'as-sold' ? <span>{PREP_LABEL[f.prep]}</span> : null}{f.names.el ? <span lang="el">{f.names.el}</span> : null}</span>
                   </div>
-                  <div class="item-end small num">{f.n.kcal === undefined ? '?' : Math.round(f.n.kcal)} kcal<span class="xs subtle">{f.basis.per === 'unit' ? `per ${f.basis.unitLabel}` : f.basis.per === '100ml' ? '/100 mL' : '/100 g'}</span></div>
+                  <div class="item-end small num">{f.n.kcal === undefined ? '?' : `${f.partial?.includes('kcal') ? '≥ ' : ''}${Math.round(f.n.kcal)}`} kcal<span class="xs subtle">{f.basis.per === 'unit' ? `per ${f.basis.unitLabel}` : f.basis.per === '100ml' ? '/100 mL' : '/100 g'}</span></div>
                 </button>
               ))}
             </div>

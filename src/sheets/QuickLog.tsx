@@ -37,7 +37,11 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
 
   const day = useAsync(() => ensureDay(dayKey), [dayKey]);
   const slots = day?.slots ?? p.defaultSlots;
-  useEffect(() => { if (!slot && slots.length) setSlot(slotId ?? guessSlot(slots)); }, [slots.length]);
+  // The day's own meals load after the defaults: keep the choice only while it is one of them.
+  useEffect(() => {
+    if (!slots.length || slots.some((s) => s.id === slot)) return;
+    setSlot(slotId && slots.some((s) => s.id === slotId) ? slotId : guessSlot(slots));
+  }, [slots.map((s) => s.id).join('|')]);
 
   const foods = useLive(() => allFoods(), [], [] as Food[]);
   const recents = useLive(() => recentFoods(12), [], []);
@@ -133,12 +137,7 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
   }
 
   return (
-    <Sheet title="Log food" onClose={closeSheet}
-      footer={<>
-        <button type="button" class="btn" onClick={() => openSheet({ kind: 'scan', dayKey, ...(slot ? { slotId: slot } : {}) })}><ScanBarcode size={16} aria-hidden="true" /> Scan</button>
-        <button type="button" class="btn" onClick={() => setQuick(true)}><Plus size={16} aria-hidden="true" /> Quick add</button>
-        <button type="button" class="btn" onClick={() => openSheet({ kind: 'food-editor', thenLog: { dayKey, slotId: slot } })}><Pencil size={16} aria-hidden="true" /> New food from label</button>
-      </>}>
+    <Sheet title="Log food" onClose={closeSheet}>
       <div class="field">
         <label for="ql-search" class="sr-only">Search foods</label>
         <div style={{ position: 'relative' }}>
@@ -153,6 +152,11 @@ export function QuickLog({ dayKey, slotId, status: initialStatus, query: initial
             }}
           />
         </div>
+      </div>
+      <div class="chips ql-ways" role="group" aria-label="Other ways to log">
+        <button type="button" class="chip" onClick={() => openSheet({ kind: 'scan', dayKey, ...(slot ? { slotId: slot } : {}) })}><ScanBarcode size={15} aria-hidden="true" /> Scan</button>
+        <button type="button" class="chip" onClick={() => setQuick(true)}><Plus size={15} aria-hidden="true" /> Quick add</button>
+        <button type="button" class="chip" onClick={() => openSheet({ kind: 'food-editor', thenLog: { dayKey, slotId: slot } })}><Pencil size={15} aria-hidden="true" /> New food from label</button>
       </div>
       {mealText ? (
         <button type="button" class="tl-card" onClick={() => setTyped(query.trim())}>
@@ -219,7 +223,7 @@ function FoodResult({ food, onPick, hint }: { food: Food; onPick: () => void; hi
         </span>
       </div>
       <div class="item-end small">
-        <span class="num">{food.n.kcal === undefined ? '?' : Math.round(food.n.kcal)} kcal</span>
+        <span class="num">{food.n.kcal === undefined ? '?' : `${food.partial?.includes('kcal') ? '≥ ' : ''}${Math.round(food.n.kcal)}`} kcal</span>
         <span class="xs subtle">{per}</span>
       </div>
     </button>

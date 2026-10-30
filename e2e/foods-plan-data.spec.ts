@@ -94,31 +94,56 @@ test('v1 planner profile on this device imports read-only', async ({ page }) => 
   expect(errors()).toEqual([]);
 });
 
-test('accessibility: no serious or critical axe violations on the main screens and sheets', async ({ page }) => {
-  await onboardFresh(page);
-  await logFood(page, 'rice cooked', /White rice.*cooked/i, '200', { unit: 'g' });
-  const scan = async (label: string) => {
-    const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
-    const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-    expect(bad.map((v) => `${label}: ${v.id} — ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
-  };
-  await scan('today');
-  await page.goto('./#/diary'); await scan('diary');
-  await page.goto('./#/plan'); await scan('plan');
-  await page.goto('./#/foods'); await scan('foods');
-  await page.goto('./#/settings'); await scan('settings');
-  await page.goto('./#/nutrients'); await scan('nutrients');
-  await page.goto('./#/kitchen'); await scan('kitchen');
-  await page.goto('./#/train'); await scan('train');
-  await page.goto('./#/pantry'); await scan('pantry');
-  await page.goto('./#/pantry/shopping'); await scan('shopping list');
-  await page.goto('./#/today');
-  await main(page).getByRole('button', { name: 'Replan rest of day' }).click();
-  await expect(dialog(page).getByRole('heading', { name: 'Replan the rest of today' })).toBeVisible();
-  await scan('replan');
-  await dialog(page).getByRole('button', { name: 'Close' }).click();
-  await main(page).getByRole('button', { name: 'Log food' }).click();
-  await scan('quick log');
-  await dialog(page).getByRole('button', { name: 'New food from label' }).click();
-  await scan('food editor');
-});
+for (const scheme of ['light', 'dark'] as const) {
+  test(`accessibility (${scheme}): no serious or critical axe violations on the main screens and sheets`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await page.emulateMedia({ colorScheme: scheme });
+    await onboardFresh(page);
+    await logFood(page, 'rice cooked', /White rice.*cooked/i, '200', { unit: 'g' });
+    await logFood(page, 'whey', /Whey protein powder/, '30', { unit: 'g' }); // oxalate: listed as not counted
+    const scan = async (label: string) => {
+      const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa']).analyze();
+      const bad = r.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+      expect(bad.map((v) => `${label}: ${v.id} — ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([]);
+    };
+    await scan('today');
+    await page.goto('./#/diary'); await scan('diary');
+    await page.goto('./#/plan'); await scan('plan');
+    await page.goto('./#/foods'); await scan('foods');
+    await page.goto('./#/settings'); await scan('settings');
+    await page.goto('./#/nutrients');
+    await main(page).getByRole('region', { name: 'Oxalate' }).getByText(/^Not counted/).click();
+    await scan('nutrients + oxalate');
+    await page.goto('./#/kitchen'); await scan('kitchen');
+    await main(page).getByRole('region', { name: 'Recipes' }).getByRole('button', { name: /^Protein cream of rice/ }).click();
+    await scan('recipe editor');
+    await dialog(page).getByRole('button', { name: 'Close' }).click();
+    await page.goto('./#/train'); await scan('train');
+    await page.goto('./#/pantry'); await scan('pantry');
+    await page.goto('./#/pantry/shopping'); await scan('shopping list');
+    await page.goto('./#/today');
+    await main(page).getByRole('button', { name: 'Replan rest of day' }).click();
+    await expect(dialog(page).getByRole('heading', { name: 'Replan the rest of today' })).toBeVisible();
+    await scan('replan');
+    await dialog(page).getByRole('button', { name: 'Close' }).click();
+    await main(page).getByRole('button', { name: /What should I eat\?/ }).click();
+    await dialog(page).getByRole('region', { name: 'Your taste' }).getByRole('button', { name: 'Looks right' }).click();
+    await expect(dialog(page).getByRole('button', { name: /^Log it/ }).first()).toBeVisible();
+    await scan('meal ideas');
+    await dialog(page).getByRole('button', { name: 'Close' }).click();
+    await main(page).getByRole('textbox', { name: 'What did you eat?' }).fill('2 eggs, some pasta and 250 ml orange juice');
+    await main(page).getByRole('button', { name: 'Check & log' }).click();
+    await expect(dialog(page).getByRole('heading', { name: /Check/ })).toBeVisible();
+    await scan('typed meal');
+    await dialog(page).getByRole('button', { name: 'Close' }).click();
+    await main(page).getByRole('button', { name: 'Log food' }).first().click();
+    await scan('quick log');
+    await dialog(page).getByRole('button', { name: 'New food from label' }).click();
+    await scan('food editor');
+    await dialog(page).getByRole('button', { name: 'Close' }).click();
+    await page.goto('./#/foods');
+    await main(page).getByRole('searchbox').fill('potato raw');
+    await main(page).getByRole('button', { name: /^Potato, white \(raw\)/ }).first().click();
+    await scan('food detail');
+  });
+}

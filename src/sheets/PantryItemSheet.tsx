@@ -12,7 +12,7 @@ import { displayName, PREP_LABEL, type Food, type Quantity } from '../domain/nut
 import { defaultQuantity } from '../domain/nutrition/quantity';
 import { closeSheet, toast } from '../app/store';
 
-const startQty = (f: Food): Quantity => (f.basis.per === 'unit' || f.group === 'fruit' || /\begg\b/i.test(f.names.en) ? defaultQuantity(f) : { amount: 100, unit: f.basis.per === '100ml' ? 'ml' : 'g' });
+const startQty = (f: Food): Quantity => (f.basis.per === 'unit' || /^egg\b/i.test(f.names.en) ? defaultQuantity(f) : { amount: f.group === 'fruit' || f.group === 'veg' ? 250 : 100, unit: f.basis.per === '100ml' ? 'ml' : 'g' });
 
 /** Add a food to the pantry, or edit / use up a pantry lot. */
 export function PantryItemSheet({ itemId, food: given }: { itemId?: string; food?: Food | FoodSnapshot }) {

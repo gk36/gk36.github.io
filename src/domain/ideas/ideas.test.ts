@@ -6,7 +6,7 @@ import { contribution } from '../nutrition/compute';
 import { BLUEPRINTS } from './blueprints';
 import { assembleIdea, chosenText, draftsOf, generateIdeas, isAvoided, rebalance, STAPLES, type Idea, type IdeaInput } from './generate';
 import { DEFAULT_TASTE, FAT_SHARE, type MealKind } from './model';
-import { levelFor, oxalateFor } from './oxalate';
+import { levelFor, oxalateFor } from '../micros/oxalate';
 
 const coreFoods = core as unknown as Food[];
 const foods = new Map(coreFoods.map((f) => [f.id, f]));

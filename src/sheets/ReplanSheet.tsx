@@ -99,7 +99,7 @@ function ReplanBody({ setup }: { setup: ReplanSetup }) {
               await addShopping({ name: displayName(f), food: f, qty: qtyOf(i, f, setup, added), source: 'replan' });
             }
             toast(`${missing.length} food${missing.length > 1 ? 's' : ''} added to the shopping list`, { tone: 'ok' });
-          }}><ShoppingCart size={16} aria-hidden="true" /> Missing → shopping list</button>
+          }}><ShoppingCart size={16} aria-hidden="true" /> Missing to list</button>
         ) : null}
         <button type="button" class="btn btn-primary" disabled={busy || !changes.length} onClick={() => void apply()}>
           <Check size={16} aria-hidden="true" /> {changes.length ? `Apply ${changes.length} change${changes.length > 1 ? 's' : ''}` : 'No changes'}

@@ -91,7 +91,7 @@ p { margin: 0; }
 
 /* ---------- surfaces ---------- */
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-l); padding: 16px; }
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
 .card-title { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 1.4px; color: var(--fg-subtle); font-weight: 800; }
 .section-title { font-size: var(--fs-l); font-weight: 800; }
 .muted { color: var(--fg-muted); }

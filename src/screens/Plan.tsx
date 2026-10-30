@@ -124,7 +124,7 @@ export function PlanScreen() {
                 onChange={(e) => { const v = Math.round(Number(e.currentTarget.value)); if (v >= 50 && v <= 1000) setPl({ milkMl: v }); }} />
             </Field>
           ) : null}
-          <div class="fields">
+          <div class="fields fields-wide">
             {visibleMeals(input).flatMap((m) => mealMeta(input, m).rows.filter((r) => r.group).map((row) => {
               const key = `${m.id}:${row.group}`;
               const opts = availableFoods(binding.tables, m.id, row.group!);

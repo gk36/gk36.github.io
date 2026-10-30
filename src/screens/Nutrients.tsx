@@ -16,6 +16,7 @@ import { useAsync, useLive } from '../ui/hooks';
 import { Segmented } from '../ui/controls';
 import { ChevronLeft, ChevronRight, Info } from '../ui/icons';
 import { slotsFor } from './parts/DayView';
+import { OxalateCard } from './parts/OxalateCard';
 
 export const VITAMINS: NutrientId[] = ['vitA', 'retinol', 'vitC', 'vitD', 'vitE', 'vitK', 'thiamin', 'riboflavin', 'niacin', 'pantothenic', 'vitB6', 'biotin', 'folate', 'vitB12', 'choline'];
 export const MINERALS: NutrientId[] = ['calcium', 'phosphorus', 'magnesium', 'potassium', 'sodium', 'iron', 'zinc', 'copper', 'manganese', 'selenium', 'iodine'];
@@ -104,6 +105,7 @@ export function Nutrients({ dayKey }: { dayKey: DayKey }) {
               </section>
             );
           })}
+          <OxalateCard dayKey={dayKey} range={range} />
           {range === 'day' ? <MealCompare entries={eaten} dayKey={dayKey} refs={refs} /> : null}
         </>
       )}

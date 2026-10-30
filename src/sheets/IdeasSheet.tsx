@@ -6,7 +6,7 @@ import { Check, ChefHat, ChevronDown, Clock, Leaf, Pencil, Plus, Shuffle, Shoppi
 import { ideaFood, ideaToShopping, loadIdeaSetup, mealGoal, mealNeeds, mealOfSlot, saveIdeaAsRecipe, tasteOf, type IdeaSetup } from '../data/ideas';
 import { draftsOf, generateIdeas, nutrientWords, rebalance, roleChoices, sized, type Idea, type IdeaInput, type IdeaItem } from '../domain/ideas/generate';
 import { EQUIPMENT_LABEL, type Equipment, type TastePrefs } from '../domain/ideas/model';
-import { OXALATE_LABEL, OXALATE_SOURCES } from '../domain/ideas/oxalate';
+import { OXALATE_LABEL, OXALATE_SOURCES } from '../domain/micros/oxalate';
 import { displayName } from '../domain/nutrition/food';
 import { roundFor } from '../domain/nutrition/format';
 import { formatAmount, parseAmount } from '../domain/nutrition/quantity';

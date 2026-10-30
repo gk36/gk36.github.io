@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db, EXAMPLES_SEEDED_KEY } from './db';
 import { coreFoods } from './foods/registry';
 import { foodSchema } from './schemas';
 import { recipeFood } from '../domain/kitchen/recipe';
@@ -68,7 +68,7 @@ export async function buildExamples(): Promise<Food[]> {
 
 /** Adds the starter recipes once per device; a recipe the user deleted or changed is never brought back. */
 export async function seedExamples(): Promise<number> {
-  if (await db().settings.get('examples-v1')) return 0;
+  if (await db().settings.get(EXAMPLES_SEEDED_KEY)) return 0;
   let added = 0;
   for (const food of await buildExamples()) {
     if (await db().foods.get(food.id)) continue;
@@ -77,6 +77,6 @@ export async function seedExamples(): Promise<number> {
     await db().foods.put(food);
     added += 1;
   }
-  await db().settings.put({ key: 'examples-v1', value: { at: new Date().toISOString() } });
+  await db().settings.put({ key: EXAMPLES_SEEDED_KEY, value: { at: new Date().toISOString() } });
   return added;
 }

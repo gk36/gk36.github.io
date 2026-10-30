@@ -1,7 +1,7 @@
 {
   "name": "carbmaxx",
   "private": true,
-  "version": "2.0.0-alpha.6",
+  "version": "2.0.0-alpha.7",
   "type": "module",
   "description": "CARBMAXX 2.0: local-first nutrition ledger, planner and training tracker for GitHub Pages.",
   "scripts": {

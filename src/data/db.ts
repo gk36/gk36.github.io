@@ -153,4 +153,7 @@ export function useDatabase(next: CarbmaxxDB): void {
   instance = next;
 }
 
+/** Settings row written once the starter recipes have been added on this device. */
+export const EXAMPLES_SEEDED_KEY = 'examples-v1';
+
 export const live = <T extends { deletedAt?: string | null }>(r: T | undefined): r is T => !!r && !r.deletedAt;

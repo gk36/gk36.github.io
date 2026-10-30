@@ -12,6 +12,8 @@ import { deleteCustomFood, restoreCustomFood, saveCustomFood } from '../data/foo
 import type { FoodSnapshot } from '../data/types';
 import { closeSheet, openSheet, todayKey, toast } from '../app/store';
 import { AmountPicker } from './AmountPicker';
+import { coreFoods } from '../data/foods/registry';
+import { oxalateOfFood, OXALATE_LABEL, OXALATE_SOURCES } from '../domain/micros/oxalate';
 import type { DayKey } from '../domain/time';
 
 const MAIN: NutrientId[] = ['kcal', 'protein', 'carbs', 'fiber', 'sugars', 'fat', 'satFat', 'sodium'];
@@ -96,6 +98,7 @@ export function FoodDetail({ food, dayKey, slotId }: { food: Food | FoodSnapshot
         </div>
         <p class="xs subtle" style={{ marginTop: '8px' }}>“unknown” means the source does not report it — it is never counted as zero.</p>
       </details>
+      <OxalateLine food={food} />
       {food.nd && codes ? (
         <details>
           <summary class="small" style={{ cursor: 'pointer', fontWeight: 700 }}>How these values were obtained</summary>
@@ -110,5 +113,23 @@ export function FoodDetail({ food, dayKey, slotId }: { food: Food | FoodSnapshot
         </details>
       ) : null}
     </Sheet>
+  );
+}
+
+/** Oxalate for this food, only from a cited source; otherwise it says unknown. */
+function OxalateLine({ food }: { food: Food | FoodSnapshot }) {
+  const core = useAsync(async () => new Map((await coreFoods()).map((f) => [f.id, f])), []);
+  if (!core) return null;
+  const est = food.basis.per === '100g' ? oxalateOfFood(food, 100, core) : oxalateOfFood(food, null, core);
+  if (!est) return <p class="small muted">Oxalate: no cited value for this food — unknown, not zero.</p>;
+  const src = OXALATE_SOURCES[est.info.src];
+  return (
+    <p class="small">
+      Oxalate: {est.mg !== null
+        ? <><b>≈ {est.mg < 10 ? Math.round(est.mg * 10) / 10 : Math.round(est.mg)} mg per 100 g</b>{est.fromPair ? ' (from the cooked food, adjusted for weight)' : ''} — {OXALATE_LABEL[est.level].toLowerCase()} for that amount.</>
+        : est.info.category ? <>listed as <b>low</b> (no amount given).</>
+          : <><b>{est.info.mg} mg per {est.info.serving}</b> (the source doesn't give that serving's weight).</>}{' '}
+      <a href={src.url} target="_blank" rel="noopener noreferrer">{src.title}</a>.{est.info.conflict ? ` Sources disagree: ${est.info.conflict}` : ''}
+    </p>
   );
 }

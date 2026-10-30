@@ -75,7 +75,7 @@ Iodine and biotin are unknown for all core foods (SR Legacy does not measure the
 
 ## Oxalate
 
-Kept apart from the USDA values, in `domain/ideas/oxalate.ts`, because the sources and units differ:
+Kept apart from the USDA values, in `domain/micros/oxalate.ts`, because the sources and units differ:
 
 - Sources, in order: Harvard T.H. Chan Oxalate Table 2023 (mg per stated serving), peer-reviewed lab
   measurements (mg per 100 g), then university kidney-stone lists. Each value records its source, and where
@@ -86,6 +86,16 @@ Kept apart from the USDA values, in `domain/ideas/oxalate.ts`, because the sourc
   is our own cut-off for ranking.
 - Foods without a cited value (egg white, kefir, feta, cream of rice, rice noodles, chia…) are unknown, never
   assumed low.
+
+The Nutrients page totals the day (or the 7-day average of logged days):
+
+- Only foods with a cited amount for the weight eaten are added. A dish counts through its ingredients.
+- Foods with a per-serving value but no serving weight (whey: "1 scoop"), or only a category (UPMC "low"),
+  are listed as not counted, with their level. Foods with no value are listed as unknown. Either one makes
+  the total an "at least".
+- There is no official daily intake. The card quotes UPMC (40–50 mg a day on a low-oxalate diet) and the
+  University of Chicago Kidney Stone Program (under 100 mg, ideally about 50), and lets the user set their own
+  limit (`profile.oxalateLimitMg`).
 
 ## Days
 
