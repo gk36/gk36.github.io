@@ -107,7 +107,16 @@ test('accessibility: no serious or critical axe violations on the main screens a
   await page.goto('./#/plan'); await scan('plan');
   await page.goto('./#/foods'); await scan('foods');
   await page.goto('./#/settings'); await scan('settings');
+  await page.goto('./#/nutrients'); await scan('nutrients');
+  await page.goto('./#/kitchen'); await scan('kitchen');
+  await page.goto('./#/train'); await scan('train');
+  await page.goto('./#/pantry'); await scan('pantry');
+  await page.goto('./#/pantry/shopping'); await scan('shopping list');
   await page.goto('./#/today');
+  await main(page).getByRole('button', { name: 'Replan rest of day' }).click();
+  await expect(dialog(page).getByRole('heading', { name: 'Replan the rest of today' })).toBeVisible();
+  await scan('replan');
+  await dialog(page).getByRole('button', { name: 'Close' }).click();
   await main(page).getByRole('button', { name: 'Log food' }).click();
   await scan('quick log');
   await dialog(page).getByRole('button', { name: 'New food from label' }).click();

@@ -17,7 +17,7 @@ changing those pages.
 src/
   domain/            pure TypeScript — no DOM, no storage (unit-tested)
     nutrition/       nutrient dictionary, food model, quantities, null-aware sums, labels, swaps
-    planning/        v1 template planner (bit-for-bit port) + core-food bindings
+    planning/        v1 template planner (bit-for-bit port) + core-food bindings; replan (goal-programming LP)
     time.ts          day keys (wall-clock day start; DST-safe)
     search.ts        accent-insensitive Greek/English search
     diary.ts         eaten / planned / projected totals
@@ -25,8 +25,9 @@ src/
     foods/           core.json (generated), registry (core + custom foods)
   app/               router (hash routes), signals store, high-level actions
   ui/                design-system components (sheets, controls, nutrition widgets, icons)
-  screens/           Today, Diary, Plan, Foods, Settings, More, Train, Onboarding
-  sheets/            Quick log, entry editor, food detail/editor, swap, copy day, saved meals, slots
+  screens/           Today, Diary, Plan, Foods, Settings, More, Train, Session, Kitchen, Nutrients, Pantry, Onboarding
+  sheets/            Quick log, entry editor, food detail/editor, swap, copy day, saved meals, slots, scan,
+                     recipe/cook, nutrient drill-down, pantry item, replan
   styles/            tokens.css (dark + light, WCAG-tested) and base.css
 ```
 
@@ -38,6 +39,25 @@ src/
 - **Targets are frozen per day** the first time a day is used, so changing goals never rewrites past days.
 - **Schema changes** add a new Dexie `version()` with an upgrade function; existing versions are never edited.
 - **Validation:** Zod schemas guard backups, imports and custom foods (Zod runs jitless — no `eval`).
+
+## Replan engine ("plans change")
+
+`domain/planning/replan.ts` builds a small linear program (javascript-lp-solver, pure JS, loaded only when the
+replan sheet opens):
+
+- **Variables:** amount of each still-planned or offered food (grams, mL or whole pieces; eggs are integers).
+- **Hard constraints:** eaten food is not in the model; keep / leave-out choices; a practical single-serving
+  maximum; shared stock per food (pantry lots, or what is left of a cooked batch); optional per-meal calorie cap
+  (relaxed with a note if the kept amounts already break it).
+- **Soft goals:** for kcal, protein, carbs and fat, `food + under − over = what is left`. Inside a tolerance band
+  (kcal ±3 %, protein −5/+15 g, carbs ±10 g, fat ±5 g) a miss is nearly free; beyond it each unit costs a fixed
+  weight (protein shortfall 14, or 40 with "protein first"; protein excess 3; fat over 6…), so an impossible day
+  yields the closest plan and an honest shortfall, never a fake match.
+- **Priorities** add non-negative per-food costs (they pick between foods, never push one to its maximum);
+  unknown values earn no credit, and unknown saturated fat counts as all of the fat.
+- **Closeness:** |new − planned| is priced in kcal so grams and pieces compare fairly.
+- Results are rounded to weighable amounts without breaking a stock or a limit (property-tested), applied in one
+  transaction, and stored as a day event that can be reverted.
 
 ## Security baseline
 

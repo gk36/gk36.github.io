@@ -50,7 +50,8 @@ export function ScanSheet({ dayKey, slotId }: { dayKey: DayKey; slotId?: string 
       return <Sheet title="Looking up…" onClose={closeSheet} lead={back}><p class="muted" role="status">Barcode {view.code} — checking your foods, then Open Food Facts…</p></Sheet>;
     case 'known':
       return (
-        <Sheet title="Already in your foods" onClose={closeSheet} lead={back}>
+        <Sheet title="Already in your foods" onClose={closeSheet} lead={back}
+          footer={<button type="button" class="btn" onClick={() => openSheet({ kind: 'pantry-item', food: view.foods[0]! })}>Add to pantry</button>}>
           <p class="small muted">Barcode {view.code}</p>
           <ul class="list">{view.foods.map((f) => (
             <li key={f.id}><button type="button" class="item" onClick={() => logFood(f)}>
@@ -71,6 +72,10 @@ export function ScanSheet({ dayKey, slotId }: { dayKey: DayKey; slotId?: string 
         <Sheet title={displayName(mapped.food)} onClose={closeSheet} lead={back}
           footer={<>
             <button type="button" class="btn" onClick={() => openSheet({ kind: 'food-editor', prefill: mapped.food, thenLog: { dayKey, ...(slotId ? { slotId } : {}) } })}>Check & edit first</button>
+            <button type="button" class="btn" disabled={mapped.errors.length > 0 || mapped.food.n.kcal === undefined} onClick={async () => {
+              const saved = await saveCustomFood(mapped.food);
+              openSheet({ kind: 'pantry-item', food: saved });
+            }}>Save & add to pantry</button>
             <button type="button" class="btn btn-primary" disabled={mapped.errors.length > 0 || mapped.food.n.kcal === undefined} onClick={() => void save(true)}>Save & log</button>
           </>}>
           <div class="cluster" style={{ alignItems: 'flex-start', flexWrap: 'nowrap' }}>

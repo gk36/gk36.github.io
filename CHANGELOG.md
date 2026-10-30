@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0-alpha.3 — milestone 7: pantry and "plans change" (unreleased, branch `carbmaxx-2`)
+
+- **Pantry:** what you have at home, in the state it's in (raw chicken 420 g, cooked rice 250 g, 6 eggs), with
+  use-by dates and estimates. Food logged as eaten — and ingredients of a cooked batch — come out of it
+  automatically (switchable); undo puts them back. Scanned products can go straight into the pantry.
+- **Shopping list:** add items or foods; the same food tops up instead of duplicating; tick what you bought and
+  it moves into the pantry. Items that run out or expire can be sent to the list.
+- **Replan rest of day:** after eating something different, rebalances only what is still planned — eaten food
+  never changes. A linear program respects what you have (one stock feeds every meal that uses it, batches count
+  once), keeps or leaves out foods you choose, can cap a meal's calories, and never invents an exact match: what
+  ends up short or over is shown per target. Priorities: closest to plan, protein first, more micronutrients,
+  most filling, lowest saturated fat, use expiring food. Every amount has a "Why this amount?" breakdown, and
+  every replan is saved in the day's history and can be undone.
+
 ## 2.0.0-alpha.2 — milestones 3, 4, 5 and 8 (unreleased, branch `carbmaxx-2`)
 
 - **Scan a barcode** with the camera, a photo, or by typing it. Codes are check-digit validated; lookups go to

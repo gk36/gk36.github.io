@@ -1,9 +1,10 @@
 import { href } from '../app/router';
-import { Activity, ChefHat, ClipboardList, Dumbbell, ExternalLink, Settings, Utensils } from '../ui/icons';
+import { Activity, ChefHat, ClipboardList, Dumbbell, ExternalLink, Refrigerator, Settings, Utensils } from '../ui/icons';
 
 export function More() {
   const items = [
     { to: href('kitchen'), label: 'Kitchen', sub: 'Recipes, batch cooking, leftovers', icon: ChefHat },
+    { to: href('pantry'), label: 'Pantry', sub: 'What you have at home, shopping list', icon: Refrigerator },
     { to: href('nutrients'), label: 'Nutrients', sub: 'Vitamins & minerals vs reference intakes', icon: Activity },
     { to: href('foods'), label: 'Foods & saved meals', sub: 'Search, add foods from labels', icon: Utensils },
     { to: href('settings'), label: 'Settings & data', sub: 'Profile, backups, v1 import', icon: Settings },

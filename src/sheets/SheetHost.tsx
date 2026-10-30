@@ -8,6 +8,11 @@ import { CopyDaySheet, SavedMealSheet, SlotsSheet } from './SmallSheets';
 import { NutrientSheet } from './NutrientSheet';
 import { ScanSheet } from './ScanSheet';
 import { CookSheet, RecipeEditor } from './RecipeSheets';
+import { useAsync } from '../ui/hooks';
+import { Sheet } from '../ui/Sheet';
+import { closeSheet } from '../app/store';
+import type { DayKey } from '../domain/time';
+import { PantryItemSheet } from './PantryItemSheet';
 
 /** Renders the one open sheet. Keyed so switching sheets remounts cleanly (focus, state). */
 export function SheetHost() {
@@ -27,5 +32,13 @@ export function SheetHost() {
     case 'scan': return <ScanSheet key={key} dayKey={s.dayKey} {...(s.slotId ? { slotId: s.slotId } : {})} />;
     case 'recipe': return <RecipeEditor key={`${key}-${s.foodId ?? 'new'}`} {...(s.foodId ? { foodId: s.foodId } : {})} />;
     case 'cook': return <CookSheet key={`${key}-${s.recipeId}`} recipeId={s.recipeId} />;
+    case 'replan': return <LazyReplan key={key} dayKey={s.dayKey} />;
+    case 'pantry-item': return <PantryItemSheet key={`${key}-${s.itemId ?? s.food?.id ?? 'new'}`} {...(s.itemId ? { itemId: s.itemId } : {})} {...(s.food ? { food: s.food } : {})} />;
   }
+}
+
+/** The replan sheet carries the LP solver, so it is fetched on first use. */
+function LazyReplan({ dayKey }: { dayKey: DayKey }) {
+  const mod = useAsync(() => import('./ReplanSheet'), []);
+  return mod ? <mod.ReplanSheet dayKey={dayKey} /> : <Sheet title="Replan the rest of today" onClose={closeSheet}><p class="muted">Loading…</p></Sheet>;
 }

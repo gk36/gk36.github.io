@@ -8,7 +8,7 @@ import { openSheet, profile, toast, todayKey } from '../app/store';
 import { href, navigate } from '../app/router';
 import { useAsync, useLive } from '../ui/hooks';
 import { MacroBar } from '../ui/nutrition';
-import { BookOpen, ClipboardList, Plus, Repeat, ScanBarcode, Smartphone } from '../ui/icons';
+import { BookOpen, ClipboardList, Plus, RefreshCw, Repeat, ScanBarcode, Smartphone } from '../ui/icons';
 import { MealList, slotsFor } from './parts/DayView';
 import { InstallHint } from './parts/InstallHint';
 import { NutrientGaps } from './parts/NutrientGaps';
@@ -88,6 +88,7 @@ export function Today() {
         <button type="button" class="btn btn-primary" onClick={() => openSheet({ kind: 'quicklog', dayKey: day })}><Plus size={18} aria-hidden="true" /> Log food</button>
         <button type="button" class="btn" onClick={() => openSheet({ kind: 'scan', dayKey: day })}><ScanBarcode size={18} aria-hidden="true" /> Scan</button>
         <button type="button" class="btn" onClick={() => navigate('plan')}><ClipboardList size={18} aria-hidden="true" /> Plan today</button>
+        <button type="button" class="btn" onClick={() => openSheet({ kind: 'replan', dayKey: day })}><RefreshCw size={18} aria-hidden="true" /> Replan rest of day</button>
         <button type="button" class="btn" onClick={() => void repeatYesterday()}><Repeat size={18} aria-hidden="true" /> Repeat yesterday</button>
       </div>
 

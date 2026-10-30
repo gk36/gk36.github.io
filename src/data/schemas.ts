@@ -107,7 +107,7 @@ export const entrySchema = z.object({
   planned: z.object({ foodId: z.string().max(120), foodName: z.string().max(300), qty: quantitySchema }).optional(),
   time: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   note: z.string().max(2000).optional(),
-  origin: z.enum(['search', 'plan', 'saved-meal', 'copy', 'quick', 'import', 'barcode', 'recipe']),
+  origin: z.enum(['search', 'plan', 'saved-meal', 'copy', 'quick', 'import', 'barcode', 'recipe', 'replan']),
   ...recordMeta,
 });
 
@@ -162,6 +162,25 @@ export const sessionSchema = z.object({
   exercises: z.array(sessionExerciseSchema).max(60), notes: z.string().max(4000).optional(), ...recordMeta,
 });
 
+const optDay = dayKey.nullable().optional();
+export const pantrySchema = z.object({
+  id: z.string().min(1).max(80), foodId: z.string().min(1).max(120), food: snapshotSchema, qty: quantitySchema, approx: z.boolean(),
+  expiresOn: optDay, openedOn: optDay, note: z.string().max(400).optional(), ...recordMeta,
+});
+export const shoppingSchema = z.object({
+  id: z.string().min(1).max(80), name: z.string().min(1).max(200), foodId: z.string().max(120).optional(), food: snapshotSchema.optional(),
+  qty: quantitySchema.optional(), group: z.enum(['protein', 'dairy', 'starch', 'fruit', 'veg', 'fat', 'sweet', 'drink', 'other']),
+  checked: z.boolean(), note: z.string().max(400).optional(), source: z.enum(['manual', 'replan', 'recipe', 'pantry']), ...recordMeta,
+});
+const replanChangeSchema = z.object({
+  entryId: z.string().max(80), kind: z.enum(['updated', 'added', 'removed']), foodName: z.string().max(300),
+  from: quantitySchema.nullable(), to: quantitySchema.nullable(),
+});
+export const eventSchema = z.object({
+  id: z.string().min(1).max(80), kind: z.literal('replan'), dayKey, at: iso, mode: z.string().max(40), summary: z.string().max(600),
+  changes: z.array(replanChangeSchema).max(200), revertedAt: iso.nullable().optional(), ...recordMeta,
+});
+
 export const BACKUP_SCHEMA = 1;
 
 export const backupSchema = z.object({
@@ -179,6 +198,9 @@ export const backupSchema = z.object({
     /** Added after the first backups — optional so older files still import. */
     programs: z.array(programSchema).optional(),
     sessions: z.array(sessionSchema).optional(),
+    pantry: z.array(pantrySchema).optional(),
+    shopping: z.array(shoppingSchema).optional(),
+    events: z.array(eventSchema).optional(),
   }),
 });
 

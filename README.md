@@ -21,6 +21,9 @@ GitHub Pages.
 - **Scan it.** Barcode by camera, photo or typing → Open Food Facts → check → save; saved products work offline.
 - **Cook once, eat all week.** Batch recipes weighed after cooking; every portion is an exact share of the batch.
 - **See every nutrient.** Coverage against your age/sex reference intakes, with what contributed each one.
+- **Plans change.** Ate something else? "Replan rest of day" rebalances only what is still planned, using what's in
+  your pantry — every change explained, nothing eaten touched, one tap to undo.
+- **Pantry & shopping list.** Stock comes down when you eat or cook; bought items go back in.
 - **Train.** Log sets from your program with a rest timer, prefilled weights, PRs and weekly volume.
 - **Works offline**, installable to the Home Screen.
 - **Your data stays on your device** (IndexedDB). Export/import backups at any time.

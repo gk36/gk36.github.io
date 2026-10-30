@@ -112,6 +112,12 @@ export async function markEaten(id: string, actual?: { qty?: Quantity; food?: Fo
   return next;
 }
 
+/** Puts an entry back exactly as it was (undo), as a new revision so sync sees the change. */
+export async function revertEntry(before: LogEntry): Promise<void> {
+  const cur = await db().entries.get(before.id);
+  await db().entries.put({ ...before, rev: Math.max(cur?.rev ?? 0, before.rev) + 1, updatedAt: nowIso() });
+}
+
 export async function softDelete(id: string): Promise<void> {
   const e = await db().entries.get(id);
   if (!e || e.deletedAt) return;

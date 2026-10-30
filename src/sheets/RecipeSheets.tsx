@@ -7,13 +7,14 @@ import { MacroLine } from '../ui/nutrition';
 import { ChefHat, Trash } from '../ui/icons';
 import { getFood, deleteCustomFood, restoreCustomFood } from '../data/foods/registry';
 import { cookBatch, saveRecipe } from '../data/kitchen';
+import { deductFromPantry } from '../data/pantry';
 import { ensureDay } from '../data/entries';
 import { recipeTotals, scaleComponents, type Component } from '../domain/kitchen/recipe';
 import { displayName, type Food, type Quantity } from '../domain/nutrition/food';
 import { defaultQuantity } from '../domain/nutrition/quantity';
 import { NUTRIENTS, type NutrientId } from '../domain/nutrition/nutrients';
 import { formatDayLabel } from '../domain/time';
-import { closeSheet, openSheet, todayKey, toast } from '../app/store';
+import { closeSheet, openSheet, profile, todayKey, toast } from '../app/store';
 import { logEntry } from '../app/actions';
 import { unitOptions, qtyKey } from './AmountPicker';
 
@@ -128,6 +129,12 @@ function CookForm({ recipe }: { recipe: Food }) {
   const cook = async () => {
     if (!valid) return;
     const batch = await cookBatch({ recipe, name, components, cookedWeightG: weight!, servings: recipe.recipe!.servings, cookedOn: today });
+    // Cooking uses the raw ingredients: take them out of the pantry (when they are in it).
+    let used = 0;
+    if (profile.value?.pantryDeduct !== false) {
+      for (const c of components) if ((await deductFromPantry(c.food, c.qty)).length) used += 1;
+    }
+    if (used) toast(`${used} ingredient${used > 1 ? 's' : ''} taken from the pantry`, { tone: 'ok' });
     if (portion && portion > 0) {
       const day = await ensureDay(today);
       await logEntry({ dayKey: today, slotId: day.slots[0]?.id ?? 'lunch', food: batch, qty: { amount: portion, unit: 'g' }, status: 'eaten', origin: 'recipe' });

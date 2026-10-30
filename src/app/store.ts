@@ -71,7 +71,9 @@ export type SheetState =
   | { kind: 'nutrient'; id: NutrientId; dayKey: DayKey; range: 'day' | 'week' }
   | { kind: 'scan'; dayKey: DayKey; slotId?: string }
   | { kind: 'recipe'; foodId?: string }
-  | { kind: 'cook'; recipeId: string };
+  | { kind: 'cook'; recipeId: string }
+  | { kind: 'replan'; dayKey: DayKey }
+  | { kind: 'pantry-item'; itemId?: string; food?: Food | FoodSnapshot };
 
 export const sheet = signal<SheetState | null>(null);
 export const openSheet = (s: SheetState) => { sheet.value = s; };

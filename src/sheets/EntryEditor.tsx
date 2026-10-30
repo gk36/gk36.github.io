@@ -4,7 +4,8 @@ import { useAsync, useLive } from '../ui/hooks';
 import { Field, Segmented } from '../ui/controls';
 import { ArrowRightLeft, Copy, Info, Trash } from '../ui/icons';
 import { MacroLine, SourceBadge } from '../ui/nutrition';
-import { duplicateEntry, ensureDay, getEntry, markEaten, updateEntry } from '../data/entries';
+import { duplicateEntry, ensureDay, getEntry, updateEntry } from '../data/entries';
+import { eatEntry } from '../app/actions';
 import { displayName, type Quantity } from '../domain/nutrition/food';
 import { describeQuantity } from '../domain/nutrition/quantity';
 import { contribution } from '../domain/nutrition/compute';
@@ -33,12 +34,13 @@ export function EntryEditor({ entryId }: { entryId: string }) {
   const save = async () => {
     const p = profile.value;
     if (status === 'eaten' && e.status === 'planned') {
-      if (p) await freezeTargets(p, e.dayKey);
-      await markEaten(e.id, { qty });
+      await eatEntry(e, { qty });
       if (slot !== e.slotId || note !== (e.note ?? '')) await updateEntry(e.id, { slotId: slot, note });
-    } else {
-      await updateEntry(e.id, { qty, status, slotId: slot, note });
+      closeSheet();
+      return;
     }
+    if (status === 'eaten' && p) await freezeTargets(p, e.dayKey);
+    await updateEntry(e.id, { qty, status, slotId: slot, note });
     toast('Saved', { tone: 'ok' });
     closeSheet();
   };

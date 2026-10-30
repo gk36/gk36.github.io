@@ -12,7 +12,7 @@ export interface RecordMeta {
 }
 
 export type EntryStatus = 'planned' | 'eaten' | 'skipped';
-export type EntryOrigin = 'search' | 'plan' | 'saved-meal' | 'copy' | 'quick' | 'import' | 'barcode' | 'recipe';
+export type EntryOrigin = 'search' | 'plan' | 'saved-meal' | 'copy' | 'quick' | 'import' | 'barcode' | 'recipe' | 'replan';
 
 /** The food exactly as it was when logged — history never shifts when a food is edited later. */
 export type FoodSnapshot = Omit<Food, 'createdAt' | 'updatedAt' | 'deletedAt' | 'rev'>;
@@ -98,6 +98,8 @@ export interface Profile {
   theme: 'system' | 'dark' | 'light';
   density: 'simple' | 'detailed' | 'research';
   lastBackupAt?: string | null;
+  /** Take food out of the pantry when it is logged as eaten or cooked (default on). */
+  pantryDeduct?: boolean;
   legacyProfileName?: string | null;
   updatedAt: string;
 }

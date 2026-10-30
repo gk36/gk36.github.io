@@ -1,11 +1,11 @@
 import { signal } from '@preact/signals';
 
 /** Hash routes work on GitHub Pages without server rewrites: #/diary/2026-10-30 */
-export type RouteName = 'today' | 'diary' | 'plan' | 'foods' | 'train' | 'more' | 'settings' | 'nutrients' | 'kitchen' | 'progress';
+export type RouteName = 'today' | 'diary' | 'plan' | 'foods' | 'train' | 'more' | 'settings' | 'nutrients' | 'kitchen' | 'pantry' | 'progress';
 
 export interface Route { name: RouteName; params: string[] }
 
-const NAMES: readonly RouteName[] = ['today', 'diary', 'plan', 'foods', 'train', 'more', 'settings', 'nutrients', 'kitchen', 'progress'];
+const NAMES: readonly RouteName[] = ['today', 'diary', 'plan', 'foods', 'train', 'more', 'settings', 'nutrients', 'kitchen', 'pantry', 'progress'];
 
 export function parseHash(hash: string): Route {
   const parts = hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);

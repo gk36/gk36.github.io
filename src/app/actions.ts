@@ -1,20 +1,28 @@
-import { addEntry, markEaten, restore, softDelete, type NewEntry } from '../data/entries';
+import { addEntry, getEntry, markEaten, restore, revertEntry, softDelete, type NewEntry } from '../data/entries';
+import { deductFromPantry, undoDeductions, type Deduction } from '../data/pantry';
 import { freezeTargets } from '../data/plan';
 import type { LogEntry } from '../data/types';
-import { displayName } from '../domain/nutrition/food';
+import { displayName, type Quantity } from '../domain/nutrition/food';
 import { describeQuantity } from '../domain/nutrition/quantity';
 import { profile, toast } from './store';
 
 let lastUndo: (() => Promise<void>) | null = null;
 export const undoLast = async () => { const u = lastUndo; lastUndo = null; if (u) await u(); };
+/** Makes Ctrl+Z undo something done outside these actions (a replan). */
+export const rememberUndo = (u: () => Promise<void>) => { lastUndo = u; };
+
+/** Pantry stock goes down when food is logged as eaten (unless turned off in the pantry). */
+const pantryDeduct = async (e: LogEntry): Promise<Deduction[]> => (profile.value?.pantryDeduct === false ? [] : deductFromPantry(e.food, e.qty));
+const pantryNote = (d: readonly Deduction[]) => (d.length ? ' · taken from the pantry' : '');
 
 export async function logEntry(input: NewEntry): Promise<LogEntry> {
   const p = profile.value;
   if (p) await freezeTargets(p, input.dayKey);
   const e = await addEntry(input);
-  const undo = async () => { await softDelete(e.id); toast('Removed'); };
+  const ded = e.status === 'eaten' ? await pantryDeduct(e) : [];
+  const undo = async () => { await softDelete(e.id); await undoDeductions(ded); toast('Removed'); };
   lastUndo = undo;
-  toast(`${input.status === 'planned' ? 'Planned' : 'Logged'} ${describeQuantity(e.food, e.qty)} ${displayName(e.food)}`, { action: { label: 'Undo', run: undo }, tone: 'ok' });
+  toast(`${input.status === 'planned' ? 'Planned' : 'Logged'} ${describeQuantity(e.food, e.qty)} ${displayName(e.food)}${pantryNote(ded)}`, { action: { label: 'Undo', run: undo }, tone: 'ok' });
   return e;
 }
 
@@ -25,9 +33,19 @@ export async function deleteWithUndo(e: LogEntry): Promise<void> {
   toast(`Deleted ${displayName(e.food)}`, { action: { label: 'Undo', run: undo } });
 }
 
-export async function eatNow(e: LogEntry): Promise<void> {
+/** Marks a planned entry eaten (optionally with the amount actually eaten); undo puts it back exactly. */
+export async function eatEntry(e: LogEntry, actual?: { qty?: Quantity }): Promise<LogEntry> {
   const p = profile.value;
   if (p) await freezeTargets(p, e.dayKey);
-  await markEaten(e.id);
-  toast(`Marked eaten: ${displayName(e.food)}`, { tone: 'ok' });
+  const before = (await getEntry(e.id)) ?? e;
+  const next = await markEaten(e.id, actual);
+  const ded = await pantryDeduct(next);
+  const undo = async () => { await revertEntry(before); await undoDeductions(ded); toast('Back to planned'); };
+  lastUndo = undo;
+  toast(`Marked eaten: ${displayName(next.food)}${pantryNote(ded)}`, { tone: 'ok', action: { label: 'Undo', run: undo } });
+  return next;
+}
+
+export async function eatNow(e: LogEntry): Promise<void> {
+  await eatEntry(e);
 }

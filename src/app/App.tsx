@@ -3,8 +3,9 @@ import { href, route, type RouteName } from './router';
 import { openSheet, profile, sheet, todayKey } from './store';
 import { undoLast } from './actions';
 import {
-  Activity, BookOpen, ChefHat, ClipboardList, Dumbbell, Ellipsis, LayoutDashboard, Plus, Settings, Utensils,
+  Activity, BookOpen, ChefHat, ClipboardList, Dumbbell, Ellipsis, LayoutDashboard, Plus, Refrigerator, Settings, Utensils,
 } from '../ui/icons';
+import { Pantry } from '../screens/Pantry';
 import { Nutrients } from '../screens/Nutrients';
 import { Kitchen } from '../screens/Kitchen';
 import { Toasts } from '../ui/Toasts';
@@ -26,6 +27,7 @@ const NAV: { name: RouteName; label: string; icon: typeof LayoutDashboard; mobil
   { name: 'plan', label: 'Plan', icon: ClipboardList, mobile: true },
   { name: 'nutrients', label: 'Nutrients', icon: Activity, mobile: false },
   { name: 'kitchen', label: 'Kitchen', icon: ChefHat, mobile: false },
+  { name: 'pantry', label: 'Pantry', icon: Refrigerator, mobile: false },
   { name: 'foods', label: 'Foods', icon: Utensils, mobile: false },
   { name: 'train', label: 'Train', icon: Dumbbell, mobile: true },
   { name: 'settings', label: 'Settings', icon: Settings, mobile: false },
@@ -62,13 +64,14 @@ export function App() {
   if (!p) return <div class="page"><p class="muted">Loading…</p></div>;
   if (!p.onboarded) return <><Onboarding /><Toasts /></>;
 
-  const active = (n: RouteName) => (r.name === n || (n === 'more' && ['foods', 'nutrients', 'settings', 'kitchen'].includes(r.name)) ? 'page' : undefined);
+  const active = (n: RouteName) => (r.name === n || (n === 'more' && ['foods', 'nutrients', 'settings', 'kitchen', 'pantry'].includes(r.name)) ? 'page' : undefined);
   const screen = (() => {
     switch (r.name) {
       case 'diary': return <Diary dayKey={r.params[0] && isDayKey(r.params[0]) ? r.params[0] : todayKey.value} />;
       case 'plan': return <PlanScreen />;
       case 'nutrients': return <Nutrients dayKey={r.params[0] && isDayKey(r.params[0]) ? r.params[0] : todayKey.value} />;
       case 'kitchen': return <Kitchen />;
+      case 'pantry': return <Pantry tab={r.params[0] === 'shopping' ? 'shopping' : 'stock'} />;
       case 'foods': return <Foods tab={r.params[0]} />;
       case 'settings': return <SettingsScreen />;
       case 'more': return <More />;

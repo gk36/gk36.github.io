@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { Food } from '../domain/nutrition/food';
-import type { DayRecord, LegacyArchive, LogEntry, SavedMeal, SettingRow, WeightRecord } from './types';
+import type { Food, Quantity } from '../domain/nutrition/food';
+import type { DayRecord, FoodSnapshot, LegacyArchive, LogEntry, SavedMeal, SettingRow, WeightRecord } from './types';
 
 /**
  * Local-first store. IndexedDB survives reloads and works offline; every change bumps `rev`
@@ -45,7 +45,67 @@ export interface WorkoutSession {
   rev: number;
 }
 
+/** One lot of a food at home ("yogurt tub, 176 g left"). Stock goes down only when food is logged as eaten or cooked. */
+export interface PantryItem {
+  id: string;
+  foodId: string;
+  food: FoodSnapshot;
+  qty: Quantity;
+  /** An estimate ("about 400 g") rather than a weighed amount. */
+  approx: boolean;
+  expiresOn?: string | null;
+  openedOn?: string | null;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  rev: number;
+}
+
+export interface ShoppingItem {
+  id: string;
+  name: string;
+  foodId?: string;
+  food?: FoodSnapshot;
+  qty?: Quantity;
+  group: Food['group'];
+  checked: boolean;
+  note?: string;
+  source: 'manual' | 'replan' | 'recipe' | 'pantry';
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  rev: number;
+}
+
+export interface ReplanChange {
+  entryId: string;
+  kind: 'updated' | 'added' | 'removed';
+  foodName: string;
+  from: Quantity | null;
+  to: Quantity | null;
+}
+
+/** History of automatic changes to a day (replans), so each one can be reviewed and reverted. */
+export interface DayEvent {
+  id: string;
+  kind: 'replan';
+  dayKey: string;
+  at: string;
+  mode: string;
+  summary: string;
+  changes: ReplanChange[];
+  revertedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+  rev: number;
+}
+
 export class CarbmaxxDB extends Dexie {
+  pantry!: Table<PantryItem, string>;
+  shopping!: Table<ShoppingItem, string>;
+  events!: Table<DayEvent, string>;
   programs!: Table<Program, string>;
   sessions!: Table<WorkoutSession, string>;
   offLookups!: Table<OffLookup, string>;
@@ -72,6 +132,8 @@ export class CarbmaxxDB extends Dexie {
     this.version(2).stores({ offLookups: 'code, fetchedAt' });
     // v3: training programs and logged workout sessions.
     this.version(3).stores({ programs: 'id, updatedAt', sessions: 'id, dayKey, startedAt, programId, updatedAt' });
+    // v4: pantry lots, shopping list, and the day-change history (replans).
+    this.version(4).stores({ pantry: 'id, foodId, updatedAt', shopping: 'id, foodId, updatedAt', events: 'id, dayKey, at, updatedAt' });
   }
 }
 

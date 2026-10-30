@@ -40,4 +40,7 @@ Cloud sync with a real account is planned (see [Roadmap](ROADMAP.md)).
 ## Schema versions
 
 The IndexedDB schema is versioned with Dexie. New versions add an upgrade function; old versions are never edited.
+v1 diary, foods, settings · v2 Open Food Facts cache · v3 training programs and sessions · v4 pantry, shopping list
+and day history (replans). Backups include every table except the Open Food Facts cache; older backups (without
+the newer tables) still import.
 Backups carry `schema: 1`; a backup from a newer app version is refused instead of being partially imported.

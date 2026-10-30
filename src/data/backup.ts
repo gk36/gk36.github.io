@@ -1,23 +1,24 @@
-import { db, type Program, type WorkoutSession } from './db';
+import { db, type DayEvent, type PantryItem, type Program, type ShoppingItem, type WorkoutSession } from './db';
 import { nowIso } from './ids';
 import { BACKUP_SCHEMA, backupSchema, type BackupFile } from './schemas';
 import type { Food } from '../domain/nutrition/food';
 import type { DayRecord, LogEntry, SavedMeal, SettingRow, WeightRecord } from './types';
 
-const TABLES = ['entries', 'days', 'foods', 'savedMeals', 'weights', 'settings', 'programs', 'sessions'] as const;
+const TABLES = ['entries', 'days', 'foods', 'savedMeals', 'weights', 'settings', 'programs', 'sessions', 'pantry', 'shopping', 'events'] as const;
 type TableName = (typeof TABLES)[number];
 /** Kept across a "replace" import so the previous state can always be restored. */
 export const PRE_IMPORT_KEY = 'preImportSnapshot';
 
 export async function exportAll(): Promise<BackupFile> {
   const d = db();
-  const [entries, days, foods, savedMeals, weights, settings, programs, sessions] = await Promise.all([
+  const [entries, days, foods, savedMeals, weights, settings, programs, sessions, pantry, shopping, events] = await Promise.all([
     d.entries.toArray(), d.days.toArray(), d.foods.toArray(), d.savedMeals.toArray(), d.weights.toArray(),
     d.settings.filter((s) => s.key !== PRE_IMPORT_KEY).toArray(), d.programs.toArray(), d.sessions.toArray(),
+    d.pantry.toArray(), d.shopping.toArray(), d.events.toArray(),
   ]);
   return {
     app: 'carbmaxx', kind: 'backup', schema: BACKUP_SCHEMA, exportedAt: nowIso(),
-    data: { entries, days, foods, savedMeals, weights, settings, programs, sessions },
+    data: { entries, days, foods, savedMeals, weights, settings, programs, sessions, pantry, shopping, events },
   } as BackupFile;
 }
 
@@ -61,9 +62,12 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
   const data = file.data;
   const programs = (data.programs ?? []) as Program[];
   const sessions = (data.sessions ?? []) as WorkoutSession[];
-  await d.transaction('rw', [d.entries, d.days, d.foods, d.savedMeals, d.weights, d.settings, d.programs, d.sessions], async () => {
+  const pantry = (data.pantry ?? []) as PantryItem[];
+  const shopping = (data.shopping ?? []) as ShoppingItem[];
+  const events = (data.events ?? []) as DayEvent[];
+  await d.transaction('rw', [d.entries, d.days, d.foods, d.savedMeals, d.weights, d.settings, d.programs, d.sessions, d.pantry, d.shopping, d.events], async () => {
     if (mode === 'replace') {
-      await Promise.all([d.entries.clear(), d.days.clear(), d.foods.clear(), d.savedMeals.clear(), d.weights.clear(), d.programs.clear(), d.sessions.clear()]);
+      await Promise.all([d.entries.clear(), d.days.clear(), d.foods.clear(), d.savedMeals.clear(), d.weights.clear(), d.programs.clear(), d.sessions.clear(), d.pantry.clear(), d.shopping.clear(), d.events.clear()]);
       const keep = await d.settings.get(PRE_IMPORT_KEY);
       await d.settings.clear();
       if (keep) await d.settings.put(keep);
@@ -75,6 +79,9 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
       await d.weights.bulkPut(data.weights as WeightRecord[]);
       await d.programs.bulkPut(programs);
       await d.sessions.bulkPut(sessions);
+      await d.pantry.bulkPut(pantry);
+      await d.shopping.bulkPut(shopping);
+      await d.events.bulkPut(events);
       await d.settings.bulkPut((data.settings as SettingRow[]).filter((s) => s.key !== PRE_IMPORT_KEY));
       return;
     }
@@ -91,6 +98,9 @@ export async function importBackup(file: BackupFile, mode: 'replace' | 'merge'):
     await mergeTable<WeightRecord>(d.weights, data.weights as WeightRecord[], (r) => r.dayKey);
     await mergeTable<Program>(d.programs, programs, (r) => r.id);
     await mergeTable<WorkoutSession>(d.sessions, sessions, (r) => r.id);
+    await mergeTable<PantryItem>(d.pantry, pantry, (r) => r.id);
+    await mergeTable<ShoppingItem>(d.shopping, shopping, (r) => r.id);
+    await mergeTable<DayEvent>(d.events, events, (r) => r.id);
     for (const s of data.settings as SettingRow[]) {
       if (s.key === PRE_IMPORT_KEY) continue;
       if (!(await d.settings.get(s.key))) await d.settings.put(s);
