@@ -6,6 +6,8 @@ import { toast } from './store';
  */
 export function registerServiceWorker(): void {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return;
+  // Inside a frame (an embedded preview) a service worker can't control the page anyway.
+  if (window.top !== window.self) return;
   // The first install also fires controllerchange (clients.claim); reloading then would wipe
   // whatever the user is typing, so only a user-requested update reloads.
   const hadController = !!navigator.serviceWorker.controller;
