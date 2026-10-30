@@ -16,7 +16,8 @@ GitHub Pages.
 - **Weigh it how you cooked it.** Core foods come from USDA FoodData Central in the states you weigh
   them (raw *and* roasted chicken, dry *and* cooked rice…), each with its FDC id.
 - **Unknown is never zero.** Missing nutrient data is shown as unknown, and totals say “≥ … · known for 7 of 9 foods”.
-- **Your labels.** Add any packaged food from its label (Greek/EU or US style, per 100 g, per 100 mL or per serving).
+- **Your labels.** Add any packaged food from its label (Greek/EU or US style, per 100 g, per 100 mL or per serving) —
+  or photograph the table and the numbers are read on your phone for you to check.
 - **Your planner.** The v1 meal template (goals, cut styles, gym/rest timings, food picks) writes *planned* entries.
 - **Scan it.** Barcode by camera, photo or typing → Open Food Facts → check → save; saved products work offline.
 - **Cook once, eat all week.** Batch recipes weighed after cooking; every portion is an exact share of the batch.
@@ -73,5 +74,7 @@ macros, and that each portion weight is one of USDA's own portions) and refuses 
   Office of Dietary Supplements fact sheets and the 2019 sodium/potassium report); sources per nutrient in
   `src/domain/micros/dri-table.json`.
 - Barcode reading on browsers without a built-in reader: zxing-wasm (MIT) / ZXing-C++ (Apache-2.0), self-hosted.
+- Label OCR: Tesseract.js and tesseract.js-core (Apache-2.0) with the tessdata_best_int Greek and English models
+  (Apache-2.0), self-hosted under `/app/ocr/`.
 - Calorie estimate: Mifflin–St Jeor × activity factor — an estimate to check against your weight trend.
 - This app is general information, not medical or dietetic advice.

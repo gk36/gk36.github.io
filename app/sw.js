@@ -1,6 +1,6 @@
 /* CARBMAXX service worker — generated at build time. */
-const VERSION = "carbmaxx-deed0f7c7b63";
-const PRECACHE = ["./","./apple-touch-icon.png","./assets/ReplanSheet-BlQ4VFOZ.js","./assets/core-DSsfOJeP.js","./assets/core.meta-UvxilGrC.js","./assets/dri-table-bfmUC6jl.js","./assets/index-CO_9sLJO.css","./assets/index-CutDw5Fy.js","./assets/inter-greek-ext-wght-normal-DlzME5K_.woff2","./assets/inter-greek-wght-normal-CkhJZR-_.woff2","./assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2","./assets/inter-latin-wght-normal-Dx4kXJAl.woff2","./assets/ponyfill-DdE6jAwG.js","./assets/zxing_reader-BxB2YfIY.wasm","./assets/zxing_reader-DJ-Ysdss.js","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest"];
+const VERSION = "carbmaxx-6e143e2f409e";
+const PRECACHE = ["./","./apple-touch-icon.png","./assets/ReplanSheet-BsE8TKLk.js","./assets/core-DSsfOJeP.js","./assets/core.meta-UvxilGrC.js","./assets/dri-table-bfmUC6jl.js","./assets/index-CO_9sLJO.css","./assets/index-DMCfC8QT.js","./assets/inter-greek-ext-wght-normal-DlzME5K_.woff2","./assets/inter-greek-wght-normal-CkhJZR-_.woff2","./assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2","./assets/inter-latin-wght-normal-Dx4kXJAl.woff2","./assets/ocr-Dl30oAva.js","./assets/ponyfill-DdE6jAwG.js","./assets/rolldown-runtime-BCiCTKAo.js","./assets/src-BmUdCsRu.js","./assets/zxing_reader-BxB2YfIY.wasm","./assets/zxing_reader-DJ-Ysdss.js","./icon-192.png","./icon-512.png","./icon-maskable-512.png","./icon.svg","./manifest.webmanifest"];
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(PRECACHE)));
 });
@@ -24,7 +24,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   e.respondWith(caches.open(VERSION).then((c) => c.match(req, { ignoreVary: true }).then((hit) => hit || fetch(req).then((res) => {
-    if (res.ok && url.pathname.includes('/assets/')) c.put(req, res.clone());
+    if (res.ok && (url.pathname.includes('/assets/') || url.pathname.includes('/ocr/'))) c.put(req, res.clone());
     return res;
   }))));
 });

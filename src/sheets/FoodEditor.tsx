@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'preact/hooks';
+import { useMemo, useRef, useState } from 'preact/hooks';
+import { LabelPhoto } from './LabelPhoto';
+import type { LabelText } from '../domain/nutrition/labelText';
 import { Sheet } from '../ui/Sheet';
 import { useAsync } from '../ui/hooks';
 import { Field, NumberField, Segmented } from '../ui/controls';
@@ -62,6 +64,36 @@ function EditorForm({ seed, thenLog }: { seed: Partial<Food> | undefined; thenLo
   const [notes, setNotes] = useState(seed?.notes ?? '');
   const [saving, setSaving] = useState(false);
   const setV = (k: string) => (v: Num) => setVals((s) => ({ ...s, [k]: v }));
+  const [ocr, setOcr] = useState<{ filled: string[]; warnings: string[]; text: string } | null>(null);
+  const valsRef = useRef(vals);
+  valsRef.current = vals;
+
+  /** Fills only EMPTY fields from the photo; anything typed by hand wins. */
+  const applyOcr = ({ text, parsed }: { text: string; parsed: LabelText }) => {
+    const next = { ...valsRef.current };
+    const filled: string[] = [];
+    const take = (key: string, label: string, v: number | undefined) => {
+      if (v === undefined || (next[key] !== null && next[key] !== undefined)) return;
+      next[key] = Math.round(v * 1000) / 1000;
+      filled.push(label);
+    };
+    const f = parsed.fields;
+    if (f.energyKcal) take('energyKcal', 'energy', f.energyKcal.value);
+    else if (f.energyKj && (next.energyKcal === null || next.energyKcal === undefined) && !useKj) { setUseKj(true); setKj(f.energyKj.value); filled.push('energy (kJ)'); }
+    take('fat', 'fat', f.fat?.value);
+    take('satFat', 'saturates', f.satFat?.value);
+    take('carbs', 'carbohydrate', f.carbs?.value);
+    take('sugars', 'sugars', f.sugars?.value);
+    take('fiber', 'fibre', f.fiber?.value);
+    take('protein', 'protein', f.protein?.value);
+    take('salt', f.salt ? 'salt' : 'salt (from sodium)', f.salt?.value ?? (f.sodiumMg ? sodiumMgToSalt(f.sodiumMg.value) : undefined));
+    setVals(next);
+    if (parsed.basis) setBasis(parsed.basis);
+    if (parsed.region) setRegion(parsed.region);
+    if (parsed.basis === 'perServing' && parsed.servingG) { setServingG(parsed.servingG); setServingMl(null); }
+    else if (parsed.basis === 'perServing' && parsed.servingMl) { setServingMl(parsed.servingMl); setServingG(null); }
+    setOcr({ filled, warnings: parsed.warnings, text: text.trim() });
+  };
 
   const input: LabelInput = useMemo(() => {
     const i: LabelInput = { name, basis, region };
@@ -114,6 +146,14 @@ function EditorForm({ seed, thenLog }: { seed: Partial<Food> | undefined; thenLo
     <Sheet title={seed?.id?.startsWith('custom:') ? 'Edit food' : 'New food from label'} onClose={closeSheet}
       footer={<><button type="button" class="btn" onClick={closeSheet}>Cancel</button><button type="button" class="btn btn-primary" disabled={!canSave} onClick={() => void save()}>{thenLog ? 'Save & log' : 'Save food'}</button></>}>
       <p class="small muted">Copy the numbers exactly as printed. Leave anything not on the label empty — it stays <b>unknown</b>, never zero.</p>
+      <LabelPhoto onRead={applyOcr} />
+      {ocr ? (
+        <div class="callout warn small stack-s" role="status">
+          <span>{ocr.filled.length ? <>Filled from your photo: <b>{ocr.filled.join(', ')}</b>. Check every number against the package before saving — photos can be misread.</> : 'Nothing new could be filled in from the photo.'}</span>
+          {ocr.warnings.map((w) => <span key={w}>{w}</span>)}
+          {ocr.text ? <details><summary>What the camera read</summary><pre class="xs" style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0' }}>{ocr.text}</pre></details> : null}
+        </div>
+      ) : null}
       <Field label="Name" for="fe-name"><input id="fe-name" class="input" value={name} onInput={(e) => setName(e.currentTarget.value)} placeholder="e.g. Greek yogurt 2%" autoFocus /></Field>
       <div class="fields">
         <Field label="Brand" for="fe-brand"><input id="fe-brand" class="input" value={brand} onInput={(e) => setBrand(e.currentTarget.value)} placeholder="optional" /></Field>

@@ -25,6 +25,39 @@ const CSP = [
 ].join('; ');
 
 /**
+ * Label OCR runs on the device with Tesseract (Apache-2.0). Its worker, WebAssembly core (with and
+ * without SIMD) and the Greek + English "best_int" models are served from our own origin under a
+ * versioned path — nothing is fetched from a CDN. They load only when a label photo is read.
+ */
+const OCR_DIR = 'ocr/7.0.0'; // also in src/integrations/ocr.ts
+const OCR_FILES: Record<string, string> = {
+  'worker.min.js': 'node_modules/tesseract.js/dist/worker.min.js',
+  'tesseract-core-simd-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js',
+  'tesseract-core-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js',
+  'lang/eng.traineddata.gz': 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz',
+  'lang/ell.traineddata.gz': 'node_modules/@tesseract.js-data/ell/4.0.0_best_int/ell.traineddata.gz',
+};
+
+function ocrAssets(): Plugin {
+  const source = (rel: string) => path.resolve(__dirname, OCR_FILES[rel]!);
+  return {
+    name: 'carbmaxx-ocr-assets',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const prefix = `/app/${OCR_DIR}/`;
+        const rel = req.url?.startsWith(prefix) ? decodeURIComponent(req.url.slice(prefix.length).split('?')[0]!) : null;
+        if (!rel || !OCR_FILES[rel]) return next();
+        res.setHeader('Content-Type', rel.endsWith('.js') ? 'text/javascript' : 'application/octet-stream');
+        fs.createReadStream(source(rel)).pipe(res);
+      });
+    },
+    generateBundle() {
+      for (const rel of Object.keys(OCR_FILES)) this.emitFile({ type: 'asset', fileName: `${OCR_DIR}/${rel}`, source: fs.readFileSync(source(rel)) });
+    },
+  };
+}
+
+/**
  * Emits app/sw.js: precaches every built file (versioned by the hash of the file list), serves
  * hashed assets cache-first and the page network-first, and only ever handles same-origin GETs
  * under /app/ — never API calls, never other pages. A new version waits until the user reloads.
@@ -36,7 +69,8 @@ function serviceWorker(): Plugin {
     generateBundle(_opts, bundle) {
       const publicDir = path.resolve(__dirname, 'src', 'public');
       const publicFiles = fs.readdirSync(publicDir).filter((f) => !f.startsWith('.'));
-      const files = [...Object.keys(bundle), ...publicFiles].filter((f) => !f.endsWith('.map')).sort();
+      // OCR files (~8 MB) are cached on first use instead of at install.
+      const files = [...Object.keys(bundle), ...publicFiles].filter((f) => !f.endsWith('.map') && !f.startsWith('ocr/')).sort();
       const version = `carbmaxx-${createHash('sha256').update(files.join('|')).digest('hex').slice(0, 12)}`;
       // Font subsets for scripts the app doesn't use are fetched (and cached) only if ever needed.
       const precache = ['./', ...files.filter((f) => f !== 'index.html' && !/inter-(cyrillic|vietnamese)/.test(f)).map((f) => `./${f}`)];
@@ -66,7 +100,7 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   e.respondWith(caches.open(VERSION).then((c) => c.match(req, { ignoreVary: true }).then((hit) => hit || fetch(req).then((res) => {
-    if (res.ok && url.pathname.includes('/assets/')) c.put(req, res.clone());
+    if (res.ok && (url.pathname.includes('/assets/') || url.pathname.includes('/ocr/'))) c.put(req, res.clone());
     return res;
   }))));
 });
@@ -90,7 +124,7 @@ export default defineConfig({
   root: 'src',
   base: '/app/',
   publicDir: 'public',
-  plugins: [preact(), cspMeta(), serviceWorker()],
+  plugins: [preact(), cspMeta(), ocrAssets(), serviceWorker()],
   build: {
     outDir: '../app',
     emptyOutDir: true,

@@ -40,6 +40,14 @@ src/
 - **Schema changes** add a new Dexie `version()` with an upgrade function; existing versions are never edited.
 - **Validation:** Zod schemas guard backups, imports and custom foods (Zod runs jitless — no `eval`).
 
+## Label OCR
+
+`integrations/ocr.ts` runs Tesseract in a Web Worker on the device: the photo is downscaled (long side ≤ 2,400 px)
+and greyscaled, then read with the Greek + English LSTM models. Engine (SIMD or plain build, chosen by feature
+test) and models are copied from `node_modules` into `app/ocr/7.0.0/` at build time, excluded from the install
+precache and cached by the service worker on first use. `domain/nutrition/labelText.ts` turns the text into label
+values (pure, unit-tested) and the label editor fills only empty fields.
+
 ## Replan engine ("plans change")
 
 `domain/planning/replan.ts` builds a small linear program (javascript-lp-solver, pure JS, loaded only when the

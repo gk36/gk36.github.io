@@ -11,10 +11,10 @@ the owner's decision.
 | 3 | Packaged foods — camera barcode scanning, Open Food Facts lookup, verify & save, offline repeat | ✅ done — live camera (native reader, or a self-hosted WebAssembly reader on iPhone), photo or typed code, check-digit validation, cached lookups |
 | 4 | Kitchen — recipes and batch cooking with measured cooked yield, leftovers, scaling | ✅ done — portions are exact fractions of the weighed batch (property-tested), raw↔cooked yield estimator |
 | 5 | Nutrients — age/sex reference intakes, unknown-aware coverage report, drill-downs, meal compare | ✅ done — NASEM DRIs for 27 nutrients, upper limits only where they apply to food, top contributors, 7-day average |
-| 6 | Label reader — photo → OCR (Greek + English) → verified label values | ⏳ planned |
+| 6 | Label reader — photo → OCR (Greek + English) → verified label values | ✅ done — on-device Tesseract (self-hosted, ~8 MB on first use), EU and US layouts, look-alike-letter tolerant, fills only empty fields for checking |
 | 7 | Pantry & replan — stock, shopping list, constrained optimizer with explanations | ✅ done — pantry lots (eaten/cooked food comes out, undoable), shopping list, "Replan rest of day" (linear programming, 6 priorities, explanations, history + undo) |
 | 8 | Training — session logging, progression, PRs; program editor and 3D viewer ported | ✅ logging done — v1 programs import read-only; sets, rest timer, prefill, PRs, weekly muscle volume, time budget. Program editor and 3D viewer stay on the classic page for now |
-| 9 | Hardening — installable PWA, accessibility and performance audits | 🔨 offline app shell and install done; audits planned |
+| 9 | Hardening — installable PWA, accessibility and performance audits | 🔨 offline shell, install, no browser pop-ups, axe on every screen; heavy features load on demand |
 
 ## Acceptance stories covered so far
 

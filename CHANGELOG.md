@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-alpha.4 — milestone 6: read a label from a photo (unreleased, branch `carbmaxx-2`)
+
+- **Read label photo** in the label editor: photograph the nutrition table; the numbers are read on the
+  phone (Greek + English, nothing is uploaded) and fill the *empty* fields — anything typed by hand wins.
+  Works with EU per-100 g/mL tables and US Nutrition Facts (serving size, sodium in mg); "less than" values,
+  impossible numbers and contradictions are flagged; "What the camera read" shows the raw text.
+- The workout logger no longer uses browser pop-ups (blocked or clumsy in installed iPhone apps).
+
 ## 2.0.0-alpha.3 — milestone 7: pantry and "plans change" (unreleased, branch `carbmaxx-2`)
 
 - **Pantry:** what you have at home, in the state it's in (raw chicken 420 g, cooked rice 250 g, 6 eggs), with
