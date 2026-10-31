@@ -1,0 +1,199 @@
+/* Components added in CARBMAXX 2.0 alpha.6+: typed meals, meal ideas, the redesigned Today. */
+
+/* iOS Safari zooms into any field under 16 px when it gets focus — keep every field at 16 px on phones. */
+@media (max-width: 1023px) {
+  input, select, textarea, .input, .select, .textarea { font-size: 16px; }
+}
+
+/* ---------- "What did you eat?" ---------- */
+.composer {
+  display: flex; flex-direction: column; gap: 8px; padding: 14px 14px 10px; border-radius: var(--radius-l);
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--ember) 35%, var(--line));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ember) 6%, transparent);
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.composer:focus-within { border-color: var(--ember); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ember) 14%, transparent); }
+.composer-label { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: var(--fs-l); color: var(--fg); }
+.composer-label svg { color: var(--ember-text); }
+.composer-input {
+  width: 100%; min-height: 52px; resize: none; border: 0; background: transparent; padding: 2px 0;
+  font-size: 17px; line-height: 1.45; color: var(--fg);
+}
+.composer-input::placeholder { color: var(--fg-subtle); }
+.composer-input:focus-visible { outline: none; }
+.composer-actions { display: flex; align-items: center; gap: 4px; }
+.composer-hint { margin-top: -2px; }
+
+/* ---------- check and log ---------- */
+.tl-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 12px 14px; cursor: pointer;
+  border-radius: var(--radius-m); border: 1px solid color-mix(in srgb, var(--ember) 45%, var(--line));
+  background: color-mix(in srgb, var(--ember) 8%, var(--surface)); color: var(--fg);
+}
+.tl-card > svg { color: var(--ember-text); flex: none; }
+.tl-card-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tl-quote {
+  margin: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 10px 12px;
+  border-radius: var(--radius-m); background: var(--surface); border: 1px dashed var(--line-strong);
+}
+.tl-quote blockquote { margin: 0; color: var(--fg-muted); overflow-wrap: anywhere; }
+.tl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tl-item { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-m); background: var(--surface); }
+.tl-item.needs { border-color: color-mix(in srgb, var(--warn) 60%, var(--line)); box-shadow: inset 3px 0 0 var(--warn); }
+.tl-head { display: flex; align-items: flex-start; gap: 8px; }
+.tl-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.tl-kcal { font-weight: 800; white-space: nowrap; padding-top: 6px; }
+.tl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.tl-amount { display: inline-flex; align-items: center; gap: 6px; }
+.tl-amount .input { width: 88px; min-height: 40px; padding: 6px 10px; }
+.tl-amount .select { width: auto; max-width: 200px; min-height: 40px; padding: 6px 8px; }
+.tl-issue { display: flex; flex-direction: column; gap: 8px; padding: 10px; border-radius: var(--radius-s); background: color-mix(in srgb, var(--warn) 9%, var(--card)); }
+.tl-msg { display: flex; align-items: flex-start; gap: 6px; font-weight: 600; font-size: var(--fs-s); }
+.tl-msg svg { color: var(--warn); flex: none; margin-top: 2px; }
+.tl-notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); color: var(--fg-subtle); }
+.tl-notes li { display: flex; align-items: flex-start; gap: 6px; }
+.tl-notes svg { flex: none; margin-top: 2px; }
+.tl-alts { align-items: center; }
+.tl-total { flex-basis: 100%; font-size: var(--fs-s); }
+.tl-wait { color: var(--warn); font-weight: 700; }
+.tl-change { display: inline-flex; align-items: center; gap: 4px; min-height: 28px; }
+
+/* ---------- meal ideas ---------- */
+.ideas-entry {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 16px; cursor: pointer;
+  border-radius: var(--radius-l); border: 1px solid var(--line); color: var(--fg);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--carbs) 12%, var(--card)), var(--card) 60%);
+}
+.ideas-entry:hover { border-color: var(--line-strong); }
+.ideas-entry > svg:first-child { color: var(--carbs); flex: none; }
+.ideas-entry-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ideas-entry-main b { font-size: var(--fs-l); }
+.ideas-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ideas-size { justify-content: flex-start; gap: 4px; width: 100%; padding: 0 12px; font-weight: 600; }
+.ideas-size svg { margin-left: auto; color: var(--fg-subtle); }
+.ideas-gap {
+  display: flex; gap: 8px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-m); font-weight: 600;
+  background: color-mix(in srgb, var(--carbs) 10%, var(--surface)); border: 1px solid color-mix(in srgb, var(--carbs) 35%, var(--line));
+}
+.ideas-gap svg { color: var(--carbs); flex: none; margin-top: 3px; }
+.ideas-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.idea { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: var(--radius-l); border: 1px solid var(--line); background: var(--surface); }
+.idea-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 10px; }
+.idea-title { font-size: var(--fs-l); font-weight: 800; }
+.idea-numbers { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.idea-kcal { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+.idea-kcal small { font-size: var(--fs-s); font-weight: 700; color: var(--fg-muted); letter-spacing: 0; }
+.idea-macro { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-s); color: var(--fg-muted); }
+.idea-macro b { color: var(--fg); font-size: var(--fs-m); }
+.idea-fit { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.fit { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; }
+.fit.ok { color: var(--ok); }
+.fit.close { color: var(--fg-muted); }
+.fit.off { color: var(--warn); }
+.idea-helps { display: flex; gap: 6px; align-items: flex-start; }
+.idea-helps svg { color: var(--carbs); flex: none; margin-top: 3px; }
+.idea-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.idea-item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-s); }
+.idea-line { flex: 1 1 220px; min-width: 0; }
+.idea-edit { display: flex; align-items: center; gap: 6px; flex: 1 1 260px; }
+.idea-edit .input { width: 84px; min-height: 40px; padding: 6px 10px; }
+.idea-edit .select { flex: 1; min-height: 40px; padding: 6px 8px; }
+.idea-name { flex: 1; }
+.idea-badges { gap: 4px; }
+.idea-steps { border-radius: var(--radius-m); background: var(--card); border: 1px solid var(--line); padding: 4px 12px; }
+.idea-steps summary { display: flex; align-items: center; gap: 6px; min-height: 40px; cursor: pointer; font-weight: 700; list-style: none; }
+.idea-steps summary::-webkit-details-marker { display: none; }
+.idea-steps summary .chev { margin-left: auto; transition: transform var(--dur-fast); }
+.idea-steps[open] summary .chev { transform: rotate(180deg); }
+.idea-steps ol { margin: 4px 0 10px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; font-size: var(--fs-s); line-height: 1.55; }
+.idea-facts { display: flex; flex-direction: column; gap: 4px; }
+.idea-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.idea-actions .btn { flex: 1 1 auto; }
+.taste { border-color: color-mix(in srgb, var(--ember) 40%, var(--line)); }
+@media (max-width: 420px) {
+  .ideas-controls { grid-template-columns: 1fr; }
+}
+
+/* ---------- Today summary ---------- */
+.summary { display: flex; flex-direction: column; gap: 14px; }
+.summary-top { display: flex; align-items: center; gap: 18px; }
+.summary-side { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.summary-left { font-size: 30px; font-weight: 900; line-height: 1.1; letter-spacing: -0.5px; }
+.summary-left.over { color: var(--warn); }
+.summary-planned { margin-top: 6px; }
+.ring { position: relative; width: 132px; height: 132px; flex: none; }
+.ring svg { display: block; }
+.ring circle { fill: none; }
+.ring-track { stroke: var(--raised); }
+.ring-fill { stroke: var(--ember); stroke-linecap: round; transition: stroke-dasharray var(--dur); }
+.ring-fill.over { stroke: var(--warn); }
+.ring-planned { stroke: color-mix(in srgb, var(--ember) 32%, var(--raised)); }
+.ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
+.ring .hero-num { font-size: 30px; }
+
+.quick-row {
+  display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity;
+}
+.quick-row::-webkit-scrollbar { display: none; }
+.quick {
+  flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; scroll-snap-align: start;
+  border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); color: var(--fg); font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.quick:hover { border-color: var(--fg-subtle); }
+.quick svg { color: var(--ember-text); }
+@media (min-width: 1024px) { .quick-row { margin: 0; padding: 2px 0; flex-wrap: wrap; overflow: visible; } }
+
+/* ---------- oxalate ---------- */
+.oxalate .card-title { display: inline-flex; align-items: center; gap: 6px; }
+.ox-total { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; }
+.ox-num { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; }
+.ox-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.ox-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-s); }
+.ox-list li:last-child { border-bottom: 0; }
+.ox-food { flex: 1 1 160px; min-width: 0; font-weight: 600; }
+.ox-note { flex-basis: 100%; }
+.ox-unknown summary { cursor: pointer; font-weight: 700; min-height: 36px; display: flex; align-items: center; }
+
+/* ---------- polish: controls that look the same on iPhone and desktop ---------- */
+/* Native selects get one look everywhere (iOS otherwise draws grey gradients with truncated text). */
+.select {
+  -webkit-appearance: none; appearance: none; padding-right: 36px; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a93a8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
+}
+/* Long choices (meal picks, time zones) get a full row on phones. */
+.fields-wide { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+
+/* Recipe and batch ingredients: name, then amount · unit · remove. */
+.ing-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 0; }
+.ing-name { flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ing-controls { flex: 1 1 260px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ing-controls .input { width: 92px; flex: none; }
+.ing-controls .select { flex: 1; min-width: 0; }
+
+/* Kitchen recipes. */
+.recipe-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 12px 0; }
+.recipe-main { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left; background: none; border: 0; padding: 0; color: inherit; cursor: pointer; }
+.recipe-main .item-name .badge { margin-left: 6px; vertical-align: 2px; }
+.recipe-actions { display: flex; gap: 8px; }
+
+/* Meal cards: name and totals on the left, one clear add button on the right. */
+.meal-head { align-items: flex-start; }
+.meal-title { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.meal-kcal { margin-top: 3px; color: var(--fg-muted); }
+.meal-kcal b { color: var(--fg); }
+.meal-add { flex: none; border-radius: 999px; }
+
+/* Log food: other ways in, as chips under the search. */
+.ql-ways { margin-top: -4px; }
+
+/* Bottom sheets on phones get a grab handle, like native sheets. */
+@media (max-width: 719px) {
+  .sheet-inner { position: relative; }
+  .sheet-inner::before {
+    content: ""; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px;
+    border-radius: 999px; background: var(--line-strong);
+  }
+  .sheet-head { padding-top: 18px; }
+}

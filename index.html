@@ -43,6 +43,14 @@
   .tab{padding:9px 18px;border-radius:9px;font-size:13.5px;font-weight:800;color:var(--muted);text-decoration:none;letter-spacing:.3px;transition:.15s}
   .tab:hover{color:var(--txt)}
   .tab.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+  .tab.new{color:var(--carb)}
+  .tab.new:hover{color:var(--txt)}
+  .newapp{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;margin:-6px 0 18px;padding:12px 16px;border-radius:14px;border:1px solid rgba(62,207,142,.35);background:linear-gradient(135deg,rgba(62,207,142,.12),rgba(255,106,61,.06));color:var(--txt);text-decoration:none;box-shadow:var(--sh);transition:.15s}
+  .newapp:hover{border-color:var(--carb)}
+  .newapp-badge{font-size:11px;font-weight:900;letter-spacing:1px;color:#0e0f13;background:var(--carb);border-radius:999px;padding:3px 9px}
+  .newapp-text{flex:1;min-width:220px;font-size:13.5px;color:var(--muted)}
+  .newapp-text b{color:var(--txt)}
+  .newapp-go{font-weight:900;color:var(--carb);white-space:nowrap}
 
   .card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--sh)}
   .pad{padding:20px}
@@ -247,7 +255,14 @@
   <nav class="tabs">
     <a class="tab on" href="index.html">🍚 Nutrition</a>
     <a class="tab" href="workout.html">🏋️ Workout</a>
+    <a class="tab new" href="app/">✨ CARBMAXX 2.0</a>
   </nav>
+
+  <a class="newapp" href="app/">
+    <span class="newapp-badge">NEW · BETA</span>
+    <span class="newapp-text"><b>CARBMAXX 2.0</b> — type what you ate, get meal ideas with exact grams from your pantry, scan barcodes and track every vitamin. Works offline on your phone; this page stays as it is.</span>
+    <span class="newapp-go">Open →</span>
+  </a>
 
   <!-- ============ PROFILE ============ -->
   <div class="card pad profilebar" id="profileBar">
